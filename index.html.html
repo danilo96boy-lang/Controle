@@ -195,14 +195,13 @@
         document.addEventListener('DOMContentLoaded', () => {
             // --- INÍCIO DA CONFIGURAÇÃO FIREBASE ---
 
-            // <<< COPIE E COLE A CONFIGURAÇÃO DO SEU PROJETO FIREBASE AQUI >>>
             const firebaseConfig = {
-                apiKey: "SUA_API_KEY",
-                authDomain: "SEU_AUTH_DOMAIN",
-                projectId: "SEU_PROJECT_ID",
-                storageBucket: "SEU_STORAGE_BUCKET",
-                messagingSenderId: "SEU_MESSAGING_SENDER_ID",
-                appId: "SEU_APP_ID"
+              apiKey: "AIzaSyBf1nzx6mH1lWckWQyXDnWZKLlh-5cfcv0",
+              authDomain: "controle-a9909.firebaseapp.com",
+              projectId: "controle-a9909",
+              storageBucket: "controle-a9909.appspot.com",
+              messagingSenderId: "43886457318",
+              appId: "1:43886457318:web:289e82579a38c28fefa627"
             };
 
             // Inicializa o Firebase
@@ -263,7 +262,7 @@
                 const monthKey = getMonthYearKey(currentDate);
                 DOM.monthHeader.textContent = currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
                 
-                // CORREÇÃO 1: Filtro de data robusto que não é afetado por fuso horário.
+                // Filtro de data robusto que não é afetado por fuso horário.
                 // Ele compara a string 'YYYY-MM' em vez de usar o objeto Date.
                 const monthExpenses = expensesData
                     .filter(e => e.date && e.date.startsWith(monthKey))
@@ -303,7 +302,7 @@
             const renderExpenseList = (expenses) => {
                 if (expenses.length === 0) { DOM.expensesList.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-center p-6 bg-card-background-color rounded-lg border-2 border-dashed border-border-color"><h3 class="mt-2 text-lg font-semibold">Nenhum Lançamento no Mês</h3><p class="mt-1 text-text-secondary">Clique em "Adicionar Lançamento" para começar.</p></div>`; return; }
                 
-                // CORREÇÃO 2: Adicionado timeZone: 'UTC' para garantir que a data exibida seja a mesma que a data inserida.
+                // Adicionado timeZone: 'UTC' para garantir que a data exibida seja a mesma que a data inserida.
                 DOM.expensesList.innerHTML = expenses.map(exp => `<div class="expense-card p-4 flex items-center gap-4" data-id="${exp.id}"><div class="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full" style="background-color: ${CATEGORY_COLORS[exp.category]}20"><span class="text-xl">${CATEGORY_ICONS[exp.category] || '📎'}</span></div><div class="flex-grow"><p class="font-semibold">${exp.description}</p><p class="text-sm text-text-secondary">${new Date(exp.date).toLocaleDateString('pt-BR', {day: '2-digit', month: 'long', timeZone: 'UTC'})}</p></div><p class="font-bold text-lg">${formatCurrency(exp.value)}</p></div>`).join('');
             };
 

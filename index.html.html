@@ -9,6 +9,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --primary-color: #6366f1;
@@ -75,9 +79,9 @@
             transition: box-shadow 0.2s;
         }
         .form-input:focus, .form-select:focus {
-             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
-             border-color: var(--primary-color);
-             outline: none;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+            border-color: var(--primary-color);
+            outline: none;
         }
         
         #expense-modal-container {
@@ -138,7 +142,7 @@
     <div id="main-container" class="main-container w-full max-w-7xl mx-auto flex flex-col flex-grow p-6 sm:p-8">
         
         <header class="text-center mb-8 flex-shrink-0">
-             <div class="flex justify-center items-center gap-3">
+            <div class="flex justify-center items-center gap-3">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-9 w-9 text-brand" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
                 <h1 class="text-4xl sm:text-5xl font-bold tracking-tight">Painel Financeiro</h1>
             </div>
@@ -189,10 +193,33 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const CATEGORIES = ['Mercado', 'Contas', 'Apartamento', 'Carro', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Poupança Maria Luisa', 'Reserva', 'Outros'];
-            const EXPENSES_KEY = 'coupleExpensesData_v9_final';
-            const INCOME_KEY = 'coupleIncomeData_v9_final';
+            // --- INÍCIO DA CONFIGURAÇÃO FIREBASE ---
 
+            // <<< COPIE E COLE A CONFIGURAÇÃO DO SEU PROJETO FIREBASE AQUI >>>
+            const firebaseConfig = {
+                apiKey: "SUA_API_KEY",
+                authDomain: "SEU_AUTH_DOMAIN",
+                projectId: "SEU_PROJECT_ID",
+                storageBucket: "SEU_STORAGE_BUCKET",
+                messagingSenderId: "SEU_MESSAGING_SENDER_ID",
+                appId: "SEU_APP_ID"
+            };
+
+            // Inicializa o Firebase
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+
+            // Simulação de um ID de usuário. Idealmente, isso viria de um sistema de login.
+            // Todos os dados serão salvos sob este "nó" no banco de dados.
+            const userId = 'casal_principal'; 
+
+            // Referências para as coleções no Firestore
+            const expensesCollection = db.collection('users').doc(userId).collection('expenses');
+            const incomeCollection = db.collection('users').doc(userId).collection('income');
+            
+            // --- FIM DA CONFIGURAÇÃO FIREBASE ---
+
+            const CATEGORIES = ['Mercado', 'Contas', 'Apartamento', 'Carro', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Poupança Maria Luisa', 'Reserva', 'Outros'];
             const CATEGORY_ICONS = { 'Mercado': '🛒', 'Contas': '💡', 'Apartamento': '🏢', 'Carro': '🚗', 'Lazer': '🎉', 'Delivery': '🍔', 'Posto': '⛽', 'Farmácia': '💊', 'Roupa': '👕', 'Escola': '🎓', 'Poupança Maria Luisa': '🐖', 'Reserva': '🏦', 'Outros': '📎' };
             const CATEGORY_COLORS = { 'Mercado': '#f59e0b', 'Contas': '#10b981', 'Apartamento': '#a855f7', 'Carro': '#3b82f6', 'Lazer': '#ef4444', 'Delivery': '#d946ef', 'Posto': 'orangered', 'Farmácia': '#84cc16', 'Roupa': '#6366f1', 'Escola': '#0ea5e9', 'Poupança Maria Luisa': '#ec4899', 'Reserva': '#14b8a6', 'Outros': '#6b7280' };
 
@@ -225,15 +252,44 @@
             const getMonthYearKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
             const showToast = (message, type = 'success') => { DOM.toast.textContent = message; DOM.toast.classList.toggle('error', type !== 'success'); DOM.toast.classList.add('show'); setTimeout(() => { DOM.toast.classList.remove('show'); }, 3000); };
-            const saveData = () => { localStorage.setItem(EXPENSES_KEY, JSON.stringify(expensesData)); localStorage.setItem(INCOME_KEY, JSON.stringify(incomeData)); };
-            const loadData = () => { try { const se = localStorage.getItem(EXPENSES_KEY); expensesData = se ? JSON.parse(se) : []; const si = localStorage.getItem(INCOME_KEY); incomeData = si ? JSON.parse(si) : {}; } catch (e) { console.error("Erro ao carregar dados.", e); expensesData = []; incomeData = {}; } };
+            
+            // REMOVIDO: saveData() - Não é mais necessário, cada ação salva individualmente.
+
+            // MODIFICADO: loadData agora é async e busca dados do Firestore
+            const loadData = async () => {
+                try {
+                    // Carregar despesas
+                    const expensesSnapshot = await expensesCollection.get();
+                    expensesData = expensesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                    // Carregar rendas
+                    const incomeSnapshot = await incomeCollection.get();
+                    incomeData = {};
+                    incomeSnapshot.forEach(doc => {
+                        incomeData[doc.id] = doc.data();
+                    });
+                } catch (e) {
+                    console.error("Erro ao carregar dados do Firebase.", e);
+                    showToast("Erro ao carregar dados.", 'error');
+                    expensesData = [];
+                    incomeData = {};
+                }
+            };
 
             const renderMonthView = () => {
                 const year = currentDate.getFullYear();
                 const month = currentDate.getMonth();
                 const monthKey = getMonthYearKey(currentDate);
                 DOM.monthHeader.textContent = new Date(year, month).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
-                const monthExpenses = expensesData.filter(e => new Date(e.date).getFullYear() === year && new Date(e.date).getMonth() === month).sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+                const monthExpenses = expensesData
+                    .filter(e => {
+                        const expenseDate = new Date(e.date);
+                        // Ajuste para considerar o fuso horário corretamente
+                        return expenseDate.getFullYear() === year && expenseDate.getMonth() === month;
+                    })
+                    .sort((a, b) => new Date(a.date) - new Date(b.date));
+                
                 const monthIncome = incomeData[monthKey] || { salary1: '', salary2: '' };
                 DOM.salary1Input.value = monthIncome.salary1 || '';
                 DOM.salary2Input.value = monthIncome.salary2 || '';
@@ -242,7 +298,7 @@
             };
 
             const renderSummary = (expenses, income) => {
-                const totalExpenses = expenses.reduce((sum, exp) => sum + (exp.value || 0), 0);
+                const totalExpenses = expenses.reduce((sum, exp) => sum + (parseFloat(exp.value) || 0), 0);
                 const totalIncome = (parseFloat(income.salary1) || 0) + (parseFloat(income.salary2) || 0);
                 const balance = totalIncome - totalExpenses;
                 const summaryByCategory = CATEGORIES.map(category => ({ category, total: expenses.filter(e => e.category === category).reduce((sum, e) => sum + e.value, 0) })).filter(item => item.total > 0);
@@ -267,7 +323,7 @@
 
             const renderExpenseList = (expenses) => {
                 if (expenses.length === 0) { DOM.expensesList.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-center p-6 bg-card-background-color rounded-lg border-2 border-dashed border-border-color"><h3 class="mt-2 text-lg font-semibold">Nenhum Lançamento no Mês</h3><p class="mt-1 text-text-secondary">Clique em "Adicionar Lançamento" para começar.</p></div>`; return; }
-                DOM.expensesList.innerHTML = expenses.map(exp => `<div class="expense-card p-4 flex items-center gap-4" data-id="${exp.id}"><div class="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full" style="background-color: ${CATEGORY_COLORS[exp.category]}20"><span class="text-xl">${CATEGORY_ICONS[exp.category] || '📎'}</span></div><div class="flex-grow"><p class="font-semibold">${exp.description}</p><p class="text-sm text-text-secondary">${new Date(exp.date).toLocaleDateString('pt-BR', {day: '2-digit', month: 'long'})}</p></div><p class="font-bold text-lg">${formatCurrency(exp.value)}</p></div>`).join('');
+                DOM.expensesList.innerHTML = expenses.map(exp => `<div class="expense-card p-4 flex items-center gap-4" data-id="${exp.id}"><div class="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full" style="background-color: ${CATEGORY_COLORS[exp.category]}20"><span class="text-xl">${CATEGORY_ICONS[exp.category] || '📎'}</span></div><div class="flex-grow"><p class="font-semibold">${exp.description}</p><p class="text-sm text-text-secondary">${new Date(exp.date).toLocaleDateString('pt-BR', {day: '2-digit', month: 'long', timeZone: 'UTC'})}</p></div><p class="font-bold text-lg">${formatCurrency(exp.value)}</p></div>`).join('');
             };
 
             const showExpenseModal = (expenseId = null) => {
@@ -310,41 +366,101 @@
                 setTimeout(() => { DOM.modalContainer.innerHTML = ''; }, 300);
             };
 
-            const handleSalaryChange = () => { const mk = getMonthYearKey(currentDate); if (!incomeData[mk]) incomeData[mk] = {}; incomeData[mk].salary1 = DOM.salary1Input.value; incomeData[mk].salary2 = DOM.salary2Input.value; saveData(); renderMonthView(); };
+            // MODIFICADO: handleSalaryChange agora é async e salva no Firestore
+            const handleSalaryChange = async () => {
+                const monthKey = getMonthYearKey(currentDate);
+                const incomePayload = {
+                    salary1: DOM.salary1Input.value,
+                    salary2: DOM.salary2Input.value
+                };
+
+                try {
+                    await incomeCollection.doc(monthKey).set(incomePayload, { merge: true });
+                    
+                    if (!incomeData[monthKey]) incomeData[monthKey] = {};
+                    incomeData[monthKey] = incomePayload;
+
+                    renderMonthView();
+                } catch (error) {
+                    console.error("Erro ao salvar renda: ", error);
+                    showToast('Erro ao salvar a renda.', 'error');
+                }
+            };
             
-            DOM.salary1Input.addEventListener('input', handleSalaryChange); 
-            DOM.salary2Input.addEventListener('input', handleSalaryChange);
+            DOM.salary1Input.addEventListener('change', handleSalaryChange); 
+            DOM.salary2Input.addEventListener('change', handleSalaryChange);
             DOM.prevMonthBtn.addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); renderMonthView(); });
             DOM.nextMonthBtn.addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); renderMonthView(); });
             DOM.addExpenseBtn.addEventListener('click', () => showExpenseModal());
-            DOM.expensesList.addEventListener('click', (e) => { const c = e.target.closest('.expense-card'); if (c) showExpenseModal(parseInt(c.dataset.id)); });
 
-            DOM.modalContainer.addEventListener('click', (e) => { 
+            // MODIFICADO: ID é uma string, não precisa de parseInt
+            DOM.expensesList.addEventListener('click', (e) => { 
+                const card = e.target.closest('.expense-card'); 
+                if (card) showExpenseModal(card.dataset.id); 
+            });
+
+            // MODIFICADO: Ações de delete e submit são async
+            DOM.modalContainer.addEventListener('click', async (e) => { 
                 if (e.target.classList.contains('modal-close-btn') || e.target.id === 'expense-modal-container') {
                     hideExpenseModal();
                 }
                 if (e.target.id === 'delete-btn' && currentEditingId) { 
                     if(confirm('Tem certeza que deseja excluir este lançamento?')) { 
-                        expensesData = expensesData.filter(exp => exp.id !== currentEditingId); 
-                        saveData(); renderMonthView(); hideExpenseModal(); showToast('Lançamento excluído!', 'success'); 
+                        try {
+                            await expensesCollection.doc(currentEditingId).delete();
+                            await loadData();
+                            renderMonthView();
+                            hideExpenseModal();
+                            showToast('Lançamento excluído!', 'success');
+                        } catch (error) {
+                            console.error("Erro ao excluir: ", error);
+                            showToast('Erro ao excluir lançamento.', 'error');
+                        }
                     } 
                 } 
             });
 
-            DOM.modalContainer.addEventListener('submit', (e) => { 
+            DOM.modalContainer.addEventListener('submit', async (e) => { 
                 if (e.target.id === 'expense-form-inner') { 
                     e.preventDefault(); 
-                    const d = { id: currentEditingId || Date.now(), date: document.getElementById('form-date').value, description: document.getElementById('form-description').value, category: document.getElementById('form-category').value, value: parseFloat(document.getElementById('form-value').value) || 0 }; 
-                    if (currentEditingId) { const i = expensesData.findIndex(exp => exp.id === currentEditingId); if (i > -1) expensesData[i] = d; } else { expensesData.push(d); } 
-                    saveData(); renderMonthView(); hideExpenseModal(); showToast('Lançamento salvo com sucesso!', 'success'); 
+                    
+                    const expensePayload = {
+                        date: document.getElementById('form-date').value,
+                        description: document.getElementById('form-description').value,
+                        category: document.getElementById('form-category').value,
+                        value: parseFloat(document.getElementById('form-value').value) || 0
+                    };
+
+                    try {
+                        if (currentEditingId) {
+                            await expensesCollection.doc(currentEditingId).update(expensePayload);
+                        } else {
+                            await expensesCollection.add(expensePayload);
+                        }
+                        
+                        await loadData();
+                        renderMonthView();
+                        hideExpenseModal();
+                        showToast('Lançamento salvo com sucesso!', 'success');
+                    } catch (error) {
+                        console.error("Erro ao salvar no Firestore: ", error);
+                        showToast('Erro ao salvar lançamento.', 'error');
+                    }
                 } 
             });
+            
+            // NOTA: A funcionalidade de Importar/Exportar não foi atualizada para o Firebase.
+            // Ela continuará funcionando com o formato antigo de dados, mas não interagirá com o banco de dados.
+            DOM.exportBtn.addEventListener('click', () => { const d = { expenses: expensesData, income: incomeData }; const s = JSON.stringify(d, null, 2); const b = new Blob([s], { type: 'application/json' }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = `backup_gastos_${toISODateString(new Date())}.json`; a.click(); a.remove(); URL.revokeObjectURL(u); showToast('Backup local exportado com sucesso!'); });
+            DOM.importInput.addEventListener('change', (e) => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => { try { const d = JSON.parse(ev.target.result); if (d.expenses && d.income) { if (confirm('Isto irá substituir TODOS os dados locais. Não afetará o Firebase. Deseja continuar?')) { expensesData = d.expenses; incomeData = d.income; renderMonthView(); showToast('Dados importados localmente!'); } } else { showToast('Arquivo de backup inválido.', 'error'); } } catch (err) { showToast('Erro ao ler o arquivo.', 'error'); console.error(err); } finally { DOM.importInput.value = ''; } }; r.readAsText(f); });
 
-            DOM.exportBtn.addEventListener('click', () => { const d = { expenses: expensesData, income: incomeData }; const s = JSON.stringify(d, null, 2); const b = new Blob([s], { type: 'application/json' }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = `backup_gastos_${toISODateString(new Date())}.json`; a.click(); a.remove(); URL.revokeObjectURL(u); showToast('Backup exportado com sucesso!'); });
-            DOM.importInput.addEventListener('change', (e) => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => { try { const d = JSON.parse(ev.target.result); if (d.expenses && d.income) { if (confirm('Isto irá substituir TODOS os dados atuais. Deseja continuar?')) { expensesData = d.expenses; incomeData = d.income; saveData(); renderMonthView(); showToast('Dados importados com sucesso!'); } } else { showToast('Arquivo de backup inválido.', 'error'); } } catch (err) { showToast('Erro ao ler o arquivo.', 'error'); console.error(err); } finally { DOM.importInput.value = ''; } }; r.readAsText(f); });
+            // MODIFICADO: A inicialização agora é async
+            const initializeApp = async () => {
+                await loadData();
+                renderMonthView();
+            };
 
-            loadData();
-            renderMonthView();
+            initializeApp();
         });
     </script>
 </body>

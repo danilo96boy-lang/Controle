@@ -24,6 +24,11 @@
         .expense-item:hover { transform: translateX(4px); background-color: #374151; cursor: pointer; }
         
         .sub-chart-container { position: relative; height: 200px; width: 100%; display: flex; justify-content: center; }
+        
+        /* Scrollbar fina */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen p-4 md:p-8">
@@ -125,7 +130,7 @@
             <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
                 <div>
                     <h3 class="text-xl font-bold text-white">Detalhes da Fatura</h3>
-                    <p class="text-sm text-gray-400" id="invoice-subtitle">Breakdown</p>
+                    <p class="text-sm text-gray-400" id="invoice-subtitle">Compras detalhadas</p>
                 </div>
                 <button onclick="closeModal('invoice-details-modal')" class="text-2xl text-gray-400 hover:text-white">&times;</button>
             </div>
@@ -140,16 +145,16 @@
                 
                 <div class="flex flex-col h-full overflow-hidden relative">
                     <div class="flex justify-between items-center mb-2 shrink-0">
-                        <h4 class="text-sm font-bold text-gray-300">Categorias Detectadas</h4>
+                        <h4 class="text-sm font-bold text-gray-300">Lojas & Categorias</h4>
                         <a id="download-invoice-btn" href="#" download="fatura.pdf" class="text-xs text-indigo-400 hover:text-indigo-300 underline">Baixar PDF</a>
                     </div>
                     
-                    <div id="invoice-items-list" class="flex-1 overflow-y-auto pr-2 space-y-1 bg-gray-900/30 p-2 rounded text-sm mb-4">
+                    <div id="invoice-items-list" class="flex-1 overflow-y-auto pr-2 space-y-2 bg-gray-900/30 p-2 rounded text-sm mb-4">
                         </div>
 
                     <button onclick="deleteItem()" class="shrink-0 w-full border border-red-900/50 text-red-500 py-3 rounded hover:bg-red-900/20 text-sm font-semibold transition flex items-center justify-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
-                        Excluir este Lançamento
+                        Excluir Lançamento
                     </button>
                 </div>
             </div>
@@ -178,7 +183,7 @@
         const KEYWORDS = {
             'Uber/Transporte': ['uber', '99', 'sem parar', 'estacionamento', 'zona azul', 'pedagio', 'veloe'],
             'Delivery': ['ifood', 'rappi', 'ze delivery', 'aiqfome', 'delivery'],
-            'Assinaturas': ['netflix', 'spotify', 'amazon', 'prime', 'apple', 'google', 'youtube', 'hbo', 'disney', 'globoplay', 'star+', 'paramount', 'max', 'adobe'],
+            'Assinaturas': ['netflix', 'spotify', 'amazon', 'prime', 'apple', 'google', 'youtube', 'hbo', 'disney', 'globoplay', 'star+', 'paramount', 'max', 'adobe', 'smartfit', 'gympass'],
             'Mercado': ['carrefour', 'atacadao', 'pague m', 'roldao', 'tenda', 'swift', 'sao vicente', 'dia', 'extra', 'pao de acucar', 'big', 'walmart', 'sonda', 'supermercado', 'mercado', 'varejao', 'sacolao', 'comercial de alimentos'],
             'Farmácia': ['drogaria', 'farmacia', 'drogal', 'pague menos', 'drogasil', 'raia', 'ultrafarma', 'nissei', 'bifarma'],
             'Posto': ['posto', 'shell', 'ipiranga', 'petrobras', 'br', 'auto posto', 'combustivel'],
@@ -255,6 +260,7 @@
                 curExpenses.forEach(item => {
                     const day = item.date.split('-')[2];
                     const color = COLORS[item.category] || '#6b7280';
+                    // Verifica se tem detalhes (lista de compras)
                     const hasDetails = item.details && Object.keys(item.details).length > 0;
                     
                     let actionButton = '';
@@ -269,6 +275,9 @@
                          actionButton = `<span class="text-gray-500 text-xs ml-2">📎 Anexo</span>`;
                     }
 
+                    // Botão de lixeira direto
+                    const deleteAction = `<button onclick="deleteDirectly('${item.id}', event)" class="text-gray-500 hover:text-red-500 ml-2 p-1 rounded hover:bg-gray-700 transition-colors" title="Excluir">🗑️</button>`;
+
                     listEl.innerHTML += `
                         <div ${clickAction} class="expense-item bg-gray-700/50 p-3 rounded-lg flex items-center justify-between border-l-4 mb-2" style="border-color: ${color}">
                             <div class="flex items-center gap-3 overflow-hidden">
@@ -278,7 +287,10 @@
                                     <p class="text-xs text-gray-400 flex items-center">${item.category} ${actionButton}</p>
                                 </div>
                             </div>
-                            <span class="font-bold text-white whitespace-nowrap">${fmtMoney(item.value)}</span>
+                            <div class="flex items-center">
+                                <span class="font-bold text-white whitespace-nowrap">${fmtMoney(item.value)}</span>
+                                ${deleteAction}
+                            </div>
                         </div>
                     `;
                 });
@@ -340,11 +352,11 @@
             btn.innerText = "Salvar"; btn.disabled = false;
         };
 
-        // --- PARSER ---
+        // --- PARSER (AGORA GERA LISTA DE ITENS, NÃO SOMA) ---
         async function parsePDF(file) {
             const buff = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument(buff).promise;
-            let breakdown = {};
+            let breakdown = {}; // { "Mercado": [{desc: "Carrefour", val: 10}, ...] }
             let total = 0;
             
             for(let i=1; i<=pdf.numPages; i++) {
@@ -372,38 +384,86 @@
                             if (descLower.includes(key)) { cat = category; break categoryLoop; }
                         }
                     }
-                    breakdown[cat] = (breakdown[cat] || 0) + val;
+
+                    // Nova lógica: Guarda o item na lista da categoria
+                    if (!breakdown[cat]) breakdown[cat] = [];
+                    breakdown[cat].push({ desc: desc, val: val });
+                    
                     total += val;
                 }
             }
             return { breakdown, total: parseFloat(total.toFixed(2)) };
         }
 
-        // --- UI UTILS ---
+        // --- UI MODAL DETALHES ---
         function openInvoiceDetails(id) {
-            currentEditId = id; // IMPORTANT for Delete
+            currentEditId = id;
             const item = expenses.find(e => e.id === id);
             document.getElementById('invoice-subtitle').innerText = `${item.description} - ${fmtMoney(item.value)}`;
+            
             const dlBtn = document.getElementById('download-invoice-btn');
             if(item.attachment) { dlBtn.href = item.attachment; dlBtn.style.display = 'block'; } 
             else { dlBtn.style.display = 'none'; }
             
             const listContainer = document.getElementById('invoice-items-list');
             listContainer.innerHTML = '';
-            const ctx = document.getElementById('invoiceChart').getContext('2d');
-            if(invoiceChart) invoiceChart.destroy();
+            
+            // DADOS PARA O GRÁFICO (SOMA TOTAL POR CATEGORIA)
+            let chartLabels = [];
+            let chartData = [];
+            let chartColors = [];
 
             if (item.details) {
-                const cats = Object.keys(item.details).sort((a,b) => item.details[b] - item.details[a]);
-                const vals = cats.map(c => item.details[c]);
+                // Ordena categorias pelo valor total gasto nelas
+                const cats = Object.keys(item.details);
                 
-                cats.forEach((cat, idx) => {
-                    listContainer.innerHTML += `<div class="flex justify-between border-b border-gray-700 py-2"><span class="text-gray-300">${cat}</span><span class="font-bold text-white">${fmtMoney(vals[idx])}</span></div>`;
+                // Cria array auxiliar para ordenar
+                const sortedCats = cats.map(cat => {
+                    const totalCat = item.details[cat].reduce((acc, curr) => acc + curr.val, 0);
+                    return { cat, total: totalCat };
+                }).sort((a, b) => b.total - a.total);
+
+                sortedCats.forEach(c => {
+                    const catName = c.cat;
+                    const catTotal = c.total;
+                    const items = item.details[catName];
+
+                    // Preenche Gráfico
+                    chartLabels.push(catName);
+                    chartData.push(catTotal);
+                    chartColors.push(COLORS[catName] || '#666');
+
+                    // Cabeçalho da Categoria
+                    let html = `
+                        <div class="mb-3 border border-gray-700 rounded overflow-hidden">
+                            <div class="bg-gray-800 px-3 py-2 flex justify-between font-bold text-indigo-200">
+                                <span>${catName}</span>
+                                <span>${fmtMoney(catTotal)}</span>
+                            </div>
+                            <div class="bg-gray-900/50 px-3 py-1">
+                    `;
+                    
+                    // Lista de Itens (Lojas)
+                    items.forEach(subItem => {
+                        html += `
+                            <div class="flex justify-between text-xs py-1 text-gray-400 border-b border-gray-800 last:border-0">
+                                <span class="truncate pr-2">${subItem.desc}</span>
+                                <span class="shrink-0">${fmtMoney(subItem.val)}</span>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `</div></div>`;
+                    listContainer.innerHTML += html;
                 });
+
+                // Renderiza Gráfico
+                const ctx = document.getElementById('invoiceChart').getContext('2d');
+                if(invoiceChart) invoiceChart.destroy();
                 
                 invoiceChart = new Chart(ctx, {
                     type: 'doughnut',
-                    data: { labels: cats, datasets: [{ data: vals, backgroundColor: cats.map(c => COLORS[c] || '#666'), borderWidth: 0 }] },
+                    data: { labels: chartLabels, datasets: [{ data: chartData, backgroundColor: chartColors, borderWidth: 0 }] },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
                 });
             }
@@ -434,6 +494,12 @@
             }
             document.getElementById('expense-modal').classList.remove('hidden');
             document.getElementById('expense-modal').classList.add('flex');
+        }
+
+        async function deleteDirectly(id, event) {
+            event.stopPropagation();
+            currentEditId = id;
+            deleteItem();
         }
 
         async function deleteItem() {

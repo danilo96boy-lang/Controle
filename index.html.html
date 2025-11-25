@@ -6,12 +6,12 @@
     <title>Painel Financeiro - Casal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
     <style>
         :root {
@@ -23,9 +23,7 @@
             --text-color-secondary: #9ca3af;
             --border-color: #374151;
         }
-        html, body {
-            height: 100%;
-        }
+        html, body { height: 100%; }
         body {
             font-family: 'Poppins', sans-serif;
             background-color: var(--background-color);
@@ -33,217 +31,190 @@
             overflow-x: hidden;
             position: relative;
         }
-        h1, h2, h3, h4, .font-display {
-            font-family: 'Inter', sans-serif;
-            font-weight: 700;
-        }
+        h1, h2, h3, h4, .font-display { font-family: 'Inter', sans-serif; font-weight: 700; }
         
-        /* LOGIN SCREEN STYLES */
-        #login-screen {
-            position: fixed;
-            inset: 0;
-            background-color: var(--background-color);
-            z-index: 200;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        /* LOGIN E MODAIS */
+        #login-screen, #loading-overlay {
+            position: fixed; inset: 0; background-color: var(--background-color);
+            z-index: 200; display: flex; align-items: center; justify-content: center;
             transition: opacity 0.5s ease-out;
         }
-        #login-screen.hidden-auth {
-            opacity: 0;
-            pointer-events: none;
+        #loading-overlay { background-color: rgba(0,0,0,0.8); z-index: 300; display: none; flex-direction: column; gap: 15px; }
+        #login-screen.hidden-auth { opacity: 0; pointer-events: none; }
+
+        /* NAV TABS */
+        .nav-tabs {
+            display: flex; gap: 1rem; margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color); padding-bottom: 1px;
         }
+        .nav-tab {
+            padding: 0.75rem 1.5rem; cursor: pointer; border-bottom: 2px solid transparent;
+            color: var(--text-color-secondary); font-weight: 500; transition: all 0.2s;
+        }
+        .nav-tab:hover { color: var(--text-color-primary); }
+        .nav-tab.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+        
+        .tab-content { display: none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
         .main-container {
-            background-color: var(--card-background-color);
-            border-radius: 1.5rem; 
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3); 
-            border: 1px solid var(--border-color);
-            transition: opacity 0.3s, transform 0.3s;
-            position: relative;
-            z-index: 10;
+            background-color: var(--card-background-color); border-radius: 1.5rem; 
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color);
+            position: relative; z-index: 10;
         }
-        .main-container.modal-open {
-            opacity: 0;
-            transform: scale(0.98);
-        }
+        .main-container.modal-open { opacity: 0; transform: scale(0.98); }
         
         .bg-brand { background-color: var(--primary-color); }
         .text-brand { color: var(--primary-color); }
         .hover\:bg-brand-dark:hover { background-color: var(--primary-color-dark); }
-        .focus\:ring-brand:focus { --tw-ring-color: var(--primary-color); }
-        .focus\:border-brand:focus { border-color: var(--primary-color); }
-
-        .summary-card, .expense-card, .control-bar {
-            background-color: var(--card-background-color);
-            border: 1px solid var(--border-color);
-        }
+        
         .summary-card, .expense-card {
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transition: all 0.2s ease-in-out;
+            background-color: var(--card-background-color); border: 1px solid var(--border-color);
+            border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: all 0.2s ease-in-out;
         }
-        .expense-card:hover {
-            transform: translateY(-3px) scale(1.01);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-            cursor: pointer;
-        }
+        .expense-card:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 8px 25px rgba(0,0,0,0.15); cursor: pointer; }
         
         .form-input, .form-select {
-            background-color: var(--background-color);
-            border: 1px solid var(--border-color);
-            color: var(--text-color-primary);
-            transition: box-shadow 0.2s;
-        }
-        .form-input:focus, .form-select:focus {
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
-            border-color: var(--primary-color);
-            outline: none;
+            background-color: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color-primary);
         }
         
         #expense-modal-container {
-            position: fixed; 
-            inset: 0;
-            background-color: rgba(0,0,0,0.5);
-            backdrop-filter: blur(5px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 50;
-            padding: 1rem;
-            overflow-y: auto;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
+            position: fixed; inset: 0; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+            display: flex; align-items: center; justify-content: center; z-index: 50; padding: 1rem;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
         }
-        #expense-modal-container.visible {
-            opacity: 1;
-            pointer-events: auto;
-        }
+        #expense-modal-container.visible { opacity: 1; pointer-events: auto; }
 
         #toast-notification {
             position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
             padding: 12px 24px; border-radius: 8px; color: white; font-weight: 500;
-            background-color: #22c55e;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            transition: bottom 0.5s ease-in-out;
-            z-index: 100;
+            background-color: #22c55e; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: bottom 0.5s ease-in-out; z-index: 100;
         }
         #toast-notification.show { bottom: 20px; }
         #toast-notification.error { background-color: #ef4444; }
 
-        .decoration-icon {
-            position: fixed;
-            color: var(--primary-color);
-            opacity: 0.1;
-            pointer-events: none;
-            transition: opacity 0.3s;
-            z-index: 1;
-        }
-        body.modal-open-body .decoration-icon {
-            opacity: 0;
-        }
+        .decoration-icon { position: fixed; color: var(--primary-color); opacity: 0.1; pointer-events: none; z-index: 1; }
+        @media (max-width: 1279px) { .decoration-icon { display: none; } }
         
-        @media (max-width: 1279px) { 
-            .decoration-icon {
-                display: none;
-            }
-        }
+        /* Spinner Loader */
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="dark p-4 sm:p-6 lg:p-8 flex flex-col">
 
     <div id="login-screen">
         <div class="bg-card-background-color p-8 rounded-2xl shadow-2xl w-full max-w-md border border-border-color text-center">
-            <div class="mb-6 flex justify-center">
-                <div class="p-4 bg-gray-800 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-brand" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
-                </div>
-            </div>
-            <h2 class="text-2xl font-bold mb-2">Bem-vindo(a)</h2>
-            <p class="text-text-secondary mb-6 text-sm">Insira suas credenciais para acessar o painel.</p>
-            
+            <h2 class="text-2xl font-bold mb-2">Painel Financeiro</h2>
+            <p class="text-text-secondary mb-6 text-sm">Insira suas credenciais.</p>
             <form id="login-form" class="space-y-4">
-                <div>
-                    <input type="text" id="login-user" placeholder="Usuário (gabi ou danilo)" class="form-input w-full rounded-lg p-3 text-center" required autocomplete="off">
-                </div>
-                <div>
-                    <input type="password" id="login-pass" placeholder="Senha" class="form-input w-full rounded-lg p-3 text-center" required>
-                </div>
-                <button type="submit" class="w-full bg-brand hover:bg-brand-dark text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all transform hover:scale-[1.02]">
-                    Entrar
-                </button>
+                <input type="text" id="login-user" placeholder="Usuário" class="form-input w-full rounded-lg p-3 text-center" required>
+                <input type="password" id="login-pass" placeholder="Senha" class="form-input w-full rounded-lg p-3 text-center" required>
+                <button type="submit" class="w-full bg-brand hover:bg-brand-dark text-white font-bold py-3 px-4 rounded-lg shadow-lg">Entrar</button>
             </form>
-            <p id="login-error" class="text-red-500 text-sm mt-4 hidden">Usuário ou senha incorretos.</p>
+            <p id="login-error" class="text-red-500 text-sm mt-4 hidden">Dados incorretos.</p>
         </div>
     </div>
 
-    <svg class="decoration-icon w-24 h-24" style="top: 15%; left: 5%; transform: rotate(-25deg);" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M50 0L61.2266 21.3526L85.3553 26.1244L70.1777 44.6447L71.1244 69.1317L50 59.695L28.8756 69.1317L29.8223 44.6447L4.64466 26.1244L28.7734 21.3526L50 0Z" stroke="currentColor" stroke-width="4"></path><path d="M50 25L55.6133 36.6763L68.6777 39.0622L60.3388 50.3223L61.2266 63.8157L50 59.695L38.7734 63.8157L39.6612 50.3223L31.3223 39.0622L44.3867 36.6763L50 25Z" stroke="currentColor" stroke-width="2"></path></svg>
-    <svg class="decoration-icon w-32 h-32" style="bottom: 10%; left: 8%; transform: rotate(15deg);" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" stroke="currentColor" stroke-width="4" stroke-dasharray="8 8"></circle><circle cx="50" cy="50" r="35" stroke="currentColor" stroke-width="2"></circle></svg>
-    <svg class="decoration-icon w-20 h-20" style="top: 20%; right: 7%; transform: rotate(15deg);" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="96" height="96" rx="10" stroke="currentColor" stroke-width="4"></rect><rect x="20" y="20" width="60" height="60" rx="5" stroke="currentColor" stroke-width="2" stroke-dasharray="5 5"></rect></svg>
-    <svg class="decoration-icon w-28 h-28" style="bottom: 15%; right: 5%; transform: rotate(-10deg);" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 50H98" stroke="currentColor" stroke-width="2"></path><path d="M16 22L84 78" stroke="currentColor" stroke-width="2"></path><path d="M16 78L84 22" stroke="currentColor" stroke-width="2"></path><path d="M50 2V98" stroke="currentColor" stroke-width="2"></path></svg>
+    <div id="loading-overlay">
+        <div class="loader"></div>
+        <p class="text-white font-medium" id="loading-text">Processando Fatura...</p>
+    </div>
+
+    <svg class="decoration-icon w-24 h-24" style="top: 15%; left: 5%; transform: rotate(-25deg);" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M50 0L61.2266 21.3526L85.3553 26.1244L70.1777 44.6447L71.1244 69.1317L50 59.695L28.8756 69.1317L29.8223 44.6447L4.64466 26.1244L28.7734 21.3526L50 0Z" stroke="currentColor" stroke-width="4"></path></svg>
+    <svg class="decoration-icon w-32 h-32" style="bottom: 10%; left: 8%; transform: rotate(15deg);" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" stroke="currentColor" stroke-width="4" stroke-dasharray="8 8"></circle></svg>
 
     <div id="main-container" class="main-container w-full max-w-7xl mx-auto flex flex-col flex-grow p-6 sm:p-8">
         
-        <header class="text-center mb-8 flex-shrink-0">
-            <div class="flex justify-center items-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-9 w-9 text-brand" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
-                <h1 class="text-4xl sm:text-5xl font-bold tracking-tight">Painel Financeiro</h1>
-            </div>
-            <p class="text-text-secondary mt-2 text-lg">Olá, <span id="user-greeting" class="text-brand font-bold"></span>! Seu resumo financeiro mensal.</p>
+        <header class="text-center mb-6 flex-shrink-0">
+            <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">Painel Financeiro</h1>
+            <p class="text-text-secondary mt-1 text-sm">Olá, <span id="user-greeting" class="text-brand font-bold"></span>.</p>
         </header>
 
-        <div class="control-bar flex justify-between items-center mb-6 p-3 rounded-xl flex-shrink-0">
-            <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-700 transition-colors" title="Mês Anterior"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
-            <h2 id="month-header" class="text-lg sm:text-xl font-bold text-center"></h2>
-            <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-700 transition-colors" title="Próximo Mês"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
+        <div class="control-bar flex justify-between items-center mb-4 p-3 rounded-xl flex-shrink-0 bg-gray-800">
+            <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-700"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+            <h2 id="month-header" class="text-lg font-bold text-center"></h2>
+            <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-700"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-grow overflow-hidden">
-            <div class="lg:col-span-4 flex flex-col gap-6 overflow-y-auto pr-2">
-                <div class="summary-card p-5">
-                    <h3 class="font-display text-text-secondary text-sm font-semibold uppercase tracking-wider mb-3">Renda Mensal</h3>
-                    <div class="space-y-3">
-                        <div><label for="salary1" class="text-xs text-text-secondary font-medium">Renda 1 (R$)</label><input type="number" id="salary1" placeholder="3500.00" step="0.01" class="form-input mt-1 w-full rounded-md p-2"></div>
-                        <div><label for="salary2" class="text-xs text-text-secondary font-medium">Renda 2 (R$)</label><input type="number" id="salary2" placeholder="2800.00" step="0.01" class="form-input mt-1 w-full rounded-md p-2"></div>
+        <div class="nav-tabs">
+            <div class="nav-tab active" data-target="tab-geral">Visão Geral</div>
+            <div class="nav-tab" data-target="tab-fatura">Cartão de Crédito</div>
+        </div>
+
+        <div id="tab-geral" class="tab-content active">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-4 flex flex-col gap-6">
+                    <div class="summary-card p-5">
+                        <h3 class="font-display text-text-secondary text-sm font-semibold uppercase mb-3">Renda</h3>
+                        <div class="space-y-3">
+                            <div><label class="text-xs text-text-secondary">Renda 1 (R$)</label><input type="number" id="salary1" class="form-input mt-1 w-full rounded-md p-2"></div>
+                            <div><label class="text-xs text-text-secondary">Renda 2 (R$)</label><input type="number" id="salary2" class="form-input mt-1 w-full rounded-md p-2"></div>
+                        </div>
                     </div>
+                    <div id="summary-section" class="space-y-4"></div>
                 </div>
-                <div id="summary-section" class="space-y-4"></div>
-                <div class="summary-card p-4">
-                    <h3 class="font-display text-center text-text-secondary mb-3 text-md">Distribuição de Saídas</h3>
-                    <canvas id="expensesChart"></canvas>
-                </div>
-                <div id="category-summary-section" class="space-y-2"></div>
-            </div>
-            
-            <div class="lg:col-span-8 flex flex-col">
-                <div class="flex flex-wrap justify-between items-center gap-4 mb-5 flex-shrink-0">
-                    <h3 class="font-display text-2xl">Lançamentos do Mês</h3>
-                    <div class="flex items-center gap-2">
-                        <button id="export-data-btn" class="bg-card-background-color hover:bg-background-color text-text-secondary font-semibold py-2 px-4 border border-border-color rounded-lg shadow-sm text-sm transition-colors" title="Exportar todos os dados">Exportar</button>
-                        <input type="file" id="import-file-input" class="hidden" accept=".json">
-                        <label for="import-file-input" class="cursor-pointer bg-card-background-color hover:bg-background-color text-text-secondary font-semibold py-2 px-4 border border-border-color rounded-lg shadow-sm text-sm transition-colors" title="Importar backup">Importar</label>
-                        <button id="add-expense-btn" class="bg-brand hover:bg-brand-dark text-white font-bold py-2 px-5 rounded-lg shadow-md transition-colors duration-200">Adicionar Lançamento</button>
+                
+                <div class="lg:col-span-8 flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-display text-xl">Extrato</h3>
+                        <button id="add-expense-btn" class="bg-brand hover:bg-brand-dark text-white font-bold py-2 px-4 rounded-lg text-sm">Adicionar Manual</button>
                     </div>
+                    <div id="expenses-list" class="space-y-3 flex-grow overflow-y-auto pr-2 max-h-[500px]"></div>
                 </div>
-                <div id="expenses-list" class="space-y-3 flex-grow overflow-y-auto pr-2"></div>
             </div>
         </div>
+
+        <div id="tab-fatura" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-5 flex flex-col gap-6">
+                    <div class="summary-card p-6 bg-slate-800 border-dashed border-2 border-gray-600">
+                        <h3 class="text-xl font-bold mb-2">Importar Fatura PDF</h3>
+                        <p class="text-sm text-text-secondary mb-4">Selecione o PDF da sua fatura (Nubank, Inter, etc). O sistema tentará ler os dados automaticamente.</p>
+                        
+                        <label class="block w-full cursor-pointer bg-brand hover:bg-brand-dark text-white text-center font-bold py-3 px-4 rounded-lg transition-colors">
+                            <span>📄 Selecionar PDF</span>
+                            <input type="file" id="pdf-upload-input" class="hidden" accept="application/pdf">
+                        </label>
+                        <p id="pdf-status" class="text-xs text-center mt-2 text-gray-400"></p>
+                    </div>
+
+                    <div class="summary-card p-4">
+                        <h3 class="font-display text-center text-text-secondary mb-3">Gastos do Cartão por Categoria</h3>
+                        <div class="relative h-64 w-full">
+                            <canvas id="creditCardChart"></canvas>
+                        </div>
+                        <div id="card-total-display" class="text-center mt-4 font-bold text-xl text-white"></div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-7">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-display text-xl">Lançamentos da Fatura</h3>
+                        <button id="delete-card-items-btn" class="text-red-400 hover:text-red-300 text-sm underline">Limpar Fatura do Mês</button>
+                    </div>
+                    <div id="card-expenses-list" class="space-y-3 flex-grow overflow-y-auto pr-2 max-h-[600px]">
+                        <div class="text-center p-8 text-gray-500">Nenhuma fatura importada para este mês.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
     
     <div id="expense-modal-container"></div>
-    
     <div id="toast-notification"></div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- CONFIGURAÇÃO DE USUÁRIOS ---
-            const USERS = {
-                'gabi': '19071996',
-                'danilo': '08042020'
-            };
+        // Configuração do PDF.js Worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-            // --- INÍCIO DA CONFIGURAÇÃO FIREBASE ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const USERS = { 'gabi': '19071996', 'danilo': '08042020' };
+
+            // FIREBASE INIT
             const firebaseConfig = {
               apiKey: "AIzaSyBf1nzx6mH1lWckWQyXDnWZKLlh-5cfcv0",
               authDomain: "controle-a9909.firebaseapp.com",
@@ -252,336 +223,342 @@
               messagingSenderId: "43886457318",
               appId: "1:43886457318:web:289e82579a38c28fefa627"
             };
-
-            // Inicializa o Firebase
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
-
-            // ID do grupo familiar
             const userId = 'casal_principal'; 
-
-            // Referências para as coleções no Firestore
             const expensesCollection = db.collection('users').doc(userId).collection('expenses');
             const incomeCollection = db.collection('users').doc(userId).collection('income');
             
-            // --- FIM DA CONFIGURAÇÃO FIREBASE ---
-
-            const CATEGORIES = ['Mercado', 'Contas', 'Apartamento', 'Carro', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Poupança Maria Luisa', 'Reserva', 'Outros'];
-            const CATEGORY_ICONS = { 'Mercado': '🛒', 'Contas': '💡', 'Apartamento': '🏢', 'Carro': '🚗', 'Lazer': '🎉', 'Delivery': '🍔', 'Posto': '⛽', 'Farmácia': '💊', 'Roupa': '👕', 'Escola': '🎓', 'Poupança Maria Luisa': '🐖', 'Reserva': '🏦', 'Outros': '📎' };
-            const CATEGORY_COLORS = { 'Mercado': '#f59e0b', 'Contas': '#10b981', 'Apartamento': '#a855f7', 'Carro': '#3b82f6', 'Lazer': '#ef4444', 'Delivery': '#d946ef', 'Posto': 'orangered', 'Farmácia': '#84cc16', 'Roupa': '#6366f1', 'Escola': '#0ea5e9', 'Poupança Maria Luisa': '#ec4899', 'Reserva': '#14b8a6', 'Outros': '#6b7280' };
+            // Constantes
+            const CATEGORIES = ['Mercado', 'Contas', 'Apartamento', 'Carro', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Poupança Maria Luisa', 'Reserva', 'Uber/Transporte', 'Assinaturas', 'Outros'];
+            const CATEGORY_COLORS = { 'Mercado': '#f59e0b', 'Contas': '#10b981', 'Apartamento': '#a855f7', 'Carro': '#3b82f6', 'Lazer': '#ef4444', 'Delivery': '#d946ef', 'Posto': 'orangered', 'Farmácia': '#84cc16', 'Roupa': '#6366f1', 'Escola': '#0ea5e9', 'Poupança Maria Luisa': '#ec4899', 'Reserva': '#14b8a6', 'Uber/Transporte': '#000000', 'Assinaturas': '#607d8b', 'Outros': '#6b7280' };
 
             let expensesData = [];
             let incomeData = {};
             let currentDate = new Date();
             let currentEditingId = null; 
-            window.myExpensesChart = null;
+            window.creditCardChartInstance = null;
 
             const DOM = { 
-                body: document.body, mainContainer: document.getElementById('main-container'),
                 loginScreen: document.getElementById('login-screen'), loginForm: document.getElementById('login-form'),
-                loginError: document.getElementById('login-error'), userGreeting: document.getElementById('user-greeting'),
-                prevMonthBtn: document.getElementById('prev-month-btn'), nextMonthBtn: document.getElementById('next-month-btn'), 
-                monthHeader: document.getElementById('month-header'), summarySection: document.getElementById('summary-section'), 
-                categorySummarySection: document.getElementById('category-summary-section'), expensesList: document.getElementById('expenses-list'), 
-                addExpenseBtn: document.getElementById('add-expense-btn'), modalContainer: document.getElementById('expense-modal-container'), 
-                salary1Input: document.getElementById('salary1'), salary2Input: document.getElementById('salary2'), 
-                exportBtn: document.getElementById('export-data-btn'), importInput: document.getElementById('import-file-input'), 
-                toast: document.getElementById('toast-notification') 
+                loadingOverlay: document.getElementById('loading-overlay'), loadingText: document.getElementById('loading-text'),
+                mainContainer: document.getElementById('main-container'),
+                expensesList: document.getElementById('expenses-list'), cardExpensesList: document.getElementById('card-expenses-list'),
+                modalContainer: document.getElementById('expense-modal-container'), 
+                pdfInput: document.getElementById('pdf-upload-input'), pdfStatus: document.getElementById('pdf-status'),
+                cardTotalDisplay: document.getElementById('card-total-display'),
+                monthHeader: document.getElementById('month-header'),
+                toast: document.getElementById('toast-notification')
             };
-            
-            // --- LÓGICA DE LOGIN ---
+
+            // Login Logic
             DOM.loginForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const user = document.getElementById('login-user').value.toLowerCase().trim();
                 const pass = document.getElementById('login-pass').value.trim();
-
                 if (USERS[user] && USERS[user] === pass) {
-                    DOM.loginError.classList.add('hidden');
                     DOM.loginScreen.classList.add('hidden-auth');
-                    DOM.userGreeting.textContent = user.charAt(0).toUpperCase() + user.slice(1);
-                    // Inicia o app apenas após login
+                    document.getElementById('user-greeting').textContent = user.charAt(0).toUpperCase() + user.slice(1);
                     initializeApp();
                 } else {
-                    DOM.loginError.classList.remove('hidden');
-                    // Treme a caixa de login (efeito visual simples)
-                    DOM.loginForm.parentElement.animate([
-                        { transform: 'translateX(0)' },
-                        { transform: 'translateX(-5px)' },
-                        { transform: 'translateX(5px)' },
-                        { transform: 'translateX(0)' }
-                    ], { duration: 300 });
+                    document.getElementById('login-error').classList.remove('hidden');
                 }
             });
 
-            const formatCurrency = (value) => (value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            const toISODateString = (date) => date.toISOString().split('T')[0];
-            const getMonthYearKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            // Tabs Logic
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.target).classList.add('active');
+                });
+            });
 
-            const showToast = (message, type = 'success') => { DOM.toast.textContent = message; DOM.toast.classList.toggle('error', type !== 'success'); DOM.toast.classList.add('show'); setTimeout(() => { DOM.toast.classList.remove('show'); }, 3000); };
-            
+            // Helpers
+            const formatCurrency = (val) => (val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            const getMonthYearKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            const showToast = (msg, type='success') => { DOM.toast.textContent = msg; DOM.toast.className = type === 'success' ? 'show' : 'show error'; setTimeout(() => DOM.toast.className = '', 3000); };
+            const toggleLoading = (show, msg) => { 
+                DOM.loadingOverlay.style.display = show ? 'flex' : 'none'; 
+                if(msg) DOM.loadingText.textContent = msg; 
+            };
+
+            // ---- LÓGICA DE PDF ----
+            DOM.pdfInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                toggleLoading(true, "Lendo PDF e processando transações...");
+                DOM.pdfStatus.textContent = `Processando ${file.name}...`;
+
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                    let extractedItems = [];
+
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        const textItems = textContent.items.map(item => item.str).join(' ');
+                        
+                        // REGEX para encontrar transações (Ex: 15 ABR Uber *Viagem 25,90)
+                        // Tenta capturar: DATA (DD MMM ou DD/MM) + ESPAÇO + DESCRIÇÃO + ESPAÇO + VALOR
+                        // Nota: Regex adaptável é difícil, esse foca no padrão mais comum (Nubank/Geral)
+                        const regex = /(\d{2}\s+(?:JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)|\d{2}\/\d{2})\s+(.+?)\s+(\d{1,3}(?:\.\d{3})*,\d{2})/gi;
+                        
+                        let match;
+                        while ((match = regex.exec(textItems)) !== null) {
+                            // Limpa descrição (remove parcelas ex: 1/10)
+                            let desc = match[2].trim();
+                            // Ignora linhas que parecem ser totais ou pagamentos
+                            if(desc.toUpperCase().includes('PAGAMENTO') || desc.toUpperCase().includes('TOTAL')) continue;
+
+                            let valStr = match[3].replace('.', '').replace(',', '.');
+                            let value = parseFloat(valStr);
+
+                            // Tenta categorizar automaticamente
+                            let category = 'Outros';
+                            const lowerDesc = desc.toLowerCase();
+                            if (lowerDesc.includes('uber') || lowerDesc.includes('99')) category = 'Uber/Transporte';
+                            else if (lowerDesc.includes('ifood') || lowerDesc.includes('rappi') || lowerDesc.includes('zé delivery')) category = 'Delivery';
+                            else if (lowerDesc.includes('netflix') || lowerDesc.includes('spotify') || lowerDesc.includes('amazon prime')) category = 'Assinaturas';
+                            else if (lowerDesc.includes('supermercado') || lowerDesc.includes('atacadao') || lowerDesc.includes('carrefour')) category = 'Mercado';
+                            else if (lowerDesc.includes('posto') || lowerDesc.includes('shell') || lowerDesc.includes('ipiranga')) category = 'Posto';
+                            else if (lowerDesc.includes('drogaria') || lowerDesc.includes('farma')) category = 'Farmácia';
+
+                            // Data: Assume mês atual da visualização do painel para simplificar
+                            // ou usa a data do PDF se conseguir converter (complexo pois não tem ano).
+                            // Estratégia: Usar o dia do PDF e Mês/Ano da visualização atual.
+                            const day = match[1].substring(0, 2); 
+                            const dateStr = `${getMonthYearKey(currentDate)}-${day}`;
+
+                            extractedItems.push({
+                                date: dateStr,
+                                description: desc,
+                                category: category,
+                                value: value,
+                                source: 'credit_card_import', // Flag importante
+                                attachment: null
+                            });
+                        }
+                    }
+
+                    if (extractedItems.length === 0) {
+                        alert("Não conseguimos identificar transações neste PDF. O formato pode não ser compatível.");
+                    } else {
+                        // Salvar no Firebase em lote
+                        const batch = db.batch();
+                        extractedItems.forEach(item => {
+                            const docRef = expensesCollection.doc();
+                            batch.set(docRef, item);
+                        });
+                        await batch.commit();
+                        showToast(`${extractedItems.length} transações importadas!`);
+                        await loadData();
+                        renderMonthView();
+                    }
+
+                } catch (error) {
+                    console.error(error);
+                    showToast("Erro ao ler PDF", "error");
+                } finally {
+                    toggleLoading(false);
+                    DOM.pdfInput.value = '';
+                    DOM.pdfStatus.textContent = '';
+                }
+            });
+
+            // ---- LÓGICA DE DADOS ----
+
             const loadData = async () => {
                 try {
-                    const expensesSnapshot = await expensesCollection.get();
-                    expensesData = expensesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    const incomeSnapshot = await incomeCollection.get();
+                    const snap = await expensesCollection.get();
+                    expensesData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    const incomeSnap = await incomeCollection.get();
                     incomeData = {};
-                    incomeSnapshot.forEach(doc => { incomeData[doc.id] = doc.data(); });
-                } catch (e) {
-                    console.error("Erro ao carregar dados do Firebase.", e);
-                    showToast("Erro ao carregar dados.", 'error');
-                    expensesData = []; incomeData = {};
-                }
+                    incomeSnap.forEach(d => { incomeData[d.id] = d.data(); });
+                } catch (e) { console.error(e); }
             };
 
             const renderMonthView = () => {
                 const monthKey = getMonthYearKey(currentDate);
-                DOM.monthHeader.textContent = currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
+                DOM.monthHeader.textContent = currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase();
                 
-                const monthExpenses = expensesData
-                    .filter(e => e.date && e.date.startsWith(monthKey))
-                    .sort((a, b) => new Date(a.date) - new Date(b.date));
+                // Filtra dados do mês
+                const monthExpenses = expensesData.filter(e => e.date && e.date.startsWith(monthKey));
                 
-                const monthIncome = incomeData[monthKey] || { salary1: '', salary2: '' };
-                DOM.salary1Input.value = monthIncome.salary1 || '';
-                DOM.salary2Input.value = monthIncome.salary2 || '';
-                renderSummary(monthExpenses, monthIncome);
-                renderExpenseList(monthExpenses);
+                // Separa o que é Fatura vs Manual
+                const manualExpenses = monthExpenses.filter(e => e.source !== 'credit_card_import');
+                const cardExpenses = monthExpenses.filter(e => e.source === 'credit_card_import');
+
+                // Renderiza Listas
+                renderExpenseList(manualExpenses, DOM.expensesList);
+                renderCardList(cardExpenses, DOM.cardExpensesList);
+                
+                // Renderiza Resumo Geral
+                const income = incomeData[monthKey] || {};
+                document.getElementById('salary1').value = income.salary1 || '';
+                document.getElementById('salary2').value = income.salary2 || '';
+                
+                const totalManual = manualExpenses.reduce((sum, e) => sum + e.value, 0);
+                const totalCard = cardExpenses.reduce((sum, e) => sum + e.value, 0);
+                const totalIncome = (parseFloat(income.salary1)||0) + (parseFloat(income.salary2)||0);
+                
+                const balance = totalIncome - (totalManual + totalCard);
+                
+                document.getElementById('summary-section').innerHTML = `
+                    <div class="summary-card p-4 flex justify-between"><span>Renda Total</span><span class="font-bold">${formatCurrency(totalIncome)}</span></div>
+                    <div class="summary-card p-4 flex justify-between"><span>Gastos Manuais</span><span class="font-bold text-red-400">${formatCurrency(totalManual)}</span></div>
+                    <div class="summary-card p-4 flex justify-between"><span>Fatura Cartão</span><span class="font-bold text-orange-400">${formatCurrency(totalCard)}</span></div>
+                    <div class="summary-card p-4 flex justify-between bg-gray-700"><span>Saldo</span><span class="font-bold ${balance>=0?'text-green-400':'text-red-500'}">${formatCurrency(balance)}</span></div>
+                `;
+
+                // Renderiza Gráfico do Cartão
+                renderCardChart(cardExpenses);
+                DOM.cardTotalDisplay.textContent = `Total Fatura: ${formatCurrency(totalCard)}`;
             };
 
-            const renderSummary = (expenses, income) => {
-                const totalExpenses = expenses.reduce((sum, exp) => sum + (parseFloat(exp.value) || 0), 0);
-                const totalIncome = (parseFloat(income.salary1) || 0) + (parseFloat(income.salary2) || 0);
-                const balance = totalIncome - totalExpenses;
-                const summaryByCategory = CATEGORIES.map(category => ({ category, total: expenses.filter(e => e.category === category).reduce((sum, e) => sum + e.value, 0) })).filter(item => item.total > 0);
-                let balanceColor = balance >= 0 ? 'text-green-400' : 'text-red-400';
-
-                DOM.summarySection.innerHTML = `<div class="summary-card p-4 flex justify-between items-center"><div class="font-medium text-text-secondary">Total de Renda</div><div class="font-semibold text-lg">${formatCurrency(totalIncome)}</div></div><div class="summary-card p-4 flex justify-between items-center"><div class="font-medium text-text-secondary">Total de Saídas</div><div class="font-semibold text-lg text-brand">${formatCurrency(totalExpenses)}</div></div><div class="summary-card p-4 flex justify-between items-center bg-slate-700 text-white"><div class="font-semibold uppercase tracking-wider">Saldo do Mês</div><div class="font-bold text-xl ${balanceColor}">${formatCurrency(balance)}</div></div>`;
-                
-                let categoryHTML = '';
-                if(summaryByCategory.length > 0) categoryHTML += '<h4 class="font-display text-text-secondary text-sm font-semibold uppercase tracking-wider px-2">Análise de Saídas</h4>';
-                summaryByCategory.forEach(item => { categoryHTML += `<div class="summary-card p-3 flex justify-between items-center text-sm"><div class="flex items-center gap-3"><div class="w-8 h-8 flex items-center justify-center rounded-full" style="background-color: ${CATEGORY_COLORS[item.category]}20;"><span class="text-xl">${CATEGORY_ICONS[item.category] || '📎'}</span></div><h4 class="font-medium">${item.category}</h4></div><p class="font-semibold">${formatCurrency(item.total)}</p></div>`; });
-                DOM.categorySummarySection.innerHTML = categoryHTML;
-
-                const ctx = document.getElementById('expensesChart').getContext('2d');
-                if (window.myExpensesChart) window.myExpensesChart.destroy();
-                if (expenses.length > 0) {
-                    Chart.defaults.color = '#9ca3af';
-                    window.myExpensesChart = new Chart(ctx, { type: 'doughnut', data: { labels: summaryByCategory.map(i => i.category), datasets: [{ data: summaryByCategory.map(i => i.total), backgroundColor: summaryByCategory.map(i => CATEGORY_COLORS[i.category] || '#6b7280'), hoverOffset: 8, borderWidth: 3, borderColor: '#1f2937' }] }, options: { responsive: true, cutout: '70%', plugins: { legend: { display: false }, tooltip: { bodyFont: { size: 14 } } } } });
-                } else {
-                    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-                }
+            const renderExpenseList = (list, container) => {
+                container.innerHTML = list.length ? list.map(item => createItemHTML(item)).join('') : '<p class="text-center text-gray-500 py-4">Sem lançamentos.</p>';
             };
 
-            const renderExpenseList = (expenses) => {
-                if (expenses.length === 0) { DOM.expensesList.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-center p-6 bg-card-background-color rounded-lg border-2 border-dashed border-border-color"><h3 class="mt-2 text-lg font-semibold">Nenhum Lançamento no Mês</h3><p class="mt-1 text-text-secondary">Clique em "Adicionar Lançamento" para começar.</p></div>`; return; }
-                
-                DOM.expensesList.innerHTML = expenses.map(exp => {
-                    const attachmentBtn = exp.attachment ? 
-                        `<a href="${exp.attachment}" download="comprovante_${exp.description}" class="text-xs bg-gray-700 hover:bg-gray-600 text-white py-1 px-2 rounded flex items-center gap-1" title="Baixar Anexo" onclick="event.stopPropagation()">📎 Fatura</a>` : '';
-                    const hasAttachmentIcon = exp.attachment ? '<span class="text-xs ml-2" title="Possui anexo">📎</span>' : '';
-
-                    return `<div class="expense-card p-4 flex items-center gap-4 relative group" data-id="${exp.id}">
-                        <div class="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full" style="background-color: ${CATEGORY_COLORS[exp.category]}20">
-                            <span class="text-xl">${CATEGORY_ICONS[exp.category] || '📎'}</span>
-                        </div>
-                        <div class="flex-grow min-w-0">
-                            <p class="font-semibold truncate pr-2">${exp.description} ${hasAttachmentIcon}</p>
-                            <div class="flex items-center gap-2">
-                                <p class="text-sm text-text-secondary">${new Date(exp.date).toLocaleDateString('pt-BR', {day: '2-digit', month: 'long', timeZone: 'UTC'})}</p>
-                                ${attachmentBtn}
-                            </div>
-                        </div>
-                        <p class="font-bold text-lg whitespace-nowrap">${formatCurrency(exp.value)}</p>
-                    </div>`;
-                }).join('');
+            const renderCardList = (list, container) => {
+                container.innerHTML = list.length ? list.map(item => createItemHTML(item)).join('') : '<p class="text-center text-gray-500 py-8">Nenhuma fatura importada.</p>';
             };
 
-            // Função para converter arquivo para Base64
-            const convertFileToBase64 = (file) => {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = error => reject(error);
-                    reader.readAsDataURL(file);
+            const createItemHTML = (exp) => `
+                <div class="expense-card p-3 flex items-center gap-3 relative group" onclick="editExpense('${exp.id}')">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background:${CATEGORY_COLORS[exp.category]}30; color:${CATEGORY_COLORS[exp.category]}">
+                        ${exp.source === 'credit_card_import' ? '💳' : '💸'}
+                    </div>
+                    <div class="flex-grow min-w-0">
+                        <p class="font-medium truncate text-sm">${exp.description}</p>
+                        <p class="text-xs text-text-secondary">${exp.category} • ${exp.date.split('-')[2]}</p>
+                    </div>
+                    <p class="font-bold text-sm whitespace-nowrap">${formatCurrency(exp.value)}</p>
+                </div>
+            `;
+
+            const renderCardChart = (data) => {
+                const ctx = document.getElementById('creditCardChart').getContext('2d');
+                if (window.creditCardChartInstance) window.creditCardChartInstance.destroy();
+
+                const cats = {};
+                data.forEach(d => { cats[d.category] = (cats[d.category] || 0) + d.value; });
+                
+                if (Object.keys(cats).length === 0) return;
+
+                window.creditCardChartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(cats),
+                        datasets: [{
+                            data: Object.values(cats),
+                            backgroundColor: Object.keys(cats).map(c => CATEGORY_COLORS[c] || '#666'),
+                            borderWidth: 0
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#fff', font: { size: 10 } } } } }
                 });
             };
 
-            const showExpenseModal = (expenseId = null) => {
-                currentEditingId = expenseId;
-                const expense = expenseId ? expensesData.find(exp => exp.id === expenseId) : null;
-                const isEditing = expense !== null;
-                const categoryOptions = CATEGORIES.map(cat => `<option value="${cat}" ${isEditing && expense.category === cat ? 'selected' : ''}>${cat}</option>`).join('');
+            // ---- MODAL E EDIÇÃO ----
+            window.editExpense = (id) => {
+                currentEditingId = id;
+                const exp = expensesData.find(e => e.id === id);
+                if(!exp) return;
                 
-                const modalHTML = `
-                <div class="bg-card-background-color rounded-xl shadow-2xl w-full max-w-lg border border-border-color">
-                    <form id="expense-form-inner">
-                        <div class="flex justify-between items-center p-5 border-b border-border-color">
-                            <h3 class="text-xl font-display">${isEditing ? 'Editar Lançamento' : 'Novo Lançamento'}</h3>
-                            <button type="button" class="modal-close-btn text-text-secondary hover:text-text-primary text-2xl font-bold">&times;</button>
-                        </div>
-                        <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
-                            <div>
-                                <label for="form-date" class="block text-sm font-medium text-text-secondary mb-1">Data</label>
-                                <input type="date" id="form-date" class="form-input w-full rounded-md p-2" required value="${isEditing ? expense.date : toISODateString(currentDate)}">
+                const catsOpts = CATEGORIES.map(c => `<option value="${c}" ${c===exp.category?'selected':''}>${c}</option>`).join('');
+                
+                DOM.modalContainer.innerHTML = `
+                    <div class="bg-card-background-color rounded-xl p-6 w-full max-w-md border border-border-color shadow-2xl">
+                        <h3 class="text-xl font-bold mb-4">Editar Lançamento</h3>
+                        <form id="edit-form" class="space-y-4">
+                            <div><label class="text-xs text-gray-400">Descrição</label><input id="edit-desc" value="${exp.description}" class="form-input w-full p-2 rounded"></div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="text-xs text-gray-400">Valor</label><input type="number" step="0.01" id="edit-val" value="${exp.value}" class="form-input w-full p-2 rounded"></div>
+                                <div><label class="text-xs text-gray-400">Categoria</label><select id="edit-cat" class="form-select w-full p-2 rounded">${catsOpts}</select></div>
                             </div>
-                            <div>
-                                <label for="form-category" class="block text-sm font-medium text-text-secondary mb-1">Categoria</label>
-                                <select id="form-category" class="form-select w-full rounded-md p-2" required>${categoryOptions}</select>
-                            </div>
-                            <div class="sm:col-span-2">
-                                <label for="form-description" class="block text-sm font-medium text-text-secondary mb-1">Descrição</label>
-                                <input type="text" id="form-description" placeholder="Ex: Compras da semana" class="form-input w-full rounded-md p-2" required value="${isEditing ? expense.description : ''}">
-                            </div>
-                            <div class="sm:col-span-2">
-                                <label for="form-value" class="block text-sm font-medium text-text-secondary mb-1">Valor (R$)</label>
-                                <input type="number" step="0.01" id="form-value" placeholder="150.00" class="form-input w-full rounded-md p-2" required value="${isEditing ? expense.value : ''}">
-                            </div>
-                            <div class="sm:col-span-2 border-t border-gray-700 pt-4 mt-2">
-                                <label class="block text-sm font-medium text-text-secondary mb-2">Anexar Fatura/Comprovante (Máx 400KB)</label>
-                                <div class="flex items-center gap-3">
-                                    <label class="cursor-pointer bg-gray-700 hover:bg-gray-600 text-white text-sm py-2 px-4 rounded-md transition-colors">
-                                        Escolher Arquivo
-                                        <input type="file" id="form-attachment" class="hidden" accept="image/*,application/pdf">
-                                    </label>
-                                    <span id="file-name-display" class="text-xs text-gray-400 italic">${isEditing && expense.attachment ? 'Arquivo já anexado (envie outro para substituir)' : 'Nenhum arquivo selecionado'}</span>
+                            <div class="flex justify-between pt-4">
+                                <button type="button" onclick="deleteExpense()" class="text-red-500 text-sm font-bold">Excluir</button>
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="closeModal()" class="px-4 py-2 rounded bg-gray-700">Cancelar</button>
+                                    <button type="submit" class="px-4 py-2 rounded bg-brand text-white font-bold">Salvar</button>
                                 </div>
-                                <input type="hidden" id="existing-attachment" value="${isEditing && expense.attachment ? expense.attachment : ''}">
                             </div>
-                        </div>
-                        <div class="flex justify-between items-center p-4 bg-background-color rounded-b-xl">
-                            ${isEditing ? '<button type="button" id="delete-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Excluir</button>' : '<div></div>'}
-                            <div class="flex gap-4">
-                                <button type="button" class="modal-close-btn bg-card-background-color hover:bg-gray-700 border border-border-color font-medium py-2 px-4 rounded-lg">Cancelar</button>
-                                <button type="submit" id="save-btn" class="bg-brand hover:bg-brand-dark text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2">
-                                    <span>Salvar</span>
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>`;
-                
-                DOM.modalContainer.innerHTML = modalHTML;
-                DOM.mainContainer.classList.add('modal-open');
+                        </form>
+                    </div>
+                `;
                 DOM.modalContainer.classList.add('visible');
-                DOM.body.classList.add('modal-open-body');
                 
-                // Lógica visual para input de arquivo
-                setTimeout(() => {
-                    document.getElementById('form-description').focus();
-                    const fileInput = document.getElementById('form-attachment');
-                    const nameDisplay = document.getElementById('file-name-display');
-                    fileInput.addEventListener('change', () => {
-                        if (fileInput.files.length > 0) {
-                            nameDisplay.textContent = fileInput.files[0].name;
-                            nameDisplay.classList.add('text-green-400');
-                        }
-                    });
-                }, 50);
+                document.getElementById('edit-form').onsubmit = async (e) => {
+                    e.preventDefault();
+                    const updated = {
+                        description: document.getElementById('edit-desc').value,
+                        value: parseFloat(document.getElementById('edit-val').value),
+                        category: document.getElementById('edit-cat').value
+                    };
+                    await expensesCollection.doc(currentEditingId).update(updated);
+                    closeModal(); loadData().then(renderMonthView);
+                };
             };
 
-            const hideExpenseModal = () => {
-                DOM.mainContainer.classList.remove('modal-open');
-                DOM.modalContainer.classList.remove('visible');
-                DOM.body.classList.remove('modal-open-body');
-                setTimeout(() => { DOM.modalContainer.innerHTML = ''; }, 300);
-            };
-
-            const handleSalaryChange = async () => {
-                const monthKey = getMonthYearKey(currentDate);
-                const incomePayload = { salary1: DOM.salary1Input.value, salary2: DOM.salary2Input.value };
-                try {
-                    await incomeCollection.doc(monthKey).set(incomePayload, { merge: true });
-                    if (!incomeData[monthKey]) incomeData[monthKey] = {};
-                    incomeData[monthKey] = incomePayload;
-                    renderMonthView();
-                } catch (error) {
-                    console.error("Erro ao salvar renda: ", error);
-                    showToast('Erro ao salvar a renda.', 'error');
+            window.closeModal = () => DOM.modalContainer.classList.remove('visible');
+            
+            window.deleteExpense = async () => {
+                if(confirm('Excluir?')) {
+                    await expensesCollection.doc(currentEditingId).delete();
+                    closeModal(); loadData().then(renderMonthView);
                 }
             };
+
+            // Limpar itens do cartão do mês
+            document.getElementById('delete-card-items-btn').addEventListener('click', async () => {
+                if(confirm("Deseja apagar TODOS os itens importados da fatura deste mês?")) {
+                    toggleLoading(true);
+                    const monthKey = getMonthYearKey(currentDate);
+                    const toDelete = expensesData.filter(e => e.date.startsWith(monthKey) && e.source === 'credit_card_import');
+                    const batch = db.batch();
+                    toDelete.forEach(item => batch.delete(expensesCollection.doc(item.id)));
+                    await batch.commit();
+                    toggleLoading(false);
+                    loadData().then(renderMonthView);
+                }
+            });
+
+            document.getElementById('prev-month-btn').onclick = () => { currentDate.setMonth(currentDate.getMonth()-1); renderMonthView(); };
+            document.getElementById('next-month-btn').onclick = () => { currentDate.setMonth(currentDate.getMonth()+1); renderMonthView(); };
             
-            DOM.salary1Input.addEventListener('change', handleSalaryChange); 
-            DOM.salary2Input.addEventListener('change', handleSalaryChange);
-            DOM.prevMonthBtn.addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); renderMonthView(); });
-            DOM.nextMonthBtn.addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); renderMonthView(); });
-            DOM.addExpenseBtn.addEventListener('click', () => showExpenseModal());
-            DOM.expensesList.addEventListener('click', (e) => { 
-                // Evita abrir o modal se clicar no botão de download
-                if(e.target.closest('a')) return;
-                const card = e.target.closest('.expense-card'); 
-                if (card) showExpenseModal(card.dataset.id); 
-            });
-
-            DOM.modalContainer.addEventListener('click', async (e) => { 
-                if (e.target.classList.contains('modal-close-btn') || e.target.id === 'expense-modal-container') { hideExpenseModal(); }
-                if (e.target.id === 'delete-btn' && currentEditingId) { 
-                    if(confirm('Tem certeza que deseja excluir este lançamento?')) { 
-                        try {
-                            await expensesCollection.doc(currentEditingId).delete();
-                            await loadData(); renderMonthView(); hideExpenseModal();
-                            showToast('Lançamento excluído!', 'success');
-                        } catch (error) { console.error("Erro ao excluir: ", error); showToast('Erro ao excluir lançamento.', 'error'); }
-                    } 
-                } 
-            });
-
-            DOM.modalContainer.addEventListener('submit', async (e) => { 
-                if (e.target.id === 'expense-form-inner') { 
-                    e.preventDefault(); 
-                    
-                    const saveBtn = document.getElementById('save-btn');
-                    const originalBtnText = saveBtn.innerHTML;
-                    saveBtn.disabled = true;
-                    saveBtn.innerHTML = 'Salvando...';
-
-                    try {
-                        let attachmentBase64 = document.getElementById('existing-attachment').value;
-                        const fileInput = document.getElementById('form-attachment');
-                        
-                        // Processamento de arquivo
-                        if (fileInput.files.length > 0) {
-                            const file = fileInput.files[0];
-                            // Limite de 400KB para evitar problemas com Firestore (Limite doc 1MB)
-                            if (file.size > 400 * 1024) {
-                                alert("O arquivo é muito grande! Por favor, anexe um arquivo menor que 400KB (ex: prints ou PDFs otimizados).");
-                                saveBtn.disabled = false;
-                                saveBtn.innerHTML = originalBtnText;
-                                return;
-                            }
-                            attachmentBase64 = await convertFileToBase64(file);
-                        }
-
-                        const expensePayload = {
-                            date: document.getElementById('form-date').value,
-                            description: document.getElementById('form-description').value,
-                            category: document.getElementById('form-category').value,
-                            value: parseFloat(document.getElementById('form-value').value) || 0,
-                            attachment: attachmentBase64 || null
-                        };
-                    
-                        if (currentEditingId) { await expensesCollection.doc(currentEditingId).update(expensePayload); } 
-                        else { await expensesCollection.add(expensePayload); }
-                        
-                        await loadData(); renderMonthView(); hideExpenseModal();
-                        showToast('Lançamento salvo com sucesso!', 'success');
-                    } catch (error) { 
-                        console.error("Erro ao salvar no Firestore: ", error); 
-                        showToast('Erro ao salvar. Verifique o tamanho do arquivo.', 'error'); 
-                        saveBtn.disabled = false;
-                        saveBtn.innerHTML = originalBtnText;
-                    }
-                } 
-            });
-            
-            DOM.exportBtn.addEventListener('click', () => { const d = { expenses: expensesData, income: incomeData }; const s = JSON.stringify(d, null, 2); const b = new Blob([s], { type: 'application/json' }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = `backup_gastos_${toISODateString(new Date())}.json`; a.click(); a.remove(); URL.revokeObjectURL(u); showToast('Backup local exportado com sucesso!'); });
-            DOM.importInput.addEventListener('change', (e) => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => { try { const d = JSON.parse(ev.target.result); if (d.expenses && d.income) { if (confirm('Isto irá substituir TODOS os dados locais. Não afetará o Firebase. Deseja continuar?')) { expensesData = d.expenses; incomeData = d.income; renderMonthView(); showToast('Dados importados localmente!'); } } else { showToast('Arquivo de backup inválido.', 'error'); } } catch (err) { showToast('Erro ao ler o arquivo.', 'error'); console.error(err); } finally { DOM.importInput.value = ''; } }; r.readAsText(f); });
-
-            const initializeApp = async () => {
-                await loadData();
+            // Salvar Renda
+            const saveIncome = async () => {
+                const pay = { salary1: document.getElementById('salary1').value, salary2: document.getElementById('salary2').value };
+                await incomeCollection.doc(getMonthYearKey(currentDate)).set(pay, {merge:true});
+                incomeData[getMonthYearKey(currentDate)] = pay;
                 renderMonthView();
             };
-            
-            // Removido initializeApp() automático. Agora é chamado no submit do login.
+            document.getElementById('salary1').onchange = saveIncome;
+            document.getElementById('salary2').onchange = saveIncome;
+
+            document.getElementById('add-expense-btn').onclick = () => {
+                // Função simples para adicionar manual (reaproveitando modal logic se quiser expandir depois)
+                const desc = prompt("Descrição:");
+                if(!desc) return;
+                const val = parseFloat(prompt("Valor:"));
+                if(!val) return;
+                expensesCollection.add({
+                    date: toISODateString(currentDate), description: desc, value: val, category: 'Outros', source: 'manual', attachment: null
+                }).then(() => loadData().then(renderMonthView));
+            };
+
+            const initializeApp = async () => {
+                toggleLoading(true, "Carregando dados...");
+                await loadData();
+                renderMonthView();
+                toggleLoading(false);
+            };
+
+            const toISODateString = (d) => d.toISOString().split('T')[0];
         });
     </script>
 </body>

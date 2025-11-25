@@ -82,28 +82,16 @@
             </div>
 
             <div class="lg:col-span-2 bg-gray-800 p-6 rounded-xl border border-gray-700 h-[700px] flex flex-col shadow-lg">
-                <div class="flex flex-wrap justify-between items-center mb-4 pb-2 border-b border-gray-700 gap-2">
+                <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-700">
                     <h3 class="font-bold text-xl">Lançamentos</h3>
-                    
-                    <div class="flex items-center gap-2">
-                        <label for="import-json" class="text-xs bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-gray-300 border border-gray-600 cursor-pointer" title="Restaurar Backup">📂 Restaurar</label>
-                        <input type="file" id="import-json" class="hidden" accept=".json">
-
-                        <button onclick="openModal(null, true)" class="bg-indigo-900 hover:bg-indigo-800 text-indigo-200 border border-indigo-700 px-3 py-2 rounded text-sm font-bold shadow transition flex items-center gap-2">
-                            📄 Importar Fatura
-                        </button>
-
+                    <div class="flex gap-2">
+                        <button id="export-btn" class="text-xs bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-gray-300 border border-gray-600">Backup</button>
                         <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-sm font-bold shadow transition flex items-center gap-2">
                             <span>+ Adicionar</span>
                         </button>
                     </div>
                 </div>
-                
                 <div id="expense-list" class="flex-1 overflow-y-auto pr-2 space-y-2"></div>
-                
-                <div class="mt-2 pt-2 border-t border-gray-700 flex justify-end">
-                     <button id="export-btn" class="text-xs text-gray-500 hover:text-gray-300 underline">Salvar Backup (JSON)</button>
-                </div>
             </div>
         </div>
     </div>
@@ -121,7 +109,6 @@
                 
                 <div class="pt-2 border-t border-gray-700">
                     <label class="text-xs text-gray-400 mb-1 block">Anexar Fatura/Comprovante (PDF/Imagem)</label>
-                    <p class="text-[10px] text-indigo-400 mb-2">* Se for Fatura (PDF), os dados serão lidos automaticamente.</p>
                     <p class="text-[10px] text-green-400 mb-2 hidden" id="pdf-status">✓ PDF Analisado! Valores preenchidos.</p>
                     <input type="file" id="form-file" class="block w-full text-xs text-gray-400" accept="application/pdf, image/*">
                     <input type="hidden" id="existing-file">
@@ -144,22 +131,21 @@
             <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
                 <div>
                     <h3 class="text-xl font-bold text-white">Detalhes da Fatura</h3>
-                    <p class="text-sm text-gray-400" id="invoice-subtitle">Breakdown da fatura</p>
+                    <p class="text-sm text-gray-400" id="invoice-subtitle">Breakdown</p>
                 </div>
                 <button onclick="closeModal('invoice-details-modal')" class="text-2xl text-gray-400 hover:text-white">&times;</button>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-hidden h-full">
                 <div class="flex flex-col items-center justify-center bg-gray-900/50 p-4 rounded-lg">
-                    <h4 class="text-sm font-bold text-gray-300 mb-2">Gastos da Fatura</h4>
+                    <h4 class="text-sm font-bold text-gray-300 mb-2">Gráfico da Fatura</h4>
                     <div class="sub-chart-container">
                         <canvas id="invoiceChart"></canvas>
                     </div>
-                    <p class="text-xs text-gray-400 mt-2 text-center">Valores extraídos do PDF</p>
                 </div>
                 <div class="flex flex-col h-full overflow-hidden">
                     <div class="flex justify-between items-center mb-2">
-                        <h4 class="text-sm font-bold text-gray-300">Categorias</h4>
+                        <h4 class="text-sm font-bold text-gray-300">Itens Detectados</h4>
                         <a id="download-invoice-btn" href="#" download="fatura.pdf" class="text-xs text-indigo-400 hover:text-indigo-300 underline">Baixar Original</a>
                     </div>
                     <div id="invoice-items-list" class="flex-1 overflow-y-auto pr-2 space-y-1 bg-gray-900/30 p-2 rounded text-sm mb-2"></div>
@@ -187,12 +173,12 @@
 
         const USERS = { 'gabi': '19071996', 'danilo': '08042020' };
         const CATEGORIES = ['Mercado', 'Contas', 'Apartamento', 'Carro', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Poupança Maria Luisa', 'Reserva', 'Outros'];
-        const COLORS = { 'Mercado': '#f59e0b', 'Contas': '#10b981', 'Apartamento': '#a855f7', 'Carro': '#3b82f6', 'Lazer': '#ef4444', 'Delivery': '#d946ef', 'Posto': '#ea580c', 'Farmácia': '#84cc16', 'Outros': '#6b7280' };
+        const COLORS = { 'Mercado': '#f59e0b', 'Contas': '#10b981', 'Apartamento': '#a855f7', 'Carro': '#3b82f6', 'Lazer': '#ef4444', 'Delivery': '#d946ef', 'Posto': '#ea580c', 'Farmácia': '#84cc16', 'Roupa': '#6366f1', 'Escola': '#0ea5e9', 'Outros': '#6b7280' };
         
         const KEYWORDS = {
             'Uber/Transporte': ['uber', '99', 'sem parar', 'estacionamento', 'zona azul', 'pedagio', 'veloe'],
             'Delivery': ['ifood', 'rappi', 'ze delivery', 'aiqfome', 'delivery'],
-            'Assinaturas': ['netflix', 'spotify', 'amazon', 'prime', 'apple', 'google', 'youtube', 'hbo', 'disney', 'globoplay', 'star+', 'paramount', 'max', 'adobe'],
+            'Assinaturas': ['netflix', 'spotify', 'amazon', 'prime', 'apple', 'google', 'youtube', 'hbo', 'disney', 'globoplay', 'star+', 'paramount', 'max', 'adobe', 'smartfit', 'gympass'],
             'Mercado': ['carrefour', 'atacadao', 'pague m', 'roldao', 'tenda', 'swift', 'sao vicente', 'dia', 'extra', 'pao de acucar', 'big', 'walmart', 'sonda', 'supermercado', 'mercado', 'varejao', 'sacolao', 'comercial de alimentos'],
             'Farmácia': ['drogaria', 'farmacia', 'drogal', 'pague menos', 'drogasil', 'raia', 'ultrafarma', 'nissei', 'bifarma'],
             'Posto': ['posto', 'shell', 'ipiranga', 'petrobras', 'br', 'auto posto', 'combustivel'],
@@ -283,7 +269,6 @@
                          actionButton = `<span class="text-gray-500 text-xs ml-2">📎 Anexo</span>`;
                     }
 
-                    // Botão de Lixeira direto na lista
                     const deleteAction = `<button onclick="deleteDirectly('${item.id}', event)" class="text-gray-500 hover:text-red-500 ml-2 p-1 rounded hover:bg-gray-700 transition-colors" title="Excluir">🗑️</button>`;
 
                     listEl.innerHTML += `
@@ -306,7 +291,6 @@
             updateMainChart(curExpenses);
         }
 
-        // --- AUTO FILL PDF ---
         document.getElementById('form-file').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file || file.type !== 'application/pdf') return;
@@ -326,7 +310,6 @@
             toggleLoader(false);
         });
 
-        // --- SALVAR ---
         document.getElementById('expense-form').onsubmit = async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
@@ -360,7 +343,6 @@
             btn.innerText = "Salvar"; btn.disabled = false;
         };
 
-        // --- PARSER ---
         async function parsePDF(file) {
             const buff = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument(buff).promise;
@@ -379,7 +361,8 @@
                     let desc = match[2].trim().toUpperCase();
                     let valStr = match[3];
                     
-                    if(desc.includes("PAGAMENTO") || desc.includes("SALDO") || desc.includes("TOTAL") || desc.includes("PARCELAMENTO")) continue;
+                    // FILTRO RIGOROSO
+                    if(desc.includes("PAGAMENTO") || desc.includes("SALDO") || desc.includes("TOTAL") || desc.includes("PARCELAMENTO") || desc.includes("LIMITE") || desc.includes("VENCIMENTO")) continue;
                     
                     let val = parseFloat(valStr.replace('.','').replace(',','.'));
                     if(isNaN(val) || val <= 0) continue;
@@ -393,7 +376,6 @@
                         }
                     }
 
-                    // Guardar lista
                     if (!breakdown[cat]) breakdown[cat] = [];
                     breakdown[cat].push({ desc: desc, val: val });
                     
@@ -403,9 +385,8 @@
             return { breakdown, total: parseFloat(total.toFixed(2)) };
         }
 
-        // --- MODAIS ---
         function openInvoiceDetails(id) {
-            currentEditId = id; 
+            currentEditId = id;
             const item = expenses.find(e => e.id === id);
             document.getElementById('invoice-subtitle').innerText = `${item.description} - ${fmtMoney(item.value)}`;
             const dlBtn = document.getElementById('download-invoice-btn');
@@ -467,7 +448,7 @@
             document.getElementById('invoice-details-modal').classList.add('flex');
         }
 
-        function openModal(id = null, isImport = false) {
+        function openModal(id = null) {
             currentEditId = id;
             document.getElementById('delete-btn').classList.add('hidden');
             document.getElementById('pdf-status').classList.add('hidden');
@@ -483,20 +464,15 @@
                 document.getElementById('form-val').value = item.value;
                 document.getElementById('existing-file').value = item.attachment || '';
             } else {
-                document.getElementById('modal-title').innerText = isImport ? "Importar Fatura" : "Novo Lançamento";
+                document.getElementById('modal-title').innerText = "Novo Lançamento";
                 document.getElementById('expense-form').reset();
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
                 document.getElementById('existing-file').value = '';
-                
-                if(isImport) {
-                    setTimeout(() => document.getElementById('form-file').click(), 300);
-                }
             }
             document.getElementById('expense-modal').classList.remove('hidden');
             document.getElementById('expense-modal').classList.add('flex');
         }
 
-        // FUNÇÃO DELETAR DIRETO DA LISTA
         async function deleteDirectly(id, event) {
             event.stopPropagation();
             currentEditId = id;
@@ -532,23 +508,6 @@
             const blob = new Blob([JSON.stringify(data, null, 2)], {type : 'application/json'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url; a.download = `backup.json`; a.click();
-        };
-
-        document.getElementById('import-json').onchange = (e) => {
-            const file = e.target.files[0];
-            if(!file) return;
-            const r = new FileReader();
-            r.onload = async (ev) => {
-                try {
-                    const d = JSON.parse(ev.target.result);
-                    if(confirm("Restaurar este backup substituirá a visualização atual. Para salvar no banco, será necessário re-salvar.")) {
-                        expenses = d.expenses || [];
-                        incomeData = d.income || {};
-                        render();
-                    }
-                } catch(err) { alert("Erro JSON"); }
-            };
-            r.readAsText(file);
         };
 
         function updateMainChart(data) {

@@ -173,7 +173,7 @@
 
         const USERS = { 'gabi': '19071996', 'danilo': '08042020' };
         const CATEGORIES = ['Mercado', 'Contas', 'Apartamento', 'Carro', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Poupança Maria Luisa', 'Reserva', 'Outros'];
-        const COLORS = { 'Mercado': '#f59e0b', 'Contas': '#10b981', 'Apartamento': '#a855f7', 'Carro': '#3b82f6', 'Lazer': '#ef4444', 'Delivery': '#d946ef', 'Posto': '#ea580c', 'Farmácia': '#84cc16', 'Roupa': '#6366f1', 'Escola': '#0ea5e9', 'Outros': '#6b7280' };
+        const COLORS = { 'Mercado': '#f59e0b', 'Contas': '#10b981', 'Apartamento': '#a855f7', 'Carro': '#3b82f6', 'Lazer': '#ef4444', 'Delivery': '#d946ef', 'Posto': '#ea580c', 'Farmácia': '#84cc16', 'Outros': '#6b7280' };
         
         const KEYWORDS = {
             'Uber/Transporte': ['uber', '99', 'sem parar', 'estacionamento', 'zona azul', 'pedagio', 'veloe'],
@@ -269,6 +269,7 @@
                          actionButton = `<span class="text-gray-500 text-xs ml-2">📎 Anexo</span>`;
                     }
 
+                    // Botão Lixeira Direto
                     const deleteAction = `<button onclick="deleteDirectly('${item.id}', event)" class="text-gray-500 hover:text-red-500 ml-2 p-1 rounded hover:bg-gray-700 transition-colors" title="Excluir">🗑️</button>`;
 
                     listEl.innerHTML += `
@@ -291,6 +292,7 @@
             updateMainChart(curExpenses);
         }
 
+        // --- AUTO FILL PDF ---
         document.getElementById('form-file').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file || file.type !== 'application/pdf') return;
@@ -361,7 +363,7 @@
                     let desc = match[2].trim().toUpperCase();
                     let valStr = match[3];
                     
-                    // FILTRO RIGOROSO
+                    // FILTROS DE SEGURANÇA
                     if(desc.includes("PAGAMENTO") || desc.includes("SALDO") || desc.includes("TOTAL") || desc.includes("PARCELAMENTO") || desc.includes("LIMITE") || desc.includes("VENCIMENTO")) continue;
                     
                     let val = parseFloat(valStr.replace('.','').replace(',','.'));
@@ -386,7 +388,7 @@
         }
 
         function openInvoiceDetails(id) {
-            currentEditId = id;
+            currentEditId = id; // IMPORTANTE
             const item = expenses.find(e => e.id === id);
             document.getElementById('invoice-subtitle').innerText = `${item.description} - ${fmtMoney(item.value)}`;
             const dlBtn = document.getElementById('download-invoice-btn');
@@ -473,6 +475,7 @@
             document.getElementById('expense-modal').classList.add('flex');
         }
 
+        // DELETAR DIRETO DA LISTA
         async function deleteDirectly(id, event) {
             event.stopPropagation();
             currentEditId = id;
@@ -493,12 +496,23 @@
             r.onload = () => res(r.result); r.onerror = rej;
         });
 
+        // CORREÇÃO SALVAR RENDA
         async function saveIncome() {
             const mk = currentDate.toISOString().slice(0, 7);
+            const s1 = document.getElementById('income1').value;
+            const s2 = document.getElementById('income2').value;
+
+            // ATUALIZA MEMÓRIA LOCAL PRIMEIRO
+            if (!incomeData[mk]) incomeData[mk] = {};
+            incomeData[mk].s1 = s1;
+            incomeData[mk].s2 = s2;
+
+            // SALVA NO BANCO
             await db.collection('users').doc(userId).collection('income').doc(mk).set({
-                s1: document.getElementById('income1').value, s2: document.getElementById('income2').value
+                s1: s1, s2: s2
             }, {merge:true});
-            render();
+            
+            render(); 
         }
         document.getElementById('income1').onchange = saveIncome;
         document.getElementById('income2').onchange = saveIncome;

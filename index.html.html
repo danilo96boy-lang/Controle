@@ -10,25 +10,18 @@
     
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
     <style>
         :root { --bg: #111827; --card: #1f2937; --primary: #6366f1; --text: #f9fafb; }
         body { background-color: var(--bg); color: var(--text); font-family: 'Poppins', sans-serif; }
         
-        /* Loader e Tabs */
+        /* Loading */
         #loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; }
         .spinner { border: 4px solid #333; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .tab-btn { padding: 10px 20px; border-bottom: 2px solid transparent; opacity: 0.6; transition: 0.3s; font-size: 1.1rem; font-weight: 600; }
-        .tab-btn.active { border-color: var(--primary); opacity: 1; color: var(--primary); }
-        .tab-content { display: none; animation: fadeIn 0.5s; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .expense-item:hover { background-color: #374151; transform: translateX(5px); }
+
+        .expense-item { transition: all 0.2s; }
+        .expense-item:hover { transform: translateX(4px); background-color: #374151; cursor: pointer; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen p-4 md:p-8">
@@ -47,7 +40,7 @@
 
     <div id="loading-overlay">
         <div class="spinner mb-4"></div>
-        <p class="text-white font-medium">Processando...</p>
+        <p class="text-white font-medium">Carregando...</p>
     </div>
 
     <div id="app-container" class="max-w-6xl mx-auto w-full opacity-0 transition-opacity duration-700 hidden">
@@ -55,7 +48,7 @@
         <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
             <div>
                 <h1 class="text-3xl font-bold tracking-tight">Painel Financeiro</h1>
-                <p class="text-gray-400">Bem-vindo, <span id="user-display" class="text-indigo-400 font-bold capitalize"></span></p>
+                <p class="text-gray-400">Olá, <span id="user-display" class="text-indigo-400 font-bold capitalize"></span></p>
             </div>
             <div class="flex items-center bg-gray-800 rounded-full px-4 py-2 border border-gray-700 shadow-lg">
                 <button id="prev-month" class="p-2 hover:text-indigo-400">◀</button>
@@ -64,89 +57,79 @@
             </div>
         </header>
 
-        <div class="flex gap-4 border-b border-gray-700 mb-6">
-            <button class="tab-btn active" onclick="switchTab('geral')">Visão Geral (Manual)</button>
-            <button class="tab-btn" onclick="switchTab('cartao')">Cartão de Crédito</button>
-        </div>
-
-        <div id="tab-geral" class="tab-content active">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="space-y-6">
-                    <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg">
-                        <h3 class="text-sm font-bold text-gray-400 uppercase mb-3">Renda Mensal</h3>
-                        <div class="space-y-3">
-                            <input type="number" id="income1" placeholder="Renda Gabi" class="w-full bg-gray-900 border border-gray-600 rounded p-2">
-                            <input type="number" id="income2" placeholder="Renda Danilo" class="w-full bg-gray-900 border border-gray-600 rounded p-2">
-                        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <div class="space-y-6">
+                <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase mb-3">Renda Mensal</h3>
+                    <div class="space-y-3">
+                        <input type="number" id="income1" placeholder="Renda Gabi" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm text-white">
+                        <input type="number" id="income2" placeholder="Renda Danilo" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm text-white">
                     </div>
-                    <div id="summary-display" class="space-y-3"></div>
                 </div>
 
-                <div class="lg:col-span-2 bg-gray-800 p-6 rounded-xl border border-gray-700 h-[600px] flex flex-col shadow-lg">
-                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-700">
-                        <h3 class="font-bold text-xl">Gastos Manuais (Pix/Débito)</h3>
-                        <button onclick="addManual()" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-sm font-bold shadow transition">+ Novo Gasto</button>
-                    </div>
-                    <div id="manual-list" class="flex-1 overflow-y-auto pr-2 space-y-2"></div>
+                <div id="summary-display" class="space-y-3"></div>
+
+                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg">
+                    <h4 class="text-center font-bold text-gray-400 mb-3 text-xs uppercase">Gastos por Categoria</h4>
+                    <div class="relative h-48"><canvas id="expenseChart"></canvas></div>
                 </div>
             </div>
-        </div>
 
-        <div id="tab-cartao" class="tab-content">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="space-y-6">
-                    <div class="bg-gray-800 p-6 rounded-xl border-2 border-dashed border-indigo-500/50 text-center hover:border-indigo-500 transition cursor-pointer relative group">
-                        <input type="file" id="pdf-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="application/pdf">
-                        <div class="text-4xl mb-2 group-hover:scale-110 transition">📄</div>
-                        <h3 class="font-bold text-lg text-white">Importar Fatura PDF</h3>
-                        <p class="text-sm text-gray-400 mt-1">Arraste ou clique para selecionar</p>
-                        <p class="text-xs text-indigo-400 mt-2 font-medium">Compatível com seu modelo (DD/MM)</p>
-                    </div>
-
-                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-lg">
-                        <h4 class="text-center font-bold text-gray-400 mb-3 text-sm">Categorias da Fatura</h4>
-                        <div class="relative h-56"><canvas id="cardChart"></canvas></div>
-                        <p id="card-total" class="text-center font-bold text-xl text-white mt-4">R$ 0,00</p>
-                    </div>
+            <div class="lg:col-span-2 bg-gray-800 p-6 rounded-xl border border-gray-700 h-[700px] flex flex-col shadow-lg">
+                <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-700">
+                    <h3 class="font-bold text-xl">Lançamentos</h3>
+                    <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-sm font-bold shadow transition flex items-center gap-2">
+                        <span>+ Adicionar Lançamento</span>
+                    </button>
                 </div>
-
-                <div class="lg:col-span-2 bg-gray-800 p-6 rounded-xl border border-gray-700 h-[600px] flex flex-col shadow-lg">
-                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-700">
-                        <h3 class="font-bold text-xl">Lançamentos da Fatura</h3>
-                        <button onclick="clearInvoice()" class="text-red-400 hover:text-red-300 text-sm hover:underline">Limpar Importação</button>
+                
+                <div id="expense-list" class="flex-1 overflow-y-auto pr-2 space-y-2">
                     </div>
-                    <div id="invoice-list" class="flex-1 overflow-y-auto pr-2 space-y-2">
-                        <div class="h-full flex flex-col items-center justify-center text-gray-500">
-                            <p>Nenhuma fatura importada.</p>
-                            <p class="text-sm opacity-60">Faça o upload do PDF ao lado.</p>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 
-    <div id="edit-modal" class="fixed inset-0 bg-black/80 hidden z-50 items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-gray-800 p-6 rounded-xl w-full max-w-md border border-gray-600 shadow-2xl transform transition-all scale-100">
-            <h3 class="text-xl font-bold mb-4">Editar Lançamento</h3>
-            <form id="edit-form" class="space-y-3">
-                <label class="text-xs text-gray-400">Data</label>
-                <input type="date" id="edit-date" class="w-full bg-gray-900 border border-gray-600 rounded p-2 focus:border-indigo-500 outline-none">
+    <div id="expense-modal" class="fixed inset-0 bg-black/80 hidden z-50 items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-gray-800 p-6 rounded-xl w-full max-w-md border border-gray-600 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold" id="modal-title">Novo Lançamento</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white">&times;</button>
+            </div>
+            
+            <form id="expense-form" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs text-gray-400 block mb-1">Data</label>
+                        <input type="date" id="form-date" class="w-full bg-gray-900 border border-gray-600 rounded p-2 focus:border-indigo-500 outline-none" required>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400 block mb-1">Categoria</label>
+                        <select id="form-cat" class="w-full bg-gray-900 border border-gray-600 rounded p-2 focus:border-indigo-500 outline-none"></select>
+                    </div>
+                </div>
                 
-                <label class="text-xs text-gray-400">Descrição</label>
-                <input type="text" id="edit-desc" class="w-full bg-gray-900 border border-gray-600 rounded p-2 focus:border-indigo-500 outline-none">
+                <div>
+                    <label class="text-xs text-gray-400 block mb-1">Descrição</label>
+                    <input type="text" id="form-desc" placeholder="Ex: Mercado Semanal" class="w-full bg-gray-900 border border-gray-600 rounded p-2 focus:border-indigo-500 outline-none" required>
+                </div>
                 
-                <label class="text-xs text-gray-400">Categoria</label>
-                <select id="edit-cat" class="w-full bg-gray-900 border border-gray-600 rounded p-2 focus:border-indigo-500 outline-none"></select>
+                <div>
+                    <label class="text-xs text-gray-400 block mb-1">Valor (R$)</label>
+                    <input type="number" step="0.01" id="form-val" placeholder="0,00" class="w-full bg-gray-900 border border-gray-600 rounded p-2 focus:border-indigo-500 outline-none" required>
+                </div>
+
+                <div class="pt-2 border-t border-gray-700">
+                    <label class="text-xs text-gray-400 block mb-2">Anexar Comprovante (Opcional - Imagem/PDF)</label>
+                    <input type="file" id="form-file" class="block w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-gray-700 file:text-white hover:file:bg-gray-600">
+                    <input type="hidden" id="existing-file">
+                </div>
                 
-                <label class="text-xs text-gray-400">Valor (R$)</label>
-                <input type="number" step="0.01" id="edit-val" class="w-full bg-gray-900 border border-gray-600 rounded p-2 focus:border-indigo-500 outline-none">
-                
-                <div class="flex justify-between pt-4 border-t border-gray-700 mt-4">
-                    <button type="button" onclick="deleteItem()" class="text-red-500 font-bold hover:text-red-400">Excluir</button>
-                    <div class="flex gap-2">
-                        <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">Cancelar</button>
-                        <button type="submit" class="px-4 py-2 bg-indigo-600 rounded font-bold hover:bg-indigo-500">Salvar</button>
+                <div class="flex justify-between pt-4 mt-2">
+                    <button type="button" id="delete-btn" onclick="deleteItem()" class="text-red-500 font-bold hover:text-red-400 hidden">Excluir</button>
+                    <div class="flex gap-2 ml-auto">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600 transition">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 rounded font-bold hover:bg-indigo-500 transition">Salvar</button>
                     </div>
                 </div>
             </form>
@@ -154,9 +137,7 @@
     </div>
 
     <script>
-        // --- CONFIGURAÇÕES ---
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
+        // FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyBf1nzx6mH1lWckWQyXDnWZKLlh-5cfcv0",
             authDomain: "controle-a9909.firebaseapp.com",
@@ -171,17 +152,7 @@
 
         const USERS = { 'gabi': '19071996', 'danilo': '08042020' };
         const CATEGORIES = ['Mercado', 'Contas', 'Apartamento', 'Carro', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Poupança Maria Luisa', 'Reserva', 'Uber/Transporte', 'Assinaturas', 'Outros'];
-        const CATEGORY_COLORS = { 'Mercado': '#f59e0b', 'Contas': '#10b981', 'Apartamento': '#a855f7', 'Carro': '#3b82f6', 'Lazer': '#ef4444', 'Delivery': '#d946ef', 'Posto': '#ea580c', 'Farmácia': '#84cc16', 'Roupa': '#6366f1', 'Escola': '#0ea5e9', 'Uber/Transporte': '#64748b', 'Assinaturas': '#a855f7', 'Outros': '#6b7280' };
-
-        // Palavras-chave para auto-classificação (Baseado na sua fatura)
-        const KEYWORDS = {
-            'uber': 'Uber/Transporte', '99': 'Uber/Transporte', 'sem parar': 'Carro',
-            'ifood': 'Delivery', 'rappi': 'Delivery', 'mc donalds': 'Lazer', 'burger': 'Lazer',
-            'netflix': 'Assinaturas', 'spotify': 'Assinaturas', 'amazon': 'Assinaturas', 'apple': 'Assinaturas', 'vivo': 'Contas', 'claro': 'Contas',
-            'carrefour': 'Mercado', 'atacadao': 'Mercado', 'pague m': 'Mercado', 'roldao': 'Mercado', 'tenda': 'Mercado', 'comercial de alimentos': 'Mercado',
-            'drogaria': 'Farmácia', 'farmacia': 'Farmácia', 'drogal': 'Farmácia',
-            'posto': 'Posto', 'shell': 'Posto', 'ipiranga': 'Posto', 'adega': 'Lazer', 'airbnb': 'Lazer'
-        };
+        const CAT_COLORS = { 'Mercado': '#f59e0b', 'Contas': '#10b981', 'Apartamento': '#a855f7', 'Carro': '#3b82f6', 'Lazer': '#ef4444', 'Delivery': '#d946ef', 'Posto': '#ea580c', 'Farmácia': '#84cc16', 'Outros': '#6b7280' };
 
         let expenses = [];
         let incomeData = {};
@@ -189,14 +160,14 @@
         let currentEditId = null;
         let chartInstance = null;
 
-        // --- SISTEMA ---
+        // INIT
         function init() {
-            const sel = document.getElementById('edit-cat');
+            const sel = document.getElementById('form-cat');
             sel.innerHTML = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
             loadData();
         }
 
-        // Login
+        // LOGIN logic
         document.getElementById('login-form').onsubmit = (e) => {
             e.preventDefault();
             const u = document.getElementById('user').value.toLowerCase().trim();
@@ -212,12 +183,14 @@
             }
         };
 
-        // Dados
+        // LOAD DATA
         async function loadData() {
             toggleLoader(true);
             try {
+                // Carrega gastos
                 const snap = await db.collection('users').doc(userId).collection('expenses').get();
                 expenses = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                // Carrega renda
                 const incSnap = await db.collection('users').doc(userId).collection('income').get();
                 incomeData = {};
                 incSnap.forEach(d => incomeData[d.id] = d.data());
@@ -226,205 +199,168 @@
             toggleLoader(false);
         }
 
+        // RENDER UI
         function render() {
             const monthKey = currentDate.toISOString().slice(0, 7);
             document.getElementById('current-month').innerText = currentDate.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
 
-            const curExpenses = expenses.filter(e => e.date.startsWith(monthKey));
-            const manual = curExpenses.filter(e => e.source === 'manual').sort((a,b) => new Date(b.date) - new Date(a.date));
-            const invoice = curExpenses.filter(e => e.source === 'invoice').sort((a,b) => new Date(a.date) - new Date(b.date));
+            const curExpenses = expenses
+                .filter(e => e.date.startsWith(monthKey))
+                .sort((a,b) => new Date(b.date) - new Date(a.date));
 
             // Renda
             const inc = incomeData[monthKey] || {s1:'', s2:''};
             document.getElementById('income1').value = inc.s1;
             document.getElementById('income2').value = inc.s2;
 
-            // Totais
-            const totManual = manual.reduce((a,b) => a + b.value, 0);
-            const totInvoice = invoice.reduce((a,b) => a + b.value, 0);
-            const totIncome = (parseFloat(inc.s1)||0) + (parseFloat(inc.s2)||0);
-            const balance = totIncome - (totManual + totInvoice);
+            // Cálculos
+            const totalExp = curExpenses.reduce((a,b) => a + b.value, 0);
+            const totalInc = (parseFloat(inc.s1)||0) + (parseFloat(inc.s2)||0);
+            const balance = totalInc - totalExp;
 
             document.getElementById('summary-display').innerHTML = `
-                <div class="bg-gray-800 p-4 rounded border border-gray-700 flex justify-between items-center"><span>Total Renda</span><span class="font-bold text-green-400">${fmtMoney(totIncome)}</span></div>
-                <div class="bg-gray-800 p-4 rounded border border-gray-700 flex justify-between items-center"><span>Saídas Manuais</span><span class="font-bold text-red-400">${fmtMoney(totManual)}</span></div>
-                <div class="bg-gray-800 p-4 rounded border border-gray-700 flex justify-between items-center"><span>Fatura Cartão</span><span class="font-bold text-orange-400">${fmtMoney(totInvoice)}</span></div>
-                <div class="bg-indigo-900/50 p-4 rounded border border-indigo-500/30 flex justify-between items-center text-lg mt-2"><span>Saldo</span><span class="font-bold ${balance>=0?'text-green-300':'text-red-300'}">${fmtMoney(balance)}</span></div>
+                <div class="bg-gray-800 p-4 rounded border border-gray-700 flex justify-between items-center"><span>Renda Total</span><span class="font-bold text-green-400">${fmtMoney(totalInc)}</span></div>
+                <div class="bg-gray-800 p-4 rounded border border-gray-700 flex justify-between items-center"><span>Total Saídas</span><span class="font-bold text-red-400">${fmtMoney(totalExp)}</span></div>
+                <div class="bg-indigo-900/40 p-4 rounded border border-indigo-500/30 flex justify-between items-center text-lg mt-2"><span>Saldo</span><span class="font-bold ${balance>=0?'text-green-300':'text-red-300'}">${fmtMoney(balance)}</span></div>
             `;
 
-            document.getElementById('card-total').innerText = fmtMoney(totInvoice);
-
-            // Listas
-            renderList(manual, 'manual-list', false);
-            renderList(invoice, 'invoice-list', true);
+            // Lista
+            const listEl = document.getElementById('expense-list');
+            listEl.innerHTML = '';
             
-            // Gráfico
-            updateChart(invoice);
-        }
+            if(curExpenses.length === 0) {
+                listEl.innerHTML = '<div class="text-center text-gray-500 py-10">Nenhum lançamento neste mês.</div>';
+            } else {
+                curExpenses.forEach(item => {
+                    const day = item.date.split('-')[2];
+                    const color = CAT_COLORS[item.category] || '#6b7280';
+                    // Ícone de clipe se tiver anexo
+                    const attachIcon = item.attachment ? `<span class="text-xs text-indigo-400 ml-2" title="Comprovante Anexado">📎</span>` : '';
+                    const downloadLink = item.attachment ? `<a href="${item.attachment}" download="comprovante.pdf" class="text-xs hover:text-white text-gray-400 underline mr-3" onclick="event.stopPropagation()">Baixar</a>` : '';
 
-        function renderList(list, elId, isInvoice) {
-            const el = document.getElementById(elId);
-            el.innerHTML = '';
-            if(!list.length) {
-                if(!isInvoice) el.innerHTML = '<div class="text-center text-gray-500 py-10">Sem gastos manuais neste mês.</div>';
-                return;
-            }
-            list.forEach(item => {
-                const day = item.date.split('-')[2];
-                const color = CATEGORY_COLORS[item.category] || '#6b7280';
-                el.innerHTML += `
-                    <div onclick="openEdit('${item.id}')" class="expense-item bg-gray-700/50 p-3 rounded-lg flex items-center justify-between border-l-4 transition-all cursor-pointer mb-2" style="border-color: ${color}">
-                        <div class="flex items-center gap-3 overflow-hidden">
-                            <div class="bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-gray-400 shrink-0">${day}</div>
-                            <div class="min-w-0">
-                                <p class="font-bold text-sm text-white truncate">${item.description}</p>
-                                <p class="text-xs text-gray-400">${item.category}</p>
+                    listEl.innerHTML += `
+                        <div onclick="openModal('${item.id}')" class="expense-item bg-gray-700/50 p-3 rounded-lg flex items-center justify-between border-l-4 mb-2" style="border-color: ${color}">
+                            <div class="flex items-center gap-3 overflow-hidden">
+                                <div class="bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-gray-400 shrink-0">${day}</div>
+                                <div class="min-w-0">
+                                    <p class="font-bold text-sm text-white truncate">${item.description} ${attachIcon}</p>
+                                    <p class="text-xs text-gray-400">${item.category}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                ${downloadLink}
+                                <span class="font-bold text-white whitespace-nowrap">${fmtMoney(item.value)}</span>
                             </div>
                         </div>
-                        <span class="font-bold text-white whitespace-nowrap ml-2">${fmtMoney(item.value)}</span>
-                    </div>
-                `;
-            });
-        }
-
-        // --- IMPORTAÇÃO PDF ---
-        document.getElementById('pdf-upload').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if(!file) return;
-
-            toggleLoader(true);
-            try {
-                const buff = await file.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument(buff).promise;
-                let items = [];
-                const year = currentDate.getFullYear();
-                const monthStr = String(currentDate.getMonth()+1).padStart(2,'0');
-
-                for(let i=1; i<=pdf.numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const content = await page.getTextContent();
-                    // Junta todo texto com espaço para facilitar regex global
-                    const text = content.items.map(s => s.str).join(' ');
-
-                    // REGEX AJUSTADO PARA SEU PDF (DD/MM Descrição Valor)
-                    // Captura: 14/07 POSTO AVENIDA 125,16
-                    // Ignora linhas que parecem totais ou pagamentos
-                    const regex = /(\d{2}\/\d{2})\s+(.*?)\s+(-?[\d\.]*?[\d]+,\d{2})/gi;
-                    
-                    let match;
-                    while ((match = regex.exec(text)) !== null) {
-                        const dayMonth = match[1]; // 14/07
-                        const desc = match[2].trim();
-                        const valStr = match[3];
-
-                        // Filtros de segurança
-                        if(desc.toUpperCase().includes('PAGAMENTO') || desc.toUpperCase().includes('SALDO')) continue;
-                        if(desc.length < 3) continue;
-
-                        // Valor
-                        const val = parseFloat(valStr.replace('.','').replace(',','.'));
-                        
-                        // Data (Usa o ano da visualização atual + dia/mes capturado)
-                        // Atenção: Se a fatura é de Agosto, mas tem compras de Julho, vamos respeitar o mês da compra
-                        const [d, m] = dayMonth.split('/');
-                        const dateIso = `${year}-${m}-${d}`;
-
-                        // Categoria Automática
-                        let cat = 'Outros';
-                        const low = desc.toLowerCase();
-                        for(const [k, v] of Object.entries(KEYWORDS)) {
-                            if(low.includes(k)) { cat = v; break; }
-                        }
-
-                        items.push({
-                            date: dateIso,
-                            description: desc,
-                            value: val,
-                            category: cat,
-                            source: 'invoice' // Marca como fatura
-                        });
-                    }
-                }
-
-                if(items.length) {
-                    const batch = db.batch();
-                    items.forEach(it => {
-                        const ref = db.collection('users').doc(userId).collection('expenses').doc();
-                        batch.set(ref, it);
-                    });
-                    await batch.commit();
-                    alert(`${items.length} itens importados com sucesso!`);
-                    loadData();
-                } else {
-                    alert("Nenhum item reconhecido. Verifique se o PDF é legível.");
-                }
-            } catch(err) { console.error(err); alert("Erro ao ler PDF."); }
+                    `;
+                });
+            }
             
-            toggleLoader(false);
-            e.target.value = ''; // Limpa input
-        });
-
-        // --- CRUD E UTIL ---
-        function addManual() {
-            const desc = prompt("Descrição:"); if(!desc) return;
-            const val = parseFloat(prompt("Valor:")); if(isNaN(val)) return;
-            db.collection('users').doc(userId).collection('expenses').add({
-                date: currentDate.toISOString().split('T')[0],
-                description: desc, value: val, category: 'Outros', source: 'manual'
-            }).then(loadData);
+            updateChart(curExpenses);
         }
 
-        function openEdit(id) {
+        // --- MANIPULAÇÃO DO MODAL ---
+
+        function openModal(id = null) {
             currentEditId = id;
-            const it = expenses.find(e => e.id === id);
-            document.getElementById('edit-date').value = it.date;
-            document.getElementById('edit-desc').value = it.description;
-            document.getElementById('edit-cat').value = it.category;
-            document.getElementById('edit-val').value = it.value;
-            document.getElementById('edit-modal').classList.remove('hidden');
-            document.getElementById('edit-modal').classList.add('flex');
+            document.getElementById('delete-btn').classList.add('hidden');
+            
+            if(id) {
+                // Modo Edição
+                document.getElementById('modal-title').innerText = "Editar Lançamento";
+                document.getElementById('delete-btn').classList.remove('hidden');
+                const item = expenses.find(e => e.id === id);
+                document.getElementById('form-date').value = item.date;
+                document.getElementById('form-desc').value = item.description;
+                document.getElementById('form-cat').value = item.category;
+                document.getElementById('form-val').value = item.value;
+                document.getElementById('existing-file').value = item.attachment || '';
+            } else {
+                // Modo Novo
+                document.getElementById('modal-title').innerText = "Novo Lançamento";
+                document.getElementById('expense-form').reset();
+                document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
+                document.getElementById('existing-file').value = '';
+            }
+            
+            document.getElementById('expense-modal').classList.remove('hidden');
+            document.getElementById('expense-modal').classList.add('flex');
         }
 
-        document.getElementById('edit-form').onsubmit = async (e) => {
+        document.getElementById('expense-form').onsubmit = async (e) => {
             e.preventDefault();
-            await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).update({
-                date: document.getElementById('edit-date').value,
-                description: document.getElementById('edit-desc').value,
-                category: document.getElementById('edit-cat').value,
-                value: parseFloat(document.getElementById('edit-val').value)
-            });
-            closeModal(); loadData();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerText;
+            btn.innerText = "Salvando...";
+            btn.disabled = true;
+
+            try {
+                // Upload Arquivo (Base64 simples)
+                const fileInput = document.getElementById('form-file');
+                let attachment = document.getElementById('existing-file').value;
+                
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    if (file.size > 800 * 1024) { // Limite 800kb
+                        alert("Arquivo muito grande! Máximo 800kb.");
+                        throw new Error("File too big");
+                    }
+                    attachment = await convertBase64(file);
+                }
+
+                const data = {
+                    date: document.getElementById('form-date').value,
+                    description: document.getElementById('form-desc').value,
+                    category: document.getElementById('form-cat').value,
+                    value: parseFloat(document.getElementById('form-val').value),
+                    attachment: attachment
+                };
+
+                if(currentEditId) {
+                    await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).update(data);
+                } else {
+                    await db.collection('users').doc(userId).collection('expenses').add(data);
+                }
+                
+                closeModal();
+                loadData();
+            } catch(err) {
+                console.error(err);
+                if(err.message !== "File too big") alert("Erro ao salvar.");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
         };
 
         async function deleteItem() {
-            if(confirm("Excluir?")) {
+            if(confirm("Tem certeza que deseja excluir?")) {
                 await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete();
-                closeModal(); loadData();
+                closeModal();
+                loadData();
             }
         }
 
-        async function clearInvoice() {
-            if(!confirm("Deseja apagar TODOS os itens importados da fatura deste mês?")) return;
-            toggleLoader(true);
-            const monthKey = currentDate.toISOString().slice(0, 7);
-            const toDel = expenses.filter(e => e.date.startsWith(monthKey) && e.source === 'invoice');
-            const batch = db.batch();
-            toDel.forEach(e => batch.delete(db.collection('users').doc(userId).collection('expenses').doc(e.id)));
-            await batch.commit();
-            loadData();
-        }
+        // UTILITÁRIOS
+        const convertBase64 = (file) => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
 
         async function saveIncome() {
             const mk = currentDate.toISOString().slice(0, 7);
             await db.collection('users').doc(userId).collection('income').doc(mk).set({
                 s1: document.getElementById('income1').value, s2: document.getElementById('income2').value
             }, {merge:true});
+            render(); // Atualiza saldo na hora
         }
         document.getElementById('income1').onchange = saveIncome;
         document.getElementById('income2').onchange = saveIncome;
 
         function updateChart(data) {
-            const ctx = document.getElementById('cardChart').getContext('2d');
+            const ctx = document.getElementById('expenseChart').getContext('2d');
             if(chartInstance) chartInstance.destroy();
             const cats = {};
             data.forEach(d => cats[d.category] = (cats[d.category]||0) + d.value);
@@ -432,21 +368,14 @@
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(cats),
-                    datasets: [{ data: Object.values(cats), backgroundColor: Object.keys(cats).map(k=>CATEGORY_COLORS[k]||'#666'), borderWidth: 0 }]
+                    datasets: [{ data: Object.values(cats), backgroundColor: Object.keys(cats).map(k=>CAT_COLORS[k]||'#666'), borderWidth: 0 }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#fff', font: {size: 10} } } } }
             });
         }
 
-        function switchTab(t) {
-            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
-            document.getElementById(`tab-${t}`).classList.add('active');
-            event.target.classList.add('active');
-        }
-
         function toggleLoader(s) { document.getElementById('loading-overlay').style.display = s ? 'flex' : 'none'; }
-        function closeModal() { document.getElementById('edit-modal').classList.add('hidden'); document.getElementById('edit-modal').classList.remove('flex'); }
+        function closeModal() { document.getElementById('expense-modal').classList.add('hidden'); document.getElementById('expense-modal').classList.remove('flex'); }
         function fmtMoney(v) { return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
 
         document.getElementById('prev-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()-1); loadData(); };

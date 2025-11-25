@@ -37,6 +37,23 @@
             font-family: 'Inter', sans-serif;
             font-weight: 700;
         }
+        
+        /* LOGIN SCREEN STYLES */
+        #login-screen {
+            position: fixed;
+            inset: 0;
+            background-color: var(--background-color);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease-out;
+        }
+        #login-screen.hidden-auth {
+            opacity: 0;
+            pointer-events: none;
+        }
+
         .main-container {
             background-color: var(--card-background-color);
             border-radius: 1.5rem; 
@@ -88,6 +105,7 @@
             position: fixed; 
             inset: 0;
             background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -126,7 +144,7 @@
             opacity: 0;
         }
         
-        @media (max-width: 1279px) { /* Esconde em telas menores que lg (desktop) */
+        @media (max-width: 1279px) { 
             .decoration-icon {
                 display: none;
             }
@@ -134,6 +152,32 @@
     </style>
 </head>
 <body class="dark p-4 sm:p-6 lg:p-8 flex flex-col">
+
+    <div id="login-screen">
+        <div class="bg-card-background-color p-8 rounded-2xl shadow-2xl w-full max-w-md border border-border-color text-center">
+            <div class="mb-6 flex justify-center">
+                <div class="p-4 bg-gray-800 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-brand" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                </div>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">Bem-vindo(a)</h2>
+            <p class="text-text-secondary mb-6 text-sm">Insira suas credenciais para acessar o painel.</p>
+            
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <input type="text" id="login-user" placeholder="Usuário (gabi ou danilo)" class="form-input w-full rounded-lg p-3 text-center" required autocomplete="off">
+                </div>
+                <div>
+                    <input type="password" id="login-pass" placeholder="Senha" class="form-input w-full rounded-lg p-3 text-center" required>
+                </div>
+                <button type="submit" class="w-full bg-brand hover:bg-brand-dark text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all transform hover:scale-[1.02]">
+                    Entrar
+                </button>
+            </form>
+            <p id="login-error" class="text-red-500 text-sm mt-4 hidden">Usuário ou senha incorretos.</p>
+        </div>
+    </div>
+
     <svg class="decoration-icon w-24 h-24" style="top: 15%; left: 5%; transform: rotate(-25deg);" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M50 0L61.2266 21.3526L85.3553 26.1244L70.1777 44.6447L71.1244 69.1317L50 59.695L28.8756 69.1317L29.8223 44.6447L4.64466 26.1244L28.7734 21.3526L50 0Z" stroke="currentColor" stroke-width="4"></path><path d="M50 25L55.6133 36.6763L68.6777 39.0622L60.3388 50.3223L61.2266 63.8157L50 59.695L38.7734 63.8157L39.6612 50.3223L31.3223 39.0622L44.3867 36.6763L50 25Z" stroke="currentColor" stroke-width="2"></path></svg>
     <svg class="decoration-icon w-32 h-32" style="bottom: 10%; left: 8%; transform: rotate(15deg);" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" stroke="currentColor" stroke-width="4" stroke-dasharray="8 8"></circle><circle cx="50" cy="50" r="35" stroke="currentColor" stroke-width="2"></circle></svg>
     <svg class="decoration-icon w-20 h-20" style="top: 20%; right: 7%; transform: rotate(15deg);" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="96" height="96" rx="10" stroke="currentColor" stroke-width="4"></rect><rect x="20" y="20" width="60" height="60" rx="5" stroke="currentColor" stroke-width="2" stroke-dasharray="5 5"></rect></svg>
@@ -146,7 +190,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-9 w-9 text-brand" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
                 <h1 class="text-4xl sm:text-5xl font-bold tracking-tight">Painel Financeiro</h1>
             </div>
-            <p class="text-text-secondary mt-2 text-lg">Seu resumo financeiro mensal em um só lugar.</p>
+            <p class="text-text-secondary mt-2 text-lg">Olá, <span id="user-greeting" class="text-brand font-bold"></span>! Seu resumo financeiro mensal.</p>
         </header>
 
         <div class="control-bar flex justify-between items-center mb-6 p-3 rounded-xl flex-shrink-0">
@@ -193,8 +237,13 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- INÍCIO DA CONFIGURAÇÃO FIREBASE ---
+            // --- CONFIGURAÇÃO DE USUÁRIOS ---
+            const USERS = {
+                'gabi': '19071996',
+                'danilo': '08042020'
+            };
 
+            // --- INÍCIO DA CONFIGURAÇÃO FIREBASE ---
             const firebaseConfig = {
               apiKey: "AIzaSyBf1nzx6mH1lWckWQyXDnWZKLlh-5cfcv0",
               authDomain: "controle-a9909.firebaseapp.com",
@@ -208,7 +257,7 @@
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
 
-            // Simulação de um ID de usuário. Idealmente, isso viria de um sistema de login.
+            // ID do grupo familiar
             const userId = 'casal_principal'; 
 
             // Referências para as coleções no Firestore
@@ -229,6 +278,8 @@
 
             const DOM = { 
                 body: document.body, mainContainer: document.getElementById('main-container'),
+                loginScreen: document.getElementById('login-screen'), loginForm: document.getElementById('login-form'),
+                loginError: document.getElementById('login-error'), userGreeting: document.getElementById('user-greeting'),
                 prevMonthBtn: document.getElementById('prev-month-btn'), nextMonthBtn: document.getElementById('next-month-btn'), 
                 monthHeader: document.getElementById('month-header'), summarySection: document.getElementById('summary-section'), 
                 categorySummarySection: document.getElementById('category-summary-section'), expensesList: document.getElementById('expenses-list'), 
@@ -238,6 +289,30 @@
                 toast: document.getElementById('toast-notification') 
             };
             
+            // --- LÓGICA DE LOGIN ---
+            DOM.loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const user = document.getElementById('login-user').value.toLowerCase().trim();
+                const pass = document.getElementById('login-pass').value.trim();
+
+                if (USERS[user] && USERS[user] === pass) {
+                    DOM.loginError.classList.add('hidden');
+                    DOM.loginScreen.classList.add('hidden-auth');
+                    DOM.userGreeting.textContent = user.charAt(0).toUpperCase() + user.slice(1);
+                    // Inicia o app apenas após login
+                    initializeApp();
+                } else {
+                    DOM.loginError.classList.remove('hidden');
+                    // Treme a caixa de login (efeito visual simples)
+                    DOM.loginForm.parentElement.animate([
+                        { transform: 'translateX(0)' },
+                        { transform: 'translateX(-5px)' },
+                        { transform: 'translateX(5px)' },
+                        { transform: 'translateX(0)' }
+                    ], { duration: 300 });
+                }
+            });
+
             const formatCurrency = (value) => (value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             const toISODateString = (date) => date.toISOString().split('T')[0];
             const getMonthYearKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -262,8 +337,6 @@
                 const monthKey = getMonthYearKey(currentDate);
                 DOM.monthHeader.textContent = currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
                 
-                // Filtro de data robusto que não é afetado por fuso horário.
-                // Ele compara a string 'YYYY-MM' em vez de usar o objeto Date.
                 const monthExpenses = expensesData
                     .filter(e => e.date && e.date.startsWith(monthKey))
                     .sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -302,8 +375,35 @@
             const renderExpenseList = (expenses) => {
                 if (expenses.length === 0) { DOM.expensesList.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-center p-6 bg-card-background-color rounded-lg border-2 border-dashed border-border-color"><h3 class="mt-2 text-lg font-semibold">Nenhum Lançamento no Mês</h3><p class="mt-1 text-text-secondary">Clique em "Adicionar Lançamento" para começar.</p></div>`; return; }
                 
-                // Adicionado timeZone: 'UTC' para garantir que a data exibida seja a mesma que a data inserida.
-                DOM.expensesList.innerHTML = expenses.map(exp => `<div class="expense-card p-4 flex items-center gap-4" data-id="${exp.id}"><div class="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full" style="background-color: ${CATEGORY_COLORS[exp.category]}20"><span class="text-xl">${CATEGORY_ICONS[exp.category] || '📎'}</span></div><div class="flex-grow"><p class="font-semibold">${exp.description}</p><p class="text-sm text-text-secondary">${new Date(exp.date).toLocaleDateString('pt-BR', {day: '2-digit', month: 'long', timeZone: 'UTC'})}</p></div><p class="font-bold text-lg">${formatCurrency(exp.value)}</p></div>`).join('');
+                DOM.expensesList.innerHTML = expenses.map(exp => {
+                    const attachmentBtn = exp.attachment ? 
+                        `<a href="${exp.attachment}" download="comprovante_${exp.description}" class="text-xs bg-gray-700 hover:bg-gray-600 text-white py-1 px-2 rounded flex items-center gap-1" title="Baixar Anexo" onclick="event.stopPropagation()">📎 Fatura</a>` : '';
+                    const hasAttachmentIcon = exp.attachment ? '<span class="text-xs ml-2" title="Possui anexo">📎</span>' : '';
+
+                    return `<div class="expense-card p-4 flex items-center gap-4 relative group" data-id="${exp.id}">
+                        <div class="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full" style="background-color: ${CATEGORY_COLORS[exp.category]}20">
+                            <span class="text-xl">${CATEGORY_ICONS[exp.category] || '📎'}</span>
+                        </div>
+                        <div class="flex-grow min-w-0">
+                            <p class="font-semibold truncate pr-2">${exp.description} ${hasAttachmentIcon}</p>
+                            <div class="flex items-center gap-2">
+                                <p class="text-sm text-text-secondary">${new Date(exp.date).toLocaleDateString('pt-BR', {day: '2-digit', month: 'long', timeZone: 'UTC'})}</p>
+                                ${attachmentBtn}
+                            </div>
+                        </div>
+                        <p class="font-bold text-lg whitespace-nowrap">${formatCurrency(exp.value)}</p>
+                    </div>`;
+                }).join('');
+            };
+
+            // Função para converter arquivo para Base64
+            const convertFileToBase64 = (file) => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = error => reject(error);
+                    reader.readAsDataURL(file);
+                });
             };
 
             const showExpenseModal = (expenseId = null) => {
@@ -312,13 +412,71 @@
                 const isEditing = expense !== null;
                 const categoryOptions = CATEGORIES.map(cat => `<option value="${cat}" ${isEditing && expense.category === cat ? 'selected' : ''}>${cat}</option>`).join('');
                 
-                const modalHTML = `<div class="bg-card-background-color rounded-xl shadow-2xl w-full max-w-lg border border-border-color"><form id="expense-form-inner"><div class="flex justify-between items-center p-5 border-b border-border-color"><h3 class="text-xl font-display">${isEditing ? 'Editar Lançamento' : 'Novo Lançamento'}</h3><button type="button" class="modal-close-btn text-text-secondary hover:text-text-primary text-2xl font-bold">&times;</button></div><div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5"><div><label for="form-date" class="block text-sm font-medium text-text-secondary mb-1">Data</label><input type="date" id="form-date" class="form-input w-full rounded-md p-2" required value="${isEditing ? expense.date : toISODateString(currentDate)}"></div><div><label for="form-category" class="block text-sm font-medium text-text-secondary mb-1">Categoria</label><select id="form-category" class="form-select w-full rounded-md p-2" required>${categoryOptions}</select></div><div class="sm:col-span-2"><label for="form-description" class="block text-sm font-medium text-text-secondary mb-1">Descrição</label><input type="text" id="form-description" placeholder="Ex: Compras da semana" class="form-input w-full rounded-md p-2" required value="${isEditing ? expense.description : ''}"></div><div class="sm:col-span-2"><label for="form-value" class="block text-sm font-medium text-text-secondary mb-1">Valor (R$)</label><input type="number" step="0.01" id="form-value" placeholder="150.00" class="form-input w-full rounded-md p-2" required value="${isEditing ? expense.value : ''}"></div></div><div class="flex justify-between items-center p-4 bg-background-color rounded-b-xl">${isEditing ? '<button type="button" id="delete-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Excluir</button>' : '<div></div>'}<div class="flex gap-4"><button type="button" class="modal-close-btn bg-card-background-color hover:bg-gray-700 border border-border-color font-medium py-2 px-4 rounded-lg">Cancelar</button><button type="submit" class="bg-brand hover:bg-brand-dark text-white font-bold py-2 px-4 rounded-lg">Salvar</button></div></div></form></div>`;
+                const modalHTML = `
+                <div class="bg-card-background-color rounded-xl shadow-2xl w-full max-w-lg border border-border-color">
+                    <form id="expense-form-inner">
+                        <div class="flex justify-between items-center p-5 border-b border-border-color">
+                            <h3 class="text-xl font-display">${isEditing ? 'Editar Lançamento' : 'Novo Lançamento'}</h3>
+                            <button type="button" class="modal-close-btn text-text-secondary hover:text-text-primary text-2xl font-bold">&times;</button>
+                        </div>
+                        <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div>
+                                <label for="form-date" class="block text-sm font-medium text-text-secondary mb-1">Data</label>
+                                <input type="date" id="form-date" class="form-input w-full rounded-md p-2" required value="${isEditing ? expense.date : toISODateString(currentDate)}">
+                            </div>
+                            <div>
+                                <label for="form-category" class="block text-sm font-medium text-text-secondary mb-1">Categoria</label>
+                                <select id="form-category" class="form-select w-full rounded-md p-2" required>${categoryOptions}</select>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label for="form-description" class="block text-sm font-medium text-text-secondary mb-1">Descrição</label>
+                                <input type="text" id="form-description" placeholder="Ex: Compras da semana" class="form-input w-full rounded-md p-2" required value="${isEditing ? expense.description : ''}">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label for="form-value" class="block text-sm font-medium text-text-secondary mb-1">Valor (R$)</label>
+                                <input type="number" step="0.01" id="form-value" placeholder="150.00" class="form-input w-full rounded-md p-2" required value="${isEditing ? expense.value : ''}">
+                            </div>
+                            <div class="sm:col-span-2 border-t border-gray-700 pt-4 mt-2">
+                                <label class="block text-sm font-medium text-text-secondary mb-2">Anexar Fatura/Comprovante (Máx 400KB)</label>
+                                <div class="flex items-center gap-3">
+                                    <label class="cursor-pointer bg-gray-700 hover:bg-gray-600 text-white text-sm py-2 px-4 rounded-md transition-colors">
+                                        Escolher Arquivo
+                                        <input type="file" id="form-attachment" class="hidden" accept="image/*,application/pdf">
+                                    </label>
+                                    <span id="file-name-display" class="text-xs text-gray-400 italic">${isEditing && expense.attachment ? 'Arquivo já anexado (envie outro para substituir)' : 'Nenhum arquivo selecionado'}</span>
+                                </div>
+                                <input type="hidden" id="existing-attachment" value="${isEditing && expense.attachment ? expense.attachment : ''}">
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center p-4 bg-background-color rounded-b-xl">
+                            ${isEditing ? '<button type="button" id="delete-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Excluir</button>' : '<div></div>'}
+                            <div class="flex gap-4">
+                                <button type="button" class="modal-close-btn bg-card-background-color hover:bg-gray-700 border border-border-color font-medium py-2 px-4 rounded-lg">Cancelar</button>
+                                <button type="submit" id="save-btn" class="bg-brand hover:bg-brand-dark text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2">
+                                    <span>Salvar</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>`;
                 
                 DOM.modalContainer.innerHTML = modalHTML;
                 DOM.mainContainer.classList.add('modal-open');
                 DOM.modalContainer.classList.add('visible');
                 DOM.body.classList.add('modal-open-body');
-                setTimeout(() => document.getElementById('form-description').focus(), 50);
+                
+                // Lógica visual para input de arquivo
+                setTimeout(() => {
+                    document.getElementById('form-description').focus();
+                    const fileInput = document.getElementById('form-attachment');
+                    const nameDisplay = document.getElementById('file-name-display');
+                    fileInput.addEventListener('change', () => {
+                        if (fileInput.files.length > 0) {
+                            nameDisplay.textContent = fileInput.files[0].name;
+                            nameDisplay.classList.add('text-green-400');
+                        }
+                    });
+                }, 50);
             };
 
             const hideExpenseModal = () => {
@@ -347,7 +505,12 @@
             DOM.prevMonthBtn.addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); renderMonthView(); });
             DOM.nextMonthBtn.addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); renderMonthView(); });
             DOM.addExpenseBtn.addEventListener('click', () => showExpenseModal());
-            DOM.expensesList.addEventListener('click', (e) => { const card = e.target.closest('.expense-card'); if (card) showExpenseModal(card.dataset.id); });
+            DOM.expensesList.addEventListener('click', (e) => { 
+                // Evita abrir o modal se clicar no botão de download
+                if(e.target.closest('a')) return;
+                const card = e.target.closest('.expense-card'); 
+                if (card) showExpenseModal(card.dataset.id); 
+            });
 
             DOM.modalContainer.addEventListener('click', async (e) => { 
                 if (e.target.classList.contains('modal-close-btn') || e.target.id === 'expense-modal-container') { hideExpenseModal(); }
@@ -365,22 +528,51 @@
             DOM.modalContainer.addEventListener('submit', async (e) => { 
                 if (e.target.id === 'expense-form-inner') { 
                     e.preventDefault(); 
-                    const expensePayload = {
-                        date: document.getElementById('form-date').value,
-                        description: document.getElementById('form-description').value,
-                        category: document.getElementById('form-category').value,
-                        value: parseFloat(document.getElementById('form-value').value) || 0
-                    };
+                    
+                    const saveBtn = document.getElementById('save-btn');
+                    const originalBtnText = saveBtn.innerHTML;
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = 'Salvando...';
+
                     try {
+                        let attachmentBase64 = document.getElementById('existing-attachment').value;
+                        const fileInput = document.getElementById('form-attachment');
+                        
+                        // Processamento de arquivo
+                        if (fileInput.files.length > 0) {
+                            const file = fileInput.files[0];
+                            // Limite de 400KB para evitar problemas com Firestore (Limite doc 1MB)
+                            if (file.size > 400 * 1024) {
+                                alert("O arquivo é muito grande! Por favor, anexe um arquivo menor que 400KB (ex: prints ou PDFs otimizados).");
+                                saveBtn.disabled = false;
+                                saveBtn.innerHTML = originalBtnText;
+                                return;
+                            }
+                            attachmentBase64 = await convertFileToBase64(file);
+                        }
+
+                        const expensePayload = {
+                            date: document.getElementById('form-date').value,
+                            description: document.getElementById('form-description').value,
+                            category: document.getElementById('form-category').value,
+                            value: parseFloat(document.getElementById('form-value').value) || 0,
+                            attachment: attachmentBase64 || null
+                        };
+                    
                         if (currentEditingId) { await expensesCollection.doc(currentEditingId).update(expensePayload); } 
                         else { await expensesCollection.add(expensePayload); }
+                        
                         await loadData(); renderMonthView(); hideExpenseModal();
                         showToast('Lançamento salvo com sucesso!', 'success');
-                    } catch (error) { console.error("Erro ao salvar no Firestore: ", error); showToast('Erro ao salvar lançamento.', 'error'); }
+                    } catch (error) { 
+                        console.error("Erro ao salvar no Firestore: ", error); 
+                        showToast('Erro ao salvar. Verifique o tamanho do arquivo.', 'error'); 
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = originalBtnText;
+                    }
                 } 
             });
             
-            // Lógica de import/export continua local, não interage com o Firebase.
             DOM.exportBtn.addEventListener('click', () => { const d = { expenses: expensesData, income: incomeData }; const s = JSON.stringify(d, null, 2); const b = new Blob([s], { type: 'application/json' }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = `backup_gastos_${toISODateString(new Date())}.json`; a.click(); a.remove(); URL.revokeObjectURL(u); showToast('Backup local exportado com sucesso!'); });
             DOM.importInput.addEventListener('change', (e) => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => { try { const d = JSON.parse(ev.target.result); if (d.expenses && d.income) { if (confirm('Isto irá substituir TODOS os dados locais. Não afetará o Firebase. Deseja continuar?')) { expensesData = d.expenses; incomeData = d.income; renderMonthView(); showToast('Dados importados localmente!'); } } else { showToast('Arquivo de backup inválido.', 'error'); } } catch (err) { showToast('Erro ao ler o arquivo.', 'error'); console.error(err); } finally { DOM.importInput.value = ''; } }; r.readAsText(f); });
 
@@ -388,8 +580,8 @@
                 await loadData();
                 renderMonthView();
             };
-
-            initializeApp();
+            
+            // Removido initializeApp() automático. Agora é chamado no submit do login.
         });
     </script>
 </body>

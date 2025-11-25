@@ -76,11 +76,21 @@
             </div>
 
             <div class="lg:col-span-2 bg-gray-800 p-6 rounded-xl border border-gray-700 h-[700px] flex flex-col shadow-lg">
-                <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-700">
+                <div class="flex flex-wrap justify-between items-center mb-4 pb-2 border-b border-gray-700 gap-2">
                     <h3 class="font-bold text-xl">Lançamentos</h3>
-                    <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-sm font-bold shadow transition flex items-center gap-2">
-                        <span>+ Adicionar Lançamento</span>
-                    </button>
+                    
+                    <div class="flex items-center gap-2">
+                        <button id="export-btn" class="text-xs bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-gray-300 border border-gray-600" title="Salvar Backup no PC">💾 Backup</button>
+                        <label for="import-json" class="text-xs bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-gray-300 border border-gray-600 cursor-pointer" title="Restaurar Backup">📂 Restaurar</label>
+                        <input type="file" id="import-json" class="hidden" accept=".json">
+
+                        <button onclick="openModal(null, true)" class="bg-indigo-900 hover:bg-indigo-800 text-indigo-200 border border-indigo-700 px-3 py-2 rounded text-sm font-bold shadow transition flex items-center gap-2">
+                            📄 Importar Fatura
+                        </button>
+                        <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-sm font-bold shadow transition flex items-center gap-2">
+                            <span>+ Adicionar</span>
+                        </button>
+                    </div>
                 </div>
                 <div id="expense-list" class="flex-1 overflow-y-auto pr-2 space-y-2"></div>
             </div>
@@ -268,7 +278,7 @@
             updateMainChart(curExpenses);
         }
 
-        // --- SALVAR LANÇAMENTO ---
+        // --- SALVAR ---
         document.getElementById('expense-form').onsubmit = async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
@@ -295,20 +305,17 @@
                                 details = result.breakdown;
                                 autoValue = result.total;
                             }
-                        } catch(err) { console.log("Não foi possível ler PDF, salvando apenas anexo."); }
+                        } catch(err) { console.log("Erro PDF: " + err); }
                         toggleLoader(false);
                     }
                 }
 
-                // Se o PDF foi lido e o usuário deixou valor zerado ou 1 (placeholder), usa o valor do PDF
+                // Lógica de valor
                 let finalValue = parseFloat(document.getElementById('form-val').value);
+                // Se o input estiver zerado ou 1, e o PDF tiver achado valor, sugere usar o do PDF
                 if ((finalValue === 0 || finalValue === 1) && autoValue > 0) {
-                    finalValue = autoValue;
-                    if(confirm(`Fatura lida! Valor total encontrado: ${fmtMoney(autoValue)}. Deseja usar este valor?`)) {
-                        // mantém finalValue
-                    } else {
-                        // mantém o do input
-                        finalValue = parseFloat(document.getElementById('form-val').value);
+                    if(confirm(`Valor encontrado na fatura: ${fmtMoney(autoValue)}. Usar este valor?`)) {
+                        finalValue = autoValue;
                     }
                 }
 
@@ -329,7 +336,7 @@
             btn.innerText = "Salvar"; btn.disabled = false;
         };
 
-        // --- PARSER AJUSTADO PARA O ERRO ANTERIOR ---
+        // --- PARSER CORRIGIDO (IGNORA TABELAS DE PARCELAMENTO) ---
         async function parsePDF(file) {
             const buff = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument(buff).promise;
@@ -341,8 +348,8 @@
                 const content = await page.getTextContent();
                 const text = content.items.map(s => s.str).join(' ');
 
-                // REGEX ESTRITA: Exige DD/MM para considerar uma linha válida de gasto
-                // Isso evita ler tabelas de "Opções de Parcelamento" que não têm data na linha
+                // Regex Estrita: Exige DATA (DD/MM) no início. 
+                // Isso evita pegar linhas de tabelas de oferta de parcelamento que geralmente não têm data.
                 const regex = /(\d{2}\/\d{2})\s+(.*?)\s+(-?[\d\.]*?[\d]+,\d{2})/g;
                 
                 let match;
@@ -350,14 +357,12 @@
                     let desc = match[2].trim();
                     let valStr = match[3];
                     
-                    // Filtros de segurança
-                    if(desc.includes("PAGAMENTO") || desc.includes("SALDO") || desc.includes("Total") || desc.includes("Parcelamento de fatura")) continue;
+                    if(desc.includes("PAGAMENTO") || desc.includes("SALDO") || desc.includes("Total")) continue;
                     
                     let val = parseFloat(valStr.replace('.','').replace(',','.'));
                     if(isNaN(val)) continue;
 
-                    // Somar apenas positivos (compras), ignorar pagamentos negativos na soma do breakdown de gastos
-                    if (val > 0) {
+                    if (val > 0) { // Soma apenas gastos positivos
                         let cat = 'Outros';
                         let lowDesc = desc.toLowerCase();
                         for(const [key, c] of Object.entries(KEYWORDS)) {
@@ -371,13 +376,40 @@
             return { breakdown, total: parseFloat(total.toFixed(2)) };
         }
 
-        // --- UI AUXILIAR ---
+        // --- BACKUP / RESTORE ---
+        document.getElementById('export-btn').onclick = () => {
+            const data = { expenses: expenses, income: incomeData };
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type : 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `backup_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        };
+
+        document.getElementById('import-json').onchange = (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            const r = new FileReader();
+            r.onload = async (ev) => {
+                try {
+                    const d = JSON.parse(ev.target.result);
+                    if(confirm("Isso substituirá os dados locais (visuais). Para salvar no banco, é necessário re-salvar um por um. Continuar visualização?")) {
+                        expenses = d.expenses || [];
+                        incomeData = d.income || {};
+                        render();
+                    }
+                } catch(err) { alert("Erro ao ler JSON"); }
+            };
+            r.readAsText(file);
+        };
+
+        // --- AUXILIARES ---
         function openInvoiceDetails(id) {
             const item = expenses.find(e => e.id === id);
             document.getElementById('invoice-subtitle').innerText = `${item.description} - ${fmtMoney(item.value)}`;
             const dlBtn = document.getElementById('download-invoice-btn');
             if(item.attachment) { dlBtn.href = item.attachment; dlBtn.style.display = 'block'; } 
             else { dlBtn.style.display = 'none'; }
+            
             const listContainer = document.getElementById('invoice-items-list');
             listContainer.innerHTML = '';
             const ctx = document.getElementById('invoiceChart').getContext('2d');
@@ -387,11 +419,7 @@
                 const cats = Object.keys(item.details);
                 const vals = Object.values(item.details);
                 cats.forEach((cat, idx) => {
-                    listContainer.innerHTML += `
-                        <div class="flex justify-between border-b border-gray-700 py-2">
-                            <span class="text-gray-300">${cat}</span>
-                            <span class="font-bold text-white">${fmtMoney(vals[idx])}</span>
-                        </div>`;
+                    listContainer.innerHTML += `<div class="flex justify-between border-b border-gray-700 py-2"><span class="text-gray-300">${cat}</span><span class="font-bold text-white">${fmtMoney(vals[idx])}</span></div>`;
                 });
                 invoiceChart = new Chart(ctx, {
                     type: 'doughnut',
@@ -403,9 +431,10 @@
             document.getElementById('invoice-details-modal').classList.add('flex');
         }
 
-        function openModal(id = null) {
+        function openModal(id = null, isImport = false) {
             currentEditId = id;
             document.getElementById('delete-btn').classList.add('hidden');
+            
             if(id) {
                 document.getElementById('modal-title').innerText = "Editar Lançamento";
                 document.getElementById('delete-btn').classList.remove('hidden');
@@ -416,10 +445,17 @@
                 document.getElementById('form-val').value = item.value;
                 document.getElementById('existing-file').value = item.attachment || '';
             } else {
-                document.getElementById('modal-title').innerText = "Novo Lançamento";
+                document.getElementById('modal-title').innerText = isImport ? "Importar Fatura" : "Novo Lançamento";
                 document.getElementById('expense-form').reset();
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
                 document.getElementById('existing-file').value = '';
+                
+                if(isImport) {
+                    document.getElementById('form-desc').value = "Fatura Cartão";
+                    document.getElementById('form-cat').value = "Contas";
+                    document.getElementById('form-val').value = 0; // Será preenchido auto
+                    setTimeout(() => document.getElementById('form-file').click(), 300); // Abre seletor auto
+                }
             }
             document.getElementById('expense-modal').classList.remove('hidden');
             document.getElementById('expense-modal').classList.add('flex');

@@ -2,8 +2,16 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finanças | Gabi & Danilo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Finanças | Casal</title>
+    
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Finanças">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/10562/10562363.png">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/10562/10562363.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
@@ -14,99 +22,125 @@
 
     <style>
         :root { --bg: #0f172a; --primary: #6366f1; --text: #f8fafc; }
-        body { background-color: var(--bg); color: var(--text); font-family: 'Poppins', sans-serif; 
-               background-image: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.1) 0%, transparent 20%),
-                                 radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 20%); }
+        body { 
+            background-color: var(--bg); color: var(--text); font-family: 'Poppins', sans-serif; 
+            background-image: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 25%),
+                              radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 25%);
+            background-attachment: fixed;
+            overscroll-behavior-y: none; /* Previne refresh ao puxar no mobile */
+        }
         
-        /* Glassmorphism Card */
+        /* Glassmorphism */
         .glass-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
 
-        /* Custom Scrollbar */
+        /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #6366f1; }
-
-        /* Utils */
+        
         .expense-item { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-        .expense-item:hover { transform: translateX(4px); background-color: rgba(255,255,255,0.05); }
+        .expense-item:hover { transform: translateX(4px); background-color: rgba(255,255,255,0.08); }
         
         input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         
-        /* Loader */
-        #loading-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .loader { width: 48px; height: 48px; border: 5px solid #FFF; border-bottom-color: var(--primary); border-radius: 50%; animation: rotation 1s linear infinite; }
-        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #loading-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="flex flex-col min-h-screen p-4 md:p-6 lg:p-8">
+<body class="flex flex-col min-h-screen p-4 md:p-6 lg:p-8 selection:bg-indigo-500 selection:text-white">
 
-    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-[#0f172a]">
-        <div class="glass-card p-8 rounded-2xl w-full max-w-sm text-center relative overflow-hidden">
+    <script>
+        const manifest = {
+            "name": "Painel Financeiro",
+            "short_name": "Finanças",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#0f172a",
+            "theme_color": "#0f172a",
+            "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/10562/10562363.png", "sizes": "512x512", "type": "image/png" }]
+        };
+        const link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(manifest));
+        document.head.appendChild(link);
+    </script>
+
+    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-[#0f172a] p-4">
+        <div class="glass-card p-8 rounded-2xl w-full max-w-sm text-center relative overflow-hidden border border-gray-700/50">
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
-            <div class="mb-6 inline-flex p-4 rounded-full bg-indigo-500/10 text-indigo-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            <div class="mb-6 inline-flex p-4 rounded-full bg-indigo-500/10 text-indigo-400 shadow-inner">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
             </div>
             <h2 class="text-2xl font-bold mb-2 text-white">Bem-vindo</h2>
-            <p class="text-gray-400 text-sm mb-6">Acesse o painel financeiro do casal</p>
+            <p class="text-gray-400 text-sm mb-6">Painel Financeiro Seguro</p>
             <form id="login-form" class="space-y-4">
-                <input type="text" id="user" placeholder="Usuário" class="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white focus:border-indigo-500 outline-none transition-all placeholder-gray-600">
-                <input type="password" id="pass" placeholder="Senha" class="w-full p-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white focus:border-indigo-500 outline-none transition-all placeholder-gray-600">
-                <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 py-3 rounded-lg font-bold text-white shadow-lg shadow-indigo-500/20 transition-all transform hover:scale-[1.02]">Entrar no Sistema</button>
+                <input type="text" id="user" placeholder="Usuário" class="w-full p-3.5 bg-gray-900/60 border border-gray-700 rounded-xl text-white focus:border-indigo-500 outline-none transition-all placeholder-gray-600">
+                <input type="password" id="pass" placeholder="Senha" class="w-full p-3.5 bg-gray-900/60 border border-gray-700 rounded-xl text-white focus:border-indigo-500 outline-none transition-all placeholder-gray-600">
+                <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 py-3.5 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/20 transition-all transform active:scale-95">Acessar</button>
             </form>
-            <p id="login-msg" class="text-red-400 text-sm mt-4 hidden animate-pulse">Usuário ou senha incorretos.</p>
+            <p id="login-msg" class="text-red-400 text-xs mt-4 hidden font-medium bg-red-500/10 py-2 rounded">Acesso Negado</p>
         </div>
     </div>
 
     <div id="loading-overlay">
-        <div class="loader"></div>
-        <p class="text-gray-300 font-medium mt-4 text-sm tracking-wide animate-pulse" id="loading-text">Carregando dados...</p>
+        <div class="spinner"></div>
+        <p class="text-gray-300 font-medium mt-4 text-sm tracking-wide animate-pulse" id="loading-text">Carregando...</p>
     </div>
 
-    <div id="app-container" class="max-w-7xl mx-auto w-full opacity-0 transition-opacity duration-700 hidden">
+    <div id="app-container" class="max-w-7xl mx-auto w-full opacity-0 transition-opacity duration-700 hidden pb-10">
         
         <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
             <div class="text-center md:text-left">
-                <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 tracking-tight">Painel Financeiro</h1>
-                <p class="text-gray-400 text-sm mt-1">Gestão Inteligente • <span id="user-display" class="text-indigo-400 font-bold capitalize"></span></p>
+                <h1 class="text-3xl font-bold text-white tracking-tight flex items-center gap-2 justify-center md:justify-start">
+                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">Finanças</span>
+                </h1>
+                <p class="text-gray-400 text-sm mt-1 flex items-center gap-2 justify-center md:justify-start">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    <span id="user-display" class="text-white font-bold capitalize"></span>
+                </p>
             </div>
             
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3">
+                <button id="install-btn" class="hidden bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                    ⬇ Instalar App
+                </button>
+
                 <div class="glass-card rounded-full px-2 py-1 flex items-center">
                     <button id="prev-month" class="p-2 hover:text-indigo-400 transition rounded-full hover:bg-white/5"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
-                    <span id="current-month" class="mx-4 font-semibold min-w-[140px] text-center capitalize text-sm md:text-base"></span>
+                    <span id="current-month" class="mx-3 font-semibold min-w-[120px] text-center capitalize text-sm"></span>
                     <button id="next-month" class="p-2 hover:text-indigo-400 transition rounded-full hover:bg-white/5"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
                 </div>
-                <button id="logout-btn" class="glass-card hover:bg-red-500/10 text-gray-400 hover:text-red-400 p-3 rounded-full transition-colors" title="Sair">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                <button id="logout-btn" class="glass-card hover:bg-red-500/20 text-gray-400 hover:text-red-400 p-2.5 rounded-full transition-colors" title="Sair">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                 </button>
             </div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            <div class="lg:col-span-4 flex flex-col gap-6">
+            <div class="lg:col-span-4 flex flex-col gap-6 order-2 lg:order-1">
                 
                 <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><svg class="w-24 h-24 text-indigo-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05 1.18 1.91 2.53 1.91 1.29 0 2.13-.72 2.13-1.55 0-.8-.67-1.17-1.98-1.48l-1.46-.39c-2.07-.55-3.03-1.76-3.03-3.12 0-1.77 1.46-2.96 3.12-3.3V4h2.67v1.93c1.71.36 3.13 1.41 3.27 3.31h-1.96c-.12-.94-1.02-1.67-2.32-1.67-1.23 0-2.04.72-2.04 1.55 0 .74.63 1.13 1.96 1.46l1.46.39c2.17.59 3.16 1.91 3.16 3.3 0 1.8-1.37 3.07-3.15 3.42z"/></svg></div>
+                    <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><svg class="w-32 h-32 text-indigo-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05 1.18 1.91 2.53 1.91 1.29 0 2.13-.72 2.13-1.55 0-.8-.67-1.17-1.98-1.48l-1.46-.39c-2.07-.55-3.03-1.76-3.03-3.12 0-1.77 1.46-2.96 3.12-3.3V4h2.67v1.93c1.71.36 3.13 1.41 3.27 3.31h-1.96c-.12-.94-1.02-1.67-2.32-1.67-1.23 0-2.04.72-2.04 1.55 0 .74.63 1.13 1.96 1.46l1.46.39c2.17.59 3.16 1.91 3.16 3.3 0 1.8-1.37 3.07-3.15 3.42z"/></svg></div>
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Renda Mensal</h3>
-                        <span id="income-saved-msg" class="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-bold opacity-0 transition-opacity">Salvo ✓</span>
+                        <span id="income-saved-msg" class="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded border border-green-500/20 font-bold opacity-0 transition-opacity">Salvo</span>
                     </div>
-                    <div class="space-y-3 relative z-10">
+                    <div class="space-y-4 relative z-10">
                         <div class="group/input">
-                            <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block group-hover/input:text-indigo-400 transition-colors">Gabi</label>
-                            <input type="number" id="income1" placeholder="0,00" step="0.01" class="w-full bg-gray-900/60 border border-gray-700 rounded-lg p-2.5 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all">
+                            <label class="text-[10px] text-indigo-300 uppercase font-bold mb-1 block ml-1">Gabi</label>
+                            <input type="number" id="income1" placeholder="0,00" step="0.01" class="w-full bg-gray-900/60 border border-gray-700 rounded-xl p-3 text-white focus:border-indigo-500 outline-none transition-all">
                         </div>
                         <div class="group/input">
-                            <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block group-hover/input:text-purple-400 transition-colors">Danilo</label>
-                            <input type="number" id="income2" placeholder="0,00" step="0.01" class="w-full bg-gray-900/60 border border-gray-700 rounded-lg p-2.5 text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all">
+                            <label class="text-[10px] text-purple-300 uppercase font-bold mb-1 block ml-1">Danilo</label>
+                            <input type="number" id="income2" placeholder="0,00" step="0.01" class="w-full bg-gray-900/60 border border-gray-700 rounded-xl p-3 text-white focus:border-purple-500 outline-none transition-all">
                         </div>
                     </div>
                 </div>
@@ -114,86 +148,86 @@
                 <div id="summary-display" class="space-y-3"></div>
 
                 <div class="glass-card p-5 rounded-2xl flex flex-col items-center">
-                    <h4 class="font-bold text-gray-400 mb-4 text-xs uppercase tracking-wider">Distribuição de Gastos</h4>
+                    <h4 class="font-bold text-gray-400 mb-4 text-xs uppercase tracking-wider">Visão Geral</h4>
                     <div class="relative h-56 w-full"><canvas id="expenseChart"></canvas></div>
                 </div>
             </div>
 
-            <div class="lg:col-span-8 glass-card rounded-2xl flex flex-col h-[800px]">
+            <div class="lg:col-span-8 glass-card rounded-2xl flex flex-col h-[750px] order-1 lg:order-2">
                 
                 <div class="p-5 border-b border-white/10 flex flex-col gap-4 shrink-0">
                     <div class="flex flex-wrap justify-between items-center gap-3">
-                        <h3 class="font-bold text-xl text-white flex items-center gap-2">
-                            Extrato
-                            <span id="count-badge" class="bg-gray-700 text-gray-300 text-xs py-0.5 px-2 rounded-full">0</span>
-                        </h3>
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-bold text-xl text-white">Lançamentos</h3>
+                            <span id="count-badge" class="bg-white/10 text-gray-300 text-xs py-0.5 px-2 rounded-full font-mono">0</span>
+                        </div>
                         
                         <div class="flex items-center gap-2">
-                            <button onclick="document.getElementById('export-btn').click()" class="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition" title="Salvar Backup">💾</button>
-                            <label for="import-json" class="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition cursor-pointer" title="Restaurar Backup">📂</label>
+                            <button onclick="document.getElementById('export-btn').click()" class="p-2.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition border border-transparent hover:border-white/10" title="Backup">💾</button>
+                            <label for="import-json" class="p-2.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition cursor-pointer border border-transparent hover:border-white/10" title="Restaurar">📂</label>
                             <input type="file" id="import-json" class="hidden" accept=".json">
                             
-                            <div class="h-6 w-px bg-gray-700 mx-1"></div>
+                            <div class="h-6 w-px bg-white/10 mx-1"></div>
 
-                            <button onclick="openModal(null, true)" class="bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 border border-purple-500/30 px-3 py-2 rounded-lg text-xs font-bold shadow transition flex items-center gap-2">
-                                📄 Importar Fatura
+                            <button onclick="openModal(null, true)" class="bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/30 px-3 py-2.5 rounded-lg text-xs font-bold shadow transition flex items-center gap-2">
+                                <span class="text-lg leading-none">📄</span> <span class="hidden sm:inline">Importar Fatura</span>
                             </button>
-                            <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg shadow-indigo-500/20 transition flex items-center gap-2">
-                                <span>+ Novo</span>
+                            <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-lg shadow-indigo-500/20 transition flex items-center gap-2">
+                                <span class="text-lg leading-none">+</span> <span>Novo</span>
                             </button>
                         </div>
                     </div>
 
                     <div class="relative group">
-                        <svg class="absolute left-3 top-2.5 h-4 w-4 text-gray-500 group-focus-within:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                        <input type="text" id="search-input" placeholder="Pesquisar lançamento, categoria ou valor..." class="w-full bg-gray-900/50 border border-gray-700 rounded-lg py-2 pl-10 pr-4 text-sm text-white focus:border-indigo-500 focus:bg-gray-900 outline-none transition-all placeholder-gray-600">
+                        <svg class="absolute left-3 top-3 h-4 w-4 text-gray-500 group-focus-within:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        <input type="text" id="search-input" placeholder="Filtrar lançamentos..." class="w-full bg-gray-900/50 border border-gray-700 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:border-indigo-500 focus:bg-gray-900 outline-none transition-all placeholder-gray-600">
                     </div>
                 </div>
                 
                 <div id="expense-list" class="flex-1 overflow-y-auto p-2 space-y-2 custom-scroll"></div>
                 
                 <div class="p-2 text-center border-t border-white/5">
-                     <button id="export-btn" class="text-[10px] text-gray-600 hover:text-gray-400 transition">Download Backup JSON</button>
+                     <button id="export-btn" class="text-[10px] text-gray-600 hover:text-gray-400 transition">Exportar Dados</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="expense-modal" class="fixed inset-0 bg-black/80 hidden z-50 items-center justify-center p-4 backdrop-blur-sm transition-opacity">
-        <div class="glass-card p-6 rounded-2xl w-full max-w-md shadow-2xl transform transition-all border border-gray-700">
+    <div id="expense-modal" class="fixed inset-0 bg-black/80 hidden z-50 items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
+        <div class="glass-card p-6 rounded-2xl w-full max-w-md shadow-2xl transform transition-all scale-95" id="expense-modal-content">
             <h3 class="text-xl font-bold mb-6 text-white flex items-center gap-2">
-                <span class="bg-indigo-500 w-1 h-6 rounded-full block"></span>
+                <span class="bg-indigo-500 w-1.5 h-6 rounded-full block"></span>
                 <span id="modal-title">Novo Lançamento</span>
             </h3>
             <form id="expense-form" class="space-y-4">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="text-[10px] uppercase font-bold text-gray-500 mb-1 block">Data</label>
-                        <input type="date" id="form-date" class="w-full bg-gray-900/80 border border-gray-600 rounded-lg p-2 text-white focus:border-indigo-500 outline-none">
+                        <input type="date" id="form-date" class="w-full bg-gray-900/80 border border-gray-600 rounded-lg p-2.5 text-white focus:border-indigo-500 outline-none">
                     </div>
                     <div>
                         <label class="text-[10px] uppercase font-bold text-gray-500 mb-1 block">Categoria</label>
-                        <select id="form-cat" class="w-full bg-gray-900/80 border border-gray-600 rounded-lg p-2 text-white focus:border-indigo-500 outline-none"></select>
+                        <select id="form-cat" class="w-full bg-gray-900/80 border border-gray-600 rounded-lg p-2.5 text-white focus:border-indigo-500 outline-none"></select>
                     </div>
                 </div>
                 <div>
                     <label class="text-[10px] uppercase font-bold text-gray-500 mb-1 block">Descrição</label>
-                    <input type="text" id="form-desc" placeholder="Ex: Mercado Semanal" class="w-full bg-gray-900/80 border border-gray-600 rounded-lg p-2 text-white focus:border-indigo-500 outline-none">
+                    <input type="text" id="form-desc" placeholder="Ex: Compras" class="w-full bg-gray-900/80 border border-gray-600 rounded-lg p-2.5 text-white focus:border-indigo-500 outline-none">
                 </div>
                 <div>
                     <label class="text-[10px] uppercase font-bold text-gray-500 mb-1 block">Valor (R$)</label>
-                    <input type="number" step="0.01" id="form-val" placeholder="0,00" class="w-full bg-gray-900/80 border border-gray-600 rounded-lg p-2 text-white focus:border-indigo-500 outline-none text-lg font-bold">
+                    <input type="number" step="0.01" id="form-val" placeholder="0,00" class="w-full bg-gray-900/80 border border-gray-600 rounded-lg p-2.5 text-white focus:border-indigo-500 outline-none text-lg font-bold">
                 </div>
                 
                 <div class="pt-4 border-t border-white/10">
-                    <label class="flex items-center gap-3 cursor-pointer group">
-                        <div class="bg-gray-800 p-2 rounded-lg border border-gray-600 group-hover:border-indigo-500 transition">
-                            <svg class="w-5 h-5 text-gray-400 group-hover:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                    <label class="flex items-center gap-3 cursor-pointer group p-2 rounded-lg hover:bg-white/5 transition">
+                        <div class="bg-gray-800 p-2 rounded-lg border border-gray-600 group-hover:border-indigo-500 transition shrink-0">
+                            <svg class="w-5 h-5 text-gray-400 group-hover:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                         </div>
-                        <div>
-                            <span class="text-sm text-gray-300 block">Anexar Comprovante / Fatura</span>
-                            <span class="text-[10px] text-gray-500 block" id="file-label">Nenhum arquivo selecionado</span>
-                            <span class="text-[10px] text-green-400 hidden font-bold" id="pdf-status">✓ PDF Analisado!</span>
+                        <div class="overflow-hidden">
+                            <span class="text-sm text-gray-300 block">Anexar Fatura / PDF</span>
+                            <span class="text-[10px] text-gray-500 block truncate" id="file-label">Clique para selecionar</span>
+                            <span class="text-[10px] text-green-400 hidden font-bold" id="pdf-status">✓ PDF Processado!</span>
                         </div>
                         <input type="file" id="form-file" class="hidden" accept="application/pdf, image/*">
                     </label>
@@ -202,22 +236,22 @@
                 </div>
                 
                 <div class="flex justify-between pt-6 mt-2">
-                    <button type="button" id="delete-btn" onclick="deleteItem()" class="text-red-400 hover:text-red-300 text-sm font-semibold transition hidden px-3">Excluir</button>
+                    <button type="button" id="delete-btn" onclick="deleteItem()" class="text-red-400 hover:text-red-300 text-sm font-semibold transition hidden px-2">Excluir</button>
                     <div class="flex gap-3 ml-auto">
                         <button type="button" onclick="closeModal('expense-modal')" class="px-4 py-2 text-gray-400 hover:text-white transition text-sm font-medium">Cancelar</button>
-                        <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold shadow-lg shadow-indigo-500/25 transition transform hover:translate-y-[-1px]">Salvar</button>
+                        <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold shadow-lg shadow-indigo-500/25 transition transform active:scale-95">Salvar</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="invoice-details-modal" class="fixed inset-0 bg-black/90 hidden z-50 items-center justify-center p-4 backdrop-blur-sm transition-opacity">
-        <div class="glass-card p-6 rounded-2xl w-full max-w-3xl border border-gray-700 shadow-2xl flex flex-col max-h-[90vh]">
+    <div id="invoice-details-modal" class="fixed inset-0 bg-black/90 hidden z-50 items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
+        <div class="glass-card p-6 rounded-2xl w-full max-w-3xl border border-gray-700 shadow-2xl flex flex-col max-h-[90vh] transform transition-all scale-95" id="invoice-modal-content">
             <div class="flex justify-between items-start mb-6 pb-4 border-b border-white/10">
                 <div>
                     <h3 class="text-xl font-bold text-white">Detalhes da Fatura</h3>
-                    <p class="text-sm text-gray-400 mt-1" id="invoice-subtitle">Análise de gastos extraída do PDF</p>
+                    <p class="text-sm text-gray-400 mt-1" id="invoice-subtitle">Análise de gastos</p>
                 </div>
                 <div class="flex gap-2">
                     <a id="download-invoice-btn" href="#" download="fatura.pdf" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded text-xs font-medium border border-gray-600 transition">Baixar PDF</a>
@@ -229,16 +263,14 @@
                 <div class="flex flex-col items-center justify-center bg-gray-900/30 p-6 rounded-xl border border-white/5">
                     <div class="sub-chart-container w-full"><canvas id="invoiceChart"></canvas></div>
                 </div>
-                
                 <div class="flex flex-col h-full overflow-hidden">
                     <div class="flex justify-between items-center mb-3">
-                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Breakdown por Categoria</h4>
+                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Categorias</h4>
                     </div>
                     <div id="invoice-items-list" class="flex-1 overflow-y-auto pr-2 space-y-2 mb-4 custom-scroll"></div>
-                    
                     <button onclick="deleteItem()" class="w-full border border-red-500/30 text-red-400 hover:bg-red-500/10 py-3 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        Excluir Lançamento Inteiro
+                        Excluir Lançamento
                     </button>
                 </div>
             </div>
@@ -246,7 +278,6 @@
     </div>
 
     <script>
-        // --- CONFIG ---
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
         const firebaseConfig = {
@@ -285,14 +316,29 @@
         let currentEditId = null;
         let mainChart = null;
         let invoiceChart = null;
+        let deferredPrompt;
 
-        // --- INIT ---
+        // --- PWA INSTALL LOGIC ---
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('install-btn').classList.remove('hidden');
+        });
+
+        document.getElementById('install-btn').addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') document.getElementById('install-btn').classList.add('hidden');
+                deferredPrompt = null;
+            }
+        });
+
         function init() {
             document.getElementById('form-cat').innerHTML = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
             loadData();
         }
 
-        // --- EVENTS ---
         document.getElementById('search-input').addEventListener('input', (e) => render(e.target.value));
         
         document.getElementById('logout-btn').onclick = () => {
@@ -312,15 +358,20 @@
                 setTimeout(() => document.getElementById('app-container').classList.add('opacity-100'), 50);
                 document.getElementById('user-display').innerText = u;
                 init();
-            } else { document.getElementById('login-msg').classList.remove('hidden'); }
+            } else { 
+                const msg = document.getElementById('login-msg');
+                msg.classList.remove('hidden');
+                msg.parentElement.classList.add('animate-pulse');
+                setTimeout(() => msg.parentElement.classList.remove('animate-pulse'), 500);
+            }
         };
 
         document.getElementById('form-file').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             const label = document.getElementById('file-label');
-            if (!file) { label.innerText = "Nenhum arquivo"; return; }
+            if (!file) { label.innerText = "Clique para selecionar"; return; }
             
-            label.innerText = file.name; // Mostra nome do arquivo
+            label.innerText = file.name.length > 25 ? file.name.substring(0,22)+'...' : file.name;
 
             if (file.type === 'application/pdf') {
                 toggleLoader(true, "Analisando Fatura...");
@@ -332,14 +383,13 @@
                         document.getElementById('form-cat').value = "Contas";
                         document.getElementById('parsed-details').value = JSON.stringify(result.breakdown);
                         document.getElementById('pdf-status').classList.remove('hidden');
-                        document.getElementById('pdf-status').innerText = `✓ PDF Lido! Total detectado: ${fmtMoney(result.total)}`;
+                        document.getElementById('pdf-status').innerText = `✓ PDF Lido: ${fmtMoney(result.total)}`;
                     }
                 } catch(err) { console.log(err); }
                 toggleLoader(false);
             }
         });
 
-        // --- CORE LOGIC ---
         async function loadData() {
             toggleLoader(true);
             try {
@@ -357,55 +407,45 @@
             const monthKey = currentDate.toISOString().slice(0, 7);
             document.getElementById('current-month').innerText = currentDate.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
             
-            // Filtros
             let curExpenses = expenses.filter(e => e.date.startsWith(monthKey)).sort((a,b) => new Date(b.date) - new Date(a.date));
             
             if (filterText) {
                 const t = filterText.toLowerCase();
-                curExpenses = curExpenses.filter(e => 
-                    e.description.toLowerCase().includes(t) || 
-                    e.category.toLowerCase().includes(t) ||
-                    e.value.toString().includes(t)
-                );
+                curExpenses = curExpenses.filter(e => e.description.toLowerCase().includes(t) || e.category.toLowerCase().includes(t) || e.value.toString().includes(t));
             }
 
             document.getElementById('count-badge').innerText = curExpenses.length;
 
-            // Resumo Financeiro
             const inc = incomeData[monthKey] || {s1:'', s2:''};
             document.getElementById('income1').value = inc.s1;
             document.getElementById('income2').value = inc.s2;
 
-            // Totais (Sempre do Mês, ignora busca para não quebrar saldo)
             const allMonth = expenses.filter(e => e.date.startsWith(monthKey));
             const totalExp = allMonth.reduce((a,b) => a + b.value, 0);
             const totalInc = (parseFloat(inc.s1)||0) + (parseFloat(inc.s2)||0);
             const balance = totalInc - totalExp;
             
-            // Barra de Progresso Visual
             const percent = totalInc > 0 ? Math.min((totalExp / totalInc) * 100, 100) : 0;
             const barColor = percent > 90 ? 'bg-red-500' : (percent > 75 ? 'bg-orange-500' : 'bg-emerald-500');
 
             document.getElementById('summary-display').innerHTML = `
                 <div class="glass-card p-4 rounded-xl">
-                    <div class="flex justify-between text-xs text-gray-400 mb-1"><span>Progresso do Mês</span><span>${Math.round(percent)}% da renda</span></div>
-                    <div class="w-full bg-gray-700 rounded-full h-2 mb-4"><div class="${barColor} h-2 rounded-full transition-all duration-500" style="width: ${percent}%"></div></div>
-                    <div class="flex justify-between items-center mb-2"><span class="text-gray-400 text-sm">Entradas</span><span class="font-bold text-green-400">${fmtMoney(totalInc)}</span></div>
-                    <div class="flex justify-between items-center mb-2"><span class="text-gray-400 text-sm">Saídas</span><span class="font-bold text-red-400">${fmtMoney(totalExp)}</span></div>
-                    <div class="mt-3 pt-3 border-t border-white/10 flex justify-between items-center"><span class="font-bold text-white">Saldo Restante</span><span class="font-bold text-xl ${balance>=0?'text-emerald-400':'text-red-400'}">${fmtMoney(balance)}</span></div>
+                    <div class="flex justify-between text-[10px] text-gray-400 mb-1 uppercase font-bold"><span>Consumo da Renda</span><span>${Math.round(percent)}%</span></div>
+                    <div class="w-full bg-gray-700 rounded-full h-1.5 mb-4 overflow-hidden"><div class="${barColor} h-full rounded-full transition-all duration-500" style="width: ${percent}%"></div></div>
+                    <div class="flex justify-between items-center mb-2"><span class="text-gray-400 text-sm font-medium">Entradas</span><span class="font-bold text-emerald-400">${fmtMoney(totalInc)}</span></div>
+                    <div class="flex justify-between items-center mb-2"><span class="text-gray-400 text-sm font-medium">Saídas</span><span class="font-bold text-red-400">${fmtMoney(totalExp)}</span></div>
+                    <div class="mt-3 pt-3 border-t border-white/10 flex justify-between items-center"><span class="font-bold text-white text-sm">Saldo</span><span class="font-bold text-lg ${balance>=0?'text-emerald-400':'text-red-400'}">${fmtMoney(balance)}</span></div>
                 </div>
             `;
 
-            // Lista
             const listEl = document.getElementById('expense-list');
             listEl.innerHTML = '';
             
             if(!curExpenses.length) {
-                // Empty State
                 listEl.innerHTML = `
-                    <div class="h-full flex flex-col items-center justify-center text-gray-500 opacity-50">
+                    <div class="h-full flex flex-col items-center justify-center text-gray-500 opacity-40">
                         <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-                        <p>Nenhum lançamento encontrado.</p>
+                        <p>Nada por aqui...</p>
                     </div>`;
             } else {
                 curExpenses.forEach(item => {
@@ -418,23 +458,23 @@
                     
                     if (hasDetails) {
                         clickAction = `onclick="openInvoiceDetails('${item.id}')"`;
-                        actionBadge = `<span class="ml-2 text-[10px] font-bold bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30 tracking-wider uppercase">Fatura</span>`;
+                        actionBadge = `<span class="ml-2 text-[10px] font-bold bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/30 uppercase">Fatura</span>`;
                     } else if (item.attachment) {
-                         actionBadge = `<span class="ml-2 text-[10px] text-gray-500 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg> Anexo</span>`;
+                         actionBadge = `<span class="ml-2 text-[10px] text-gray-500 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg></span>`;
                     }
 
                     listEl.innerHTML += `
-                        <div ${clickAction} class="expense-item bg-gray-800/40 p-3 rounded-xl flex items-center justify-between border-l-4 mb-2 group border-white/5" style="border-left-color: ${color}">
+                        <div ${clickAction} class="expense-item bg-gray-800/40 p-3 rounded-xl flex items-center justify-between border-l-[3px] mb-2 group border-white/5" style="border-left-color: ${color}">
                             <div class="flex items-center gap-4 overflow-hidden">
-                                <div class="bg-gray-900 w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-gray-400 shrink-0 shadow-inner">${day}</div>
+                                <div class="bg-gray-900 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-gray-400 shrink-0 shadow-inner border border-white/5">${day}</div>
                                 <div class="min-w-0">
-                                    <p class="font-semibold text-white truncate group-hover:text-indigo-300 transition-colors">${item.description}</p>
-                                    <p class="text-xs text-gray-400 flex items-center mt-0.5">${item.category} ${actionBadge}</p>
+                                    <p class="font-semibold text-white truncate text-sm group-hover:text-indigo-300 transition-colors">${item.description}</p>
+                                    <p class="text-[11px] text-gray-400 flex items-center mt-0.5">${item.category} ${actionBadge}</p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-3">
-                                <span class="font-bold text-white whitespace-nowrap text-sm md:text-base">${fmtMoney(item.value)}</span>
-                                <button onclick="deleteDirectly('${item.id}', event)" class="text-gray-600 hover:text-red-400 p-2 rounded-lg hover:bg-white/5 transition-all opacity-0 group-hover:opacity-100" title="Excluir">
+                                <span class="font-bold text-white whitespace-nowrap text-sm">${fmtMoney(item.value)}</span>
+                                <button onclick="deleteDirectly('${item.id}', event)" class="text-gray-600 hover:text-red-400 p-2 rounded-lg hover:bg-white/5 transition-all opacity-0 group-hover:opacity-100 group-active:opacity-100" title="Excluir">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                 </button>
                             </div>
@@ -445,8 +485,7 @@
             updateMainChart(allMonthExpenses);
         }
 
-        // --- CRUD & PARSING ---
-        
+        // --- PDF & CRUD ---
         async function parsePDF(file) {
             const buff = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument(buff).promise;
@@ -455,14 +494,13 @@
             
             for(let i=1; i<=pdf.numPages; i++) {
                 const text = (await (await pdf.getPage(i)).getTextContent()).items.map(s => s.str).join(' ');
-                // Regex ajustado para não pegar datas soltas, apenas linhas de compra
                 const regex = /(\d{2}\/\d{2})\s+(.*?)\s+(-?[\d\.]*?[\d]+,\d{2})/g; 
                 let match;
                 while ((match = regex.exec(text)) !== null) {
                     let desc = match[2].trim().toUpperCase();
                     let valStr = match[3];
                     
-                    if(desc.match(/PAGAMENTO|SALDO|TOTAL|PARCELAMENTO|LIMITE|VENCIMENTO|MULTA|JUROS/)) continue; // Filtro Extra
+                    if(desc.match(/PAGAMENTO|SALDO|TOTAL|PARCELAMENTO|LIMITE|VENCIMENTO|MULTA|JUROS/)) continue;
                     
                     let val = parseFloat(valStr.replace('.','').replace(',','.'));
                     if(isNaN(val) || val <= 0) continue;
@@ -529,7 +567,7 @@
         document.getElementById('income1').onchange = saveIncome;
         document.getElementById('income2').onchange = saveIncome;
 
-        // --- MODALS & UTILS ---
+        // --- MODALS ---
         function openInvoiceDetails(id) {
             currentEditId = id;
             const item = expenses.find(e => e.id === id);
@@ -573,15 +611,19 @@
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '70%' }
                 });
             }
-            document.getElementById('invoice-details-modal').classList.remove('hidden');
-            document.getElementById('invoice-details-modal').classList.add('flex');
+            // Transição suave
+            const modal = document.getElementById('invoice-details-modal');
+            const content = document.getElementById('invoice-modal-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.add('opacity-100'); content.classList.remove('scale-95'); }, 10);
+            modal.classList.add('flex');
         }
 
         function openModal(id = null, isImport = false) {
             currentEditId = id;
             document.getElementById('delete-btn').classList.add('hidden');
             document.getElementById('pdf-status').classList.add('hidden');
-            document.getElementById('file-label').innerText = "Nenhum arquivo selecionado";
+            document.getElementById('file-label').innerText = "Clique para selecionar";
             document.getElementById('parsed-details').value = "";
             
             if(id) {
@@ -600,8 +642,12 @@
                 document.getElementById('existing-file').value = '';
                 if(isImport) setTimeout(() => document.getElementById('form-file').click(), 300);
             }
-            document.getElementById('expense-modal').classList.remove('hidden');
-            document.getElementById('expense-modal').classList.add('flex');
+            
+            const modal = document.getElementById('expense-modal');
+            const content = document.getElementById('expense-modal-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.add('opacity-100'); content.classList.remove('scale-95'); }, 10);
+            modal.classList.add('flex');
         }
 
         async function deleteDirectly(id, event) { event.stopPropagation(); currentEditId = id; deleteItem(); }
@@ -626,7 +672,7 @@
             mainChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: Object.keys(cats).map(k=>COLORS[k]||'#666'), borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '70%' }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#fff', font: {size: 10} } } }, cutout: '70%' }
             });
         }
 
@@ -634,7 +680,13 @@
             document.getElementById('loading-overlay').style.display = s ? 'flex' : 'none'; 
             document.getElementById('loading-text').innerText = t;
         }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
+        function closeModal(id) { 
+            const modal = document.getElementById(id);
+            const content = modal.firstElementChild; // O card dentro do modal
+            modal.classList.remove('opacity-100');
+            content.classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
+        }
         function fmtMoney(v) { return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
 
         document.getElementById('prev-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()-1); loadData(); };

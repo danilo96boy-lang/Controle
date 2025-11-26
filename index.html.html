@@ -444,18 +444,18 @@
             let total = 0;
 
             for (let m of matches) {
-                let desc = m.desc.trim().toUpperCase();
+                let desc = m.desc.toUpperCase().replace(/\s+/g, ' '); // Normaliza descrição para busca
                 let rawVal = m.valStr;
 
                 // Filtros Universais
                 if(desc.includes("SALDO") || desc.includes("TOTAL") || desc.includes("LIMITE") || desc.includes("VENCIMENTO") || desc.includes("HISTÓRICO")) continue;
                 
-                // --- FILTRO DE PAGAMENTO DO INTER (CRÍTICO) ---
+                // --- FILTRO DE PAGAMENTO DO INTER (CRÍTICO E BLINDADO) ---
                 if(m.type === 'inter') {
                     // 1. Se tiver sinal de "+" em qualquer lugar do valor, é crédito/pagamento.
                     if (rawVal.includes("+")) continue; 
                     
-                    // 2. Palavras-chave de pagamento/crédito
+                    // 2. Palavras-chave de pagamento/crédito (Lista Negra Estrita)
                     if (desc.includes("PAGAMENTO") || desc.includes("ON LINE") || desc.includes("CREDITO") || desc.includes("ANTECIPAÇÃO")) continue;
                 }
 

@@ -262,6 +262,7 @@
         const userId = 'casal_principal';
 
         const USERS = { 'gabi': '19071996', 'danilo': '08042020' };
+        // CATEGORIAS ATUALIZADAS COM CARTÕES SEPARADOS
         const CATEGORIES = ['Mercado', 'Contas', 'Apartamento', 'Carro', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Poupança Maria Luisa', 'Reserva', 'Cartão Inter', 'Cartão Santander', 'Outros'];
         const COLORS = { 'Mercado': '#f59e0b', 'Contas': '#10b981', 'Apartamento': '#a855f7', 'Carro': '#3b82f6', 'Lazer': '#ef4444', 'Delivery': '#d946ef', 'Posto': '#ea580c', 'Farmácia': '#84cc16', 'Cartão Inter': '#FF7A00', 'Cartão Santander': '#CC0000', 'Outros': '#6b7280' };
         
@@ -328,10 +329,11 @@
                     const result = await parsePDF(file);
                     if (result && result.total > 0) {
                         document.getElementById('form-val').value = result.total;
+                        
                         const bankName = result.bank === 'Inter' ? 'Inter' : (result.bank === 'Santander' ? 'Santander' : 'Cartão');
                         document.getElementById('form-desc').value = `Fatura ${bankName}`;
                         
-                        // Auto-selecionar categoria correta se existir
+                        // Auto-selecionar categoria correta
                         if (result.bank === 'Inter') {
                             document.getElementById('form-cat').value = "Cartão Inter";
                         } else if (result.bank === 'Santander') {

@@ -388,84 +388,82 @@
             btn.innerText = "Salvar"; btn.disabled = false;
         };
 
-        // --- LÓGICA DE PARSE HÍBRIDA (INTER + SANTANDER) ---
+        // --- LÓGICA DE PARSE UNIVERSAL (TENTATIVA DUPLA) ---
         async function parsePDF(file) {
             const buff = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument(buff).promise;
-            let breakdown = {};
-            let total = 0;
-            let detectedBank = 'Desconhecido';
             let fullText = "";
             
-            // 1. Extrair Texto Completo
+            // 1. Extrair Texto
             for(let i=1; i<=pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
                 const content = await page.getTextContent();
+                // Join com espaço para evitar colagem de palavras (ex: 2025Mercado)
                 fullText += content.items.map(s => s.str).join(' ') + " ";
             }
 
-            // 2. Detectar Banco
-            if (fullText.includes("Santander") && fullText.includes("Detalhamento da Fatura")) {
-                detectedBank = "Santander";
-            } else if (fullText.toLowerCase().includes("inter") && fullText.toLowerCase().includes("despesas da fatura")) {
-                detectedBank = "Inter";
+            // 2. Definir Estratégias (Regex)
+            // Inter: Data (DD de MMM), Descrição, R$ Obrigatório
+            const regexInter = /(\d{1,2})\s+de\s+([a-zç]+)\.?\s+(\d{4})\s+(.*?)\s+(R\$\s*[+-]?\s*[\d\.]*?,\d{2})/gi;
+            
+            // Santander: Data (DD/MM), Descrição, Valor SEM R$ Obrigatório (final de linha)
+            const regexSantander = /(\d{2}\/\d{2})\s+(.+?)(?:\s+\d{1,2}\/\d{1,2})?\s+([-]?\d{1,3}(?:\.\d{3})*,\d{2})/g;
+
+            // 3. Tentar Inter Primeiro
+            let matches = [];
+            let detectedBank = "";
+            
+            let match;
+            // Executa busca Inter
+            while ((match = regexInter.exec(fullText)) !== null) {
+                matches.push({
+                    date: match[1],
+                    month: match[2],
+                    desc: match[4],
+                    valStr: match[5],
+                    type: 'inter'
+                });
             }
 
-            // 3. Aplicar Regex Específico
-            let matches = [];
-            
-            if (detectedBank === "Inter") {
-                // Formato: 23 de out. 2025 Descrição R$ 100,00 ou + R$ 100,00
-                // Captura o R$ e o sinal se houver
-                const regexInter = /(\d{1,2})\s+de\s+([a-zç]+)\.?\s+\d{4}\s+(.*?)\s+((?:R\$|)\s*[+-]?\s*[\d\.]*?[\d]+,\d{2}|[+-]?\s*R\$\s*[\d\.]*?[\d]+,\d{2})/gi;
-                let match;
-                while ((match = regexInter.exec(fullText)) !== null) {
-                    matches.push({
-                        date: match[1],
-                        month: match[2],
-                        desc: match[3],
-                        valStr: match[4],
-                        isSantander: false
-                    });
-                }
-            } 
-            else {
-                // Padrão Genérico/Santander (DD/MM Descrição Valor)
-                // Ex: 06/10 AMAZONPRIMEBR 19,90 (sem R$)
-                // Regex procura: DATA | DESCRIÇÃO | PARCELA? | VALOR
-                const regexSantander = /(\d{2}\/\d{2})\s+(.+?)(?:\s+\d{1,2}\/\d{1,2})?\s+([-]?\d{1,3}(?:\.\d{3})*,\d{2})/g;
-                let match;
+            // Se encontrou itens do Inter, define banco e segue
+            if (matches.length > 0) {
+                detectedBank = "Inter";
+            } else {
+                // Se NÃO encontrou Inter, tenta Santander
                 while ((match = regexSantander.exec(fullText)) !== null) {
                     matches.push({
                         date: match[1],
                         desc: match[2],
                         valStr: match[3],
-                        isSantander: true
+                        type: 'santander'
                     });
                 }
+                if(matches.length > 0) detectedBank = "Santander";
             }
 
-            // 4. Processar Itens
+            // 4. Processar Itens Encontrados
+            let breakdown = {};
+            let total = 0;
+
             for (let m of matches) {
                 let desc = m.desc.trim().toUpperCase();
                 
-                // Filtros de Exclusão Universais
+                // Filtros Universais (Ignorar lixo)
                 if(desc.includes("SALDO") || desc.includes("TOTAL") || desc.includes("LIMITE") || desc.includes("VENCIMENTO") || desc.includes("HISTÓRICO")) continue;
                 
-                // Filtros Específicos para Inter (Pagamentos, Créditos)
-                if(!m.isSantander && (desc.includes("PAGAMENTO") || desc.includes("CRÉDITO") || desc.includes("ANTECIPAÇÃO"))) continue;
+                // Filtros Específicos
+                if(m.type === 'inter' && (desc.includes("PAGAMENTO") || desc.includes("CRÉDITO") || desc.includes("ANTECIPAÇÃO"))) continue;
+                if(m.type === 'santander' && (desc.includes("PAGAMENTO") && desc.includes("FATURA"))) continue;
 
-                // Valor
+                // Limpar Valor
                 let valStr = m.valStr.replace('R$','').replace('+','').trim();
                 let cleanVal = valStr.replace('.','').replace(',','.');
                 let val = parseFloat(cleanVal);
                 
-                // Santander: Valores negativos são pagamentos/créditos -> ignorar
-                if(m.isSantander && val < 0) continue; 
+                // Regras de Sinal
+                if(m.type === 'santander' && val < 0) continue; // Santander: negativo é pagamento
+                if(m.type === 'inter' && m.valStr.includes("+")) continue; // Inter: sinal + é crédito
                 
-                // Inter: Validação extra caso o regex tenha pego um pagamento com "+"
-                if(!m.isSantander && m.valStr.includes("+")) continue;
-
                 if(isNaN(val) || val <= 0) continue;
 
                 // Categorização
@@ -483,7 +481,7 @@
                 total += val;
             }
 
-            return { breakdown, total: parseFloat(total.toFixed(2)), bank: detectedBank };
+            return { breakdown, total: parseFloat(total.toFixed(2)), bank: detectedBank || "Desconhecido" };
         }
 
         function openInvoiceDetails(id) {

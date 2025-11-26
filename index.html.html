@@ -46,6 +46,9 @@
         #loading-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Garante altura para o gráfico */
+        .chart-wrapper { position: relative; height: 250px; width: 100%; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen p-4 md:p-6 lg:p-8 selection:bg-indigo-500 selection:text-white">
@@ -114,9 +117,10 @@
                 <div id="summary-display" class="space-y-3 shrink-0"></div>
 
                 <div class="glass-card p-6 rounded-2xl flex flex-col flex-grow min-h-[350px]">
-                    <h4 class="font-bold text-gray-400 mb-2 text-xs uppercase tracking-wider text-center">Visão Geral</h4>
-                    <div class="relative w-full h-64 flex items-center justify-center">
+                    <h4 class="font-bold text-gray-400 mb-4 text-xs uppercase tracking-wider text-center">Visão Geral do Mês</h4>
+                    <div class="chart-wrapper">
                         <canvas id="expenseChart"></canvas>
+                        <div id="no-data-msg" class="absolute text-gray-500 text-sm hidden">Sem gastos este mês</div>
                     </div>
                 </div>
             </div>
@@ -210,7 +214,7 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 overflow-hidden h-full">
                 <div class="flex flex-col items-center justify-center bg-gray-900/30 p-6 rounded-xl border border-white/5">
-                    <div class="sub-chart-container w-full h-64"><canvas id="invoiceChart"></canvas></div>
+                    <div class="chart-wrapper"><canvas id="invoiceChart"></canvas></div>
                 </div>
                 <div class="flex flex-col h-full overflow-hidden">
                     <div class="flex justify-between items-center mb-3"><h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Categorias</h4></div>
@@ -222,7 +226,7 @@
     </div>
 
     <script>
-        // === LÓGICA DO APP ===
+        // === LÓGICA ===
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
         const firebaseConfig = { apiKey: "AIzaSyBf1nzx6mH1lWckWQyXDnWZKLlh-5cfcv0", authDomain: "controle-a9909.firebaseapp.com", projectId: "controle-a9909", storageBucket: "controle-a9909.appspot.com", messagingSenderId: "43886457318", appId: "1:43886457318:web:289e82579a38c28fefa627" };
@@ -357,49 +361,48 @@
             updateMainChart(allMonthExpenses);
         }
 
-        // CHART CONFIG CORRIGIDA (Legenda Visível)
+        // --- CHART ATUALIZADO (FIX) ---
         function updateMainChart(data) {
             const ctx = document.getElementById('expenseChart').getContext('2d');
+            const noDataMsg = document.getElementById('no-data-msg');
+            
             if(mainChart) mainChart.destroy();
+            
+            // Soma valores por categoria
             const cats = {};
-            data.forEach(d => cats[d.category] = (cats[d.category]||0) + d.value);
+            let hasData = false;
+            data.forEach(d => {
+                cats[d.category] = (cats[d.category]||0) + d.value;
+                if(d.value > 0) hasData = true;
+            });
+
+            if (!hasData) {
+                noDataMsg.classList.remove('hidden');
+                return;
+            } else {
+                noDataMsg.classList.add('hidden');
+            }
+
             mainChart = new Chart(ctx, {
                 type: 'doughnut',
-                data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: Object.keys(cats).map(k=>COLORS[k]||'#666'), borderWidth: 0 }] },
+                data: { 
+                    labels: Object.keys(cats), 
+                    datasets: [{ 
+                        data: Object.values(cats), 
+                        backgroundColor: Object.keys(cats).map(k=>COLORS[k]||'#666'), 
+                        borderWidth: 0 
+                    }] 
+                },
                 options: { 
                     responsive: true, 
                     maintainAspectRatio: false, 
                     cutout: '70%',
                     plugins: {
-                        legend: { display: true, position: 'bottom', labels: { color: '#9ca3af', boxWidth: 8, font: { size: 10 } } }
+                        legend: { display: true, position: 'bottom', labels: { color: '#9ca3af', boxWidth: 8, font: { size: 10 }, padding: 15 } }
                     }
                 }
             });
         }
-
-        // RESTO DAS FUNÇÕES (CRUD, PDF)
-        document.getElementById('search-input').addEventListener('input', (e) => render(e.target.value));
-        document.getElementById('logout-btn').onclick = () => { document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-container').classList.add('hidden'); document.getElementById('app-container').classList.remove('opacity-100'); document.getElementById('pass').value = ''; };
-        document.getElementById('form-file').addEventListener('change', async (e) => {
-            const file = e.target.files[0]; const label = document.getElementById('file-label');
-            if (!file) { label.innerText = "Clique para selecionar"; return; }
-            label.innerText = file.name.length > 25 ? file.name.substring(0,22)+'...' : file.name;
-            if (file.type === 'application/pdf') {
-                toggleLoader(true, "Analisando Fatura...");
-                try {
-                    const result = await parsePDF(file);
-                    if (result && result.total > 0) {
-                        document.getElementById('form-val').value = result.total;
-                        document.getElementById('form-desc').value = "Fatura Cartão";
-                        document.getElementById('form-cat').value = "Contas";
-                        document.getElementById('parsed-details').value = JSON.stringify(result.breakdown);
-                        document.getElementById('pdf-status').classList.remove('hidden');
-                        document.getElementById('pdf-status').innerText = `✓ Total: ${fmtMoney(result.total)}`;
-                    }
-                } catch(err) { console.log(err); }
-                toggleLoader(false);
-            }
-        });
 
         document.getElementById('expense-form').onsubmit = async (e) => {
             e.preventDefault();

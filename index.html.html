@@ -8,7 +8,6 @@
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/10562/10562363.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -25,10 +24,8 @@
             background-image: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 25%),
                               radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 25%);
             background-attachment: fixed;
-            overscroll-behavior-y: none;
         }
         
-        /* Glassmorphism */
         .glass-card {
             background: rgba(30, 41, 59, 0.75);
             backdrop-filter: blur(16px);
@@ -37,7 +34,6 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
 
-        /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
@@ -47,25 +43,20 @@
         
         input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         
-        /* Loading & Chart Fix */
         #loading-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        .chart-container-fix { position: relative; height: 260px; width: 100%; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen p-4 md:p-6 lg:p-8 selection:bg-indigo-500 selection:text-white">
 
     <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-[#0f172a] p-4">
         <div class="glass-card p-8 rounded-2xl w-full max-w-sm text-center relative overflow-hidden border border-gray-700/50">
-            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
-            <h2 class="text-2xl font-bold mb-2 text-white mt-4">Bem-vindo</h2>
-            <p class="text-gray-400 text-sm mb-6">Painel Financeiro Seguro</p>
-            <form id="login-form" class="space-y-4">
-                <input type="text" id="user" placeholder="Usuário" class="w-full p-3.5 bg-gray-900/60 border border-gray-700 rounded-xl text-white text-center focus:border-indigo-500 outline-none transition-all placeholder-gray-600">
-                <input type="password" id="pass" placeholder="Senha" class="w-full p-3.5 bg-gray-900/60 border border-gray-700 rounded-xl text-white text-center focus:border-indigo-500 outline-none transition-all placeholder-gray-600">
-                <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 py-3.5 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/20 transition-all transform active:scale-95">Acessar</button>
+            <h2 class="text-2xl font-bold mb-2 text-white">Bem-vindo</h2>
+            <form id="login-form" class="space-y-4 mt-6">
+                <input type="text" id="user" placeholder="Usuário" class="w-full p-3.5 bg-gray-900/60 border border-gray-700 rounded-xl text-white text-center focus:border-indigo-500 outline-none">
+                <input type="password" id="pass" placeholder="Senha" class="w-full p-3.5 bg-gray-900/60 border border-gray-700 rounded-xl text-white text-center focus:border-indigo-500 outline-none">
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 py-3.5 rounded-xl font-bold text-white shadow-lg transition-all">Acessar</button>
             </form>
             <p id="login-msg" class="text-red-400 text-xs mt-4 hidden font-medium bg-red-500/10 py-2 rounded">Acesso Negado</p>
         </div>
@@ -80,9 +71,7 @@
         
         <header class="flex flex-col md:flex-row justify-between items-center mb-6 gap-6">
             <div class="text-center md:text-left">
-                <h1 class="text-3xl font-bold text-white tracking-tight flex items-center gap-2 justify-center md:justify-start">
-                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">Finanças</span>
-                </h1>
+                <h1 class="text-3xl font-bold text-white tracking-tight">Finanças</h1>
                 <p class="text-gray-400 text-sm mt-1 flex items-center gap-2 justify-center md:justify-start">
                     <span class="w-2 h-2 rounded-full bg-green-500"></span>
                     <span id="user-display" class="text-white font-bold capitalize"></span>
@@ -106,7 +95,6 @@
             <div class="lg:col-span-4 flex flex-col gap-6 h-full">
                 
                 <div class="glass-card p-6 rounded-2xl relative overflow-hidden group shrink-0">
-                    <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><svg class="w-32 h-32 text-indigo-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05 1.18 1.91 2.53 1.91 1.29 0 2.13-.72 2.13-1.55 0-.8-.67-1.17-1.98-1.48l-1.46-.39c-2.07-.55-3.03-1.76-3.03-3.12 0-1.77 1.46-2.96 3.12-3.3V4h2.67v1.93c1.71.36 3.13 1.41 3.27 3.31h-1.96c-.12-.94-1.02-1.67-2.32-1.67-1.23 0-2.04.72-2.04 1.55 0 .74.63 1.13 1.96 1.46l1.46.39c2.17.59 3.16 1.91 3.16 3.3 0 1.8-1.37 3.07-3.15 3.42z"/></svg></div>
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Renda Mensal</h3>
                         <span id="income-saved-msg" class="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded border border-green-500/20 font-bold opacity-0 transition-opacity">Salvo</span>
@@ -125,14 +113,10 @@
 
                 <div id="summary-display" class="space-y-3 shrink-0"></div>
 
-                <div class="glass-card p-6 rounded-2xl flex flex-col flex-grow min-h-[350px]">
-                    <h4 class="font-bold text-gray-400 mb-2 text-xs uppercase tracking-wider text-center">Visão Geral (Mês Atual)</h4>
-                    <div class="chart-container-fix">
+                <div class="glass-card p-6 rounded-2xl flex flex-col">
+                    <h4 class="font-bold text-gray-400 mb-4 text-xs uppercase tracking-wider text-center">Visão Geral (Mês Atual)</h4>
+                    <div class="relative w-full h-64">
                         <canvas id="expenseChart"></canvas>
-                        <div id="chart-fallback" class="absolute inset-0 flex items-center justify-center text-gray-500 text-xs hidden flex-col">
-                            <svg class="w-12 h-12 mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                            <span>Sem dados</span>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -147,8 +131,8 @@
                         </div>
                         
                         <div class="flex items-center gap-2">
-                            <button onclick="document.getElementById('export-btn').click()" class="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition border border-transparent hover:border-white/10" title="Backup">💾</button>
-                            <label for="import-json" class="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition cursor-pointer border border-transparent hover:border-white/10" title="Restaurar">📂</label>
+                            <button onclick="document.getElementById('export-btn').click()" class="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition" title="Backup">💾</button>
+                            <label for="import-json" class="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition cursor-pointer" title="Restaurar">📂</label>
                             <input type="file" id="import-json" class="hidden" accept=".json">
                             
                             <div class="h-6 w-px bg-white/10 mx-2"></div>
@@ -163,8 +147,8 @@
                     </div>
 
                     <div class="relative group">
-                        <svg class="absolute left-3 top-3 h-4 w-4 text-gray-500 group-focus-within:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                        <input type="text" id="search-input" placeholder="Filtrar lançamentos por nome, categoria ou valor..." class="w-full bg-gray-900/50 border border-gray-700 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:border-indigo-500 focus:bg-gray-900 outline-none transition-all placeholder-gray-600">
+                        <svg class="absolute left-3 top-3 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        <input type="text" id="search-input" placeholder="Filtrar lançamentos..." class="w-full bg-gray-900/50 border border-gray-700 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:border-indigo-500 focus:bg-gray-900 outline-none transition-all placeholder-gray-600">
                     </div>
                 </div>
                 
@@ -226,7 +210,7 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 overflow-hidden h-full">
                 <div class="flex flex-col items-center justify-center bg-gray-900/30 p-6 rounded-xl border border-white/5">
-                    <div class="chart-container-fix w-full h-64"><canvas id="invoiceChart"></canvas></div>
+                    <div class="relative w-full h-64"><canvas id="invoiceChart"></canvas></div>
                 </div>
                 <div class="flex flex-col h-full overflow-hidden">
                     <div class="flex justify-between items-center mb-3"><h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Categorias</h4></div>
@@ -372,37 +356,15 @@
             updateMainChart(allMonthExpenses);
         }
 
-        // CHART CONFIG CORRIGIDA
         function updateMainChart(data) {
             const ctx = document.getElementById('expenseChart').getContext('2d');
-            const fallback = document.getElementById('chart-fallback');
-            
             if(mainChart) mainChart.destroy();
-            
             const cats = {};
-            let hasValues = false;
-            data.forEach(d => {
-                cats[d.category] = (cats[d.category]||0) + d.value;
-                if(d.value > 0) hasValues = true;
-            });
-
-            if(!hasValues) {
-                if(fallback) fallback.classList.remove('hidden');
-                return;
-            }
-            if(fallback) fallback.classList.add('hidden');
-
+            data.forEach(d => cats[d.category] = (cats[d.category]||0) + d.value);
             mainChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: Object.keys(cats).map(k=>COLORS[k]||'#666'), borderWidth: 0 }] },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    cutout: '70%',
-                    plugins: {
-                        legend: { display: true, position: 'bottom', labels: { color: '#9ca3af', boxWidth: 8, font: { size: 10 }, padding: 15 } }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: true, position: 'bottom', labels: { color: '#9ca3af', boxWidth: 8, font: { size: 10 }, padding: 15 } } } }
             });
         }
 
@@ -447,11 +409,12 @@
             let breakdown = {}, total = 0;
             for(let i=1; i<=pdf.numPages; i++) {
                 const text = (await (await pdf.getPage(i)).getTextContent()).items.map(s => s.str).join(' ');
+                // Regex híbrido
                 const regex = /((?:\d{2}\/\d{2})|(?:\d{2}\s+de\s+[a-zç]{3,}\.?))\s+(.*?)\s+(?:R\$\s*)?(-?[\d\.]*?[\d]+,\d{2})/gi; 
                 let match;
                 while ((match = regex.exec(text)) !== null) {
                     let desc = match[2].trim().toUpperCase(), valStr = match[3];
-                    if(desc.match(/PAGAMENTO|SALDO|TOTAL|PARCELAMENTO|LIMITE|VENCIMENTO|MULTA|JUROS|ENCARGOS/)) continue;
+                    if(desc.match(/PAGAMENTO|SALDO|TOTAL|PARCELAMENTO|LIMITE|VENCIMENTO|MULTA|JUROS|ENCARGOS|CRÉDITO|ANTECIPAÇÃO/)) continue;
                     let val = parseFloat(valStr.replace('.','').replace(',','.'));
                     if(isNaN(val) || val <= 0) continue;
                     let cat = 'Outros'; let descLower = desc.toLowerCase();

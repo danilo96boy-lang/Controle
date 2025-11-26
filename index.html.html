@@ -388,38 +388,37 @@
             btn.innerText = "Salvar"; btn.disabled = false;
         };
 
-        // --- LÓGICA DE PARSE UNIVERSAL (CORRIGIDA PARA PAGAMENTOS DO INTER) ---
+        // --- LÓGICA DE PARSE UNIVERSAL (CORRIGIDA PARA INTER) ---
         async function parsePDF(file) {
             const buff = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument(buff).promise;
             let fullText = "";
             
-            // 1. Extrair Texto
+            // 1. Extrair Texto (com separador seguro)
             for(let i=1; i<=pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
                 const content = await page.getTextContent();
-                // Join com espaço para evitar colagem de palavras
                 fullText += content.items.map(s => s.str).join(' ') + " ";
             }
 
             // 2. Definir Estratégias (Regex)
-            // Inter: Data, Mês, Ano, Descrição e Valor (incluindo R$ e sinal de +)
-            const regexInter = /(\d{1,2})\s+de\s+([a-zç]+)\.?\s+(\d{4})\s+(.*?)\s+([+-]?\s*R\$\s*[\d\.]*?,\d{2})/gi;
+            // Inter: Data (DD de MMM), Ano Opcional, Descrição, Valor (com R$ e sinal de +)
+            // Ajuste: O ano é opcional para capturar linhas onde ele pode ter sido quebrado
+            const regexInter = /(\d{1,2}\s+de\s+[a-zç]+\.?\s*(?:\d{4})?)\s+(.*?)\s+([+-]?\s*R\$\s*[\d\.]+,?\d{0,2})/gi;
             
-            // Santander: Data, Descrição e Valor (no final, sem R$)
+            // Santander: Data (DD/MM), Descrição, Valor (no final, sem R$)
             const regexSantander = /(\d{2}\/\d{2})\s+(.+?)(?:\s+\d{1,2}\/\d{1,2})?\s+([-]?\d{1,3}(?:\.\d{3})*,\d{2})/g;
 
             let matches = [];
             let detectedBank = "";
             let match;
 
-            // 3. Tentar Inter Primeiro
+            // 3. Tentar Inter Primeiro (com Regex mais flexível)
             while ((match = regexInter.exec(fullText)) !== null) {
                 matches.push({
                     date: match[1],
-                    month: match[2],
-                    desc: match[4],
-                    valStr: match[5], // Ex: "+ R$ 1.472,10"
+                    desc: match[2],
+                    valStr: match[3], // Ex: "+ R$ 1.472,10"
                     type: 'inter'
                 });
             }
@@ -446,17 +445,18 @@
             for (let m of matches) {
                 let desc = m.desc.trim().toUpperCase();
                 
-                // Filtros Universais (Ignorar cabeçalhos e rodapés)
+                // Filtros Universais
                 if(desc.includes("SALDO") || desc.includes("TOTAL") || desc.includes("LIMITE") || desc.includes("VENCIMENTO") || desc.includes("HISTÓRICO")) continue;
                 
                 // --- FILTRO CRÍTICO DO INTER ---
-                // Se a descrição contiver "PAGAMENTO" ou "ON LINE", ou se o valor tiver "+", IGNORA.
                 if(m.type === 'inter') {
+                    // Ignora linhas com palavras de pagamento
                     if (desc.includes("PAGAMENTO") || desc.includes("ON LINE") || desc.includes("CRÉDITO") || desc.includes("ANTECIPAÇÃO")) continue;
-                    if (m.valStr.includes("+")) continue; // Pega "+ R$ ..."
+                    // Ignora se tiver "+" no valor (pagamento/crédito)
+                    if (m.valStr.includes("+")) continue; 
                 }
 
-                // Filtro Santander (Pagamento de Fatura)
+                // Filtro Santander
                 if(m.type === 'santander' && (desc.includes("PAGAMENTO") && desc.includes("FATURA"))) continue;
 
                 // Limpar Valor

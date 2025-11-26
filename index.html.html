@@ -388,7 +388,7 @@
             btn.innerText = "Salvar"; btn.disabled = false;
         };
 
-        // --- LÓGICA DE PARSE UNIVERSAL (TENTATIVA DUPLA COM CORREÇÃO DE PAGAMENTOS) ---
+        // --- LÓGICA DE PARSE UNIVERSAL (CORRIGIDA PARA PAGAMENTOS DO INTER) ---
         async function parsePDF(file) {
             const buff = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument(buff).promise;
@@ -403,30 +403,27 @@
             }
 
             // 2. Definir Estratégias (Regex)
-            
-            // Inter: Captura opcional de sinal antes do R$ para pegar "+ R$ 100" (crédito)
+            // Inter: Data, Mês, Ano, Descrição e Valor (incluindo R$ e sinal de +)
             const regexInter = /(\d{1,2})\s+de\s+([a-zç]+)\.?\s+(\d{4})\s+(.*?)\s+([+-]?\s*R\$\s*[\d\.]*?,\d{2})/gi;
             
-            // Santander: Data (DD/MM), Descrição, Valor SEM R$ Obrigatório (final de linha)
+            // Santander: Data, Descrição e Valor (no final, sem R$)
             const regexSantander = /(\d{2}\/\d{2})\s+(.+?)(?:\s+\d{1,2}\/\d{1,2})?\s+([-]?\d{1,3}(?:\.\d{3})*,\d{2})/g;
 
-            // 3. Tentar Inter Primeiro
             let matches = [];
             let detectedBank = "";
-            
             let match;
-            // Executa busca Inter
+
+            // 3. Tentar Inter Primeiro
             while ((match = regexInter.exec(fullText)) !== null) {
                 matches.push({
                     date: match[1],
                     month: match[2],
                     desc: match[4],
-                    valStr: match[5],
+                    valStr: match[5], // Ex: "+ R$ 1.472,10"
                     type: 'inter'
                 });
             }
 
-            // Se encontrou itens do Inter, define banco e segue
             if (matches.length > 0) {
                 detectedBank = "Inter";
             } else {
@@ -442,22 +439,25 @@
                 if(matches.length > 0) detectedBank = "Santander";
             }
 
-            // 4. Processar Itens Encontrados
+            // 4. Processar e Filtrar Itens
             let breakdown = {};
             let total = 0;
 
             for (let m of matches) {
                 let desc = m.desc.trim().toUpperCase();
                 
-                // Filtros Universais (Ignorar lixo)
+                // Filtros Universais (Ignorar cabeçalhos e rodapés)
                 if(desc.includes("SALDO") || desc.includes("TOTAL") || desc.includes("LIMITE") || desc.includes("VENCIMENTO") || desc.includes("HISTÓRICO")) continue;
                 
-                // Filtros Específicos
-                if(m.type === 'inter' && (desc.includes("PAGAMENTO") || desc.includes("CRÉDITO") || desc.includes("ANTECIPAÇÃO"))) continue;
-                if(m.type === 'santander' && (desc.includes("PAGAMENTO") && desc.includes("FATURA"))) continue;
+                // --- FILTRO CRÍTICO DO INTER ---
+                // Se a descrição contiver "PAGAMENTO" ou "ON LINE", ou se o valor tiver "+", IGNORA.
+                if(m.type === 'inter') {
+                    if (desc.includes("PAGAMENTO") || desc.includes("ON LINE") || desc.includes("CRÉDITO") || desc.includes("ANTECIPAÇÃO")) continue;
+                    if (m.valStr.includes("+")) continue; // Pega "+ R$ ..."
+                }
 
-                // Verificação de Sinal para Inter antes de limpar
-                if(m.type === 'inter' && m.valStr.includes("+")) continue; // Ignora se tiver "+" no valor (pagamento/crédito)
+                // Filtro Santander (Pagamento de Fatura)
+                if(m.type === 'santander' && (desc.includes("PAGAMENTO") && desc.includes("FATURA"))) continue;
 
                 // Limpar Valor
                 let valStr = m.valStr.replace('R$','').replace('+','').trim();

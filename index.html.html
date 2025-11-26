@@ -388,7 +388,7 @@
             btn.innerText = "Salvar"; btn.disabled = false;
         };
 
-        // --- LÓGICA DE PARSE DE PDF REFEITA PARA FATURA INTER ---
+        // --- LÓGICA DE PARSE DE PDF REFEITA PARA FATURA INTER  ---
         async function parsePDF(file) {
             const buff = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument(buff).promise;
@@ -402,10 +402,6 @@
                 const text = content.items.map(s => s.str).join(' ');
 
                 // Regex ajustado para formato Inter: "23 de out. 2025 Descrição R$ 100,00"
-                // Grupo 1: Dia
-                // Grupo 2: Mês (extenso)
-                // Grupo 3: Descrição (captura tudo até chegar no R$)
-                // Grupo 4: Valor (com R$, espaços opcionais, e possível sinal de menos ou mais)
                 const regexInter = /(\d{1,2})\s+de\s+([a-zç]+)\.?\s+\d{4}\s+(.*?)\s+(R\$\s*[+-]?\s*[\d\.]*?[\d]+,\d{2})/gi;
                 
                 let match;
@@ -415,7 +411,7 @@
                     let desc = match[3].trim().toUpperCase();
                     let valStr = match[4]; // ex: R$ 147,73 ou + R$ 1.000,00
 
-                    // Filtros de ignorar linhas que não são despesas reais
+                    // Filtros de ignorar linhas que não são despesas reais [cite: 59, 11]
                     if(desc.includes("SALDO") || desc.includes("TOTAL") || desc.includes("LIMITE") || desc.includes("VENCIMENTO")) continue;
 
                     // Verificar se é pagamento/crédito (sinal de + ou palavras chave)

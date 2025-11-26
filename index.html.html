@@ -262,9 +262,8 @@
         const userId = 'casal_principal';
 
         const USERS = { 'gabi': '19071996', 'danilo': '08042020' };
-        // CATEGORIAS ATUALIZADAS COM CARTÕES SEPARADOS
-        const CATEGORIES = ['Mercado', 'Contas', 'Apartamento', 'Carro', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Poupança Maria Luisa', 'Reserva', 'Cartão Inter', 'Cartão Santander', 'Outros'];
-        const COLORS = { 'Mercado': '#f59e0b', 'Contas': '#10b981', 'Apartamento': '#a855f7', 'Carro': '#3b82f6', 'Lazer': '#ef4444', 'Delivery': '#d946ef', 'Posto': '#ea580c', 'Farmácia': '#84cc16', 'Cartão Inter': '#FF7A00', 'Cartão Santander': '#CC0000', 'Outros': '#6b7280' };
+        const CATEGORIES = ['Mercado', 'Contas', 'Apartamento', 'Carro', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Poupança Maria Luisa', 'Reserva', 'Outros'];
+        const COLORS = { 'Mercado': '#f59e0b', 'Contas': '#10b981', 'Apartamento': '#a855f7', 'Carro': '#3b82f6', 'Lazer': '#ef4444', 'Delivery': '#d946ef', 'Posto': '#ea580c', 'Farmácia': '#84cc16', 'Outros': '#6b7280' };
         
         const KEYWORDS = {
             'Uber/Transporte': ['uber', '99', 'sem parar', 'estacionamento', 'zona azul', 'pedagio', 'veloe'],
@@ -321,7 +320,7 @@
             const label = document.getElementById('file-label');
             if (!file) { label.innerText = "Nenhum arquivo"; return; }
             
-            label.innerText = file.name;
+            label.innerText = file.name; // Mostra nome do arquivo
 
             if (file.type === 'application/pdf') {
                 toggleLoader(true, "Analisando Fatura...");
@@ -329,26 +328,13 @@
                     const result = await parsePDF(file);
                     if (result && result.total > 0) {
                         document.getElementById('form-val').value = result.total;
-                        
-                        const bankName = result.bank === 'Inter' ? 'Inter' : (result.bank === 'Santander' ? 'Santander' : 'Cartão');
-                        document.getElementById('form-desc').value = `Fatura ${bankName}`;
-                        
-                        // Auto-selecionar categoria correta
-                        if (result.bank === 'Inter') {
-                            document.getElementById('form-cat').value = "Cartão Inter";
-                        } else if (result.bank === 'Santander') {
-                            document.getElementById('form-cat').value = "Cartão Santander";
-                        } else {
-                            document.getElementById('form-cat').value = "Contas";
-                        }
-
+                        document.getElementById('form-desc').value = "Fatura Cartão";
+                        document.getElementById('form-cat').value = "Contas";
                         document.getElementById('parsed-details').value = JSON.stringify(result.breakdown);
                         document.getElementById('pdf-status').classList.remove('hidden');
-                        document.getElementById('pdf-status').innerText = `✓ ${bankName} Lido! Total: ${fmtMoney(result.total)}`;
-                    } else {
-                        alert("Não foi possível identificar itens na fatura. Verifique se é do Inter ou Santander.");
+                        document.getElementById('pdf-status').innerText = `✓ PDF Lido! Total detectado: ${fmtMoney(result.total)}`;
                     }
-                } catch(err) { console.log(err); alert("Erro ao ler PDF"); }
+                } catch(err) { console.log(err); }
                 toggleLoader(false);
             }
         });
@@ -390,13 +376,13 @@
             document.getElementById('income1').value = inc.s1;
             document.getElementById('income2').value = inc.s2;
 
-            // Totais
+            // Totais (Sempre do Mês, ignora busca para não quebrar saldo)
             const allMonth = expenses.filter(e => e.date.startsWith(monthKey));
             const totalExp = allMonth.reduce((a,b) => a + b.value, 0);
             const totalInc = (parseFloat(inc.s1)||0) + (parseFloat(inc.s2)||0);
             const balance = totalInc - totalExp;
             
-            // Barra de Progresso
+            // Barra de Progresso Visual
             const percent = totalInc > 0 ? Math.min((totalExp / totalInc) * 100, 100) : 0;
             const barColor = percent > 90 ? 'bg-red-500' : (percent > 75 ? 'bg-orange-500' : 'bg-emerald-500');
 
@@ -415,6 +401,7 @@
             listEl.innerHTML = '';
             
             if(!curExpenses.length) {
+                // Empty State
                 listEl.innerHTML = `
                     <div class="h-full flex flex-col items-center justify-center text-gray-500 opacity-50">
                         <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
@@ -433,7 +420,7 @@
                         clickAction = `onclick="openInvoiceDetails('${item.id}')"`;
                         actionBadge = `<span class="ml-2 text-[10px] font-bold bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30 tracking-wider uppercase">Fatura</span>`;
                     } else if (item.attachment) {
-                          actionBadge = `<span class="ml-2 text-[10px] text-gray-500 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg> Anexo</span>`;
+                         actionBadge = `<span class="ml-2 text-[10px] text-gray-500 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg> Anexo</span>`;
                     }
 
                     listEl.innerHTML += `
@@ -458,76 +445,39 @@
             updateMainChart(allMonthExpenses);
         }
 
-        // --- PDF PARSING LOGIC (INTER & SANTANDER) ---
+        // --- CRUD & PARSING ---
         
         async function parsePDF(file) {
             const buff = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument(buff).promise;
-            let fullText = "";
-
-            // 1. Extração de Texto
-            for(let i=1; i<=pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const content = await page.getTextContent();
-                // Adiciona espaço entre os itens para evitar colagem de palavras
-                fullText += content.items.map(s => s.str).join('   ') + "\n";
-            }
-
-            // 2. Detecção do Banco e Configuração de Regex
-            let isInter = fullText.toLowerCase().includes("banco inter") || fullText.toLowerCase().includes("despesas da fatura");
-            let isSantander = fullText.includes("Santander") || fullText.includes("Detalhamento da Fatura");
-            
-            let matches = [];
             let breakdown = {};
             let total = 0;
-            let bankName = isInter ? 'Inter' : (isSantander ? 'Santander' : 'Desconhecido');
-
-            // 3. Estratégias de Leitura
-            if (isInter) {
-                // Regex Inter: Captura "DD de MMM. YYYY", Descrição e Valor (com ou sem +)
-                const regexInter = /(\d{1,2})\s+de\s+([a-zç]+)\.?\s+(\d{4})\s+(.*?)\s+([+-]?\s*R\$\s*[\d\.]+,?\d{2})/gi;
+            
+            for(let i=1; i<=pdf.numPages; i++) {
+                const text = (await (await pdf.getPage(i)).getTextContent()).items.map(s => s.str).join(' ');
+                // Regex ajustado para não pegar datas soltas, apenas linhas de compra
+                const regex = /(\d{2}\/\d{2})\s+(.*?)\s+(-?[\d\.]*?[\d]+,\d{2})/g; 
                 let match;
-                while ((match = regexInter.exec(fullText)) !== null) {
-                    let desc = match[4].trim().toUpperCase();
-                    let rawVal = match[5];
-
-                    // Filtros de exclusão do Inter
-                    if (rawVal.includes('+')) continue; // Ignora pagamentos/créditos
-                    if (desc.includes('PAGAMENTO') || desc.includes('SALDO') || desc.includes('TOTAL') || desc.includes('FATURA ANTERIOR')) continue;
-
-                    let val = parseFloat(rawVal.replace(/[R$\s.]/g, '').replace(',', '.'));
-                    if (val > 0) matches.push({ desc, val });
-                }
-            } else {
-                // Regex Santander (Padrão): Captura "DD/MM", Descrição e Valor
-                const regexSantander = /(\d{2}\/\d{2})\s+(.+?)\s+([-]?\d{1,3}(?:\.\d{3})*,\d{2})(?!\s*\%)/g;
-                let match;
-                while ((match = regexSantander.exec(fullText)) !== null) {
+                while ((match = regex.exec(text)) !== null) {
                     let desc = match[2].trim().toUpperCase();
-                    let rawVal = match[3];
+                    let valStr = match[3];
+                    
+                    if(desc.match(/PAGAMENTO|SALDO|TOTAL|PARCELAMENTO|LIMITE|VENCIMENTO|MULTA|JUROS/)) continue; // Filtro Extra
+                    
+                    let val = parseFloat(valStr.replace('.','').replace(',','.'));
+                    if(isNaN(val) || val <= 0) continue;
 
-                    // Filtros de exclusão do Santander
-                    if (desc.includes('PAGAMENTO') || desc.includes('SALDO') || desc.includes('TOTAL') || desc.includes('VENCIMENTO')) continue;
-                    if (rawVal.includes('-')) continue; 
-
-                    let val = parseFloat(rawVal.replace(/\./g, '').replace(',', '.'));
-                    if (val > 0) matches.push({ desc, val });
+                    let cat = 'Outros';
+                    let descLower = desc.toLowerCase();
+                    loop: for (const [category, keys] of Object.entries(KEYWORDS)) {
+                        for (const key of keys) { if (descLower.includes(key)) { cat = category; break loop; } }
+                    }
+                    if (!breakdown[cat]) breakdown[cat] = [];
+                    breakdown[cat].push({ desc: desc, val: val });
+                    total += val;
                 }
             }
-
-            // 4. Categorização
-            matches.forEach(m => {
-                let cat = 'Outros';
-                let descLower = m.desc.toLowerCase();
-                loop: for (const [category, keys] of Object.entries(KEYWORDS)) {
-                    for (const key of keys) { if (descLower.includes(key)) { cat = category; break loop; } }
-                }
-                if (!breakdown[cat]) breakdown[cat] = [];
-                breakdown[cat].push(m);
-                total += m.val;
-            });
-
-            return { breakdown, total: parseFloat(total.toFixed(2)), bank: bankName };
+            return { breakdown, total: parseFloat(total.toFixed(2)) };
         }
 
         document.getElementById('expense-form').onsubmit = async (e) => {

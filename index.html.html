@@ -132,7 +132,7 @@
                 <div><label class="text-xs text-gray-400">Valor Total (R$)</label><input type="number" step="0.01" id="form-val" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white"></div>
                 <div class="pt-2 border-t border-gray-700">
                     <label class="text-xs text-gray-400 mb-1 block">Anexar Fatura/Comprovante (PDF/Imagem)</label>
-                    <p class="text-[10px] text-indigo-400 mb-2">* Se for Fatura (PDF), tentaremos ler o valor automaticamente.</p>
+                    <p class="text-[10px] text-indigo-400 mb-2">* Suporta Santander e Inter automaticamente.</p>
                     <p class="text-[10px] text-green-400 mb-2 hidden font-bold" id="pdf-status">✓ PDF Analisado! Valores preenchidos.</p>
                     <input type="file" id="form-file" class="block w-full text-xs text-gray-400" accept="application/pdf, image/*">
                     <input type="hidden" id="existing-file">
@@ -194,14 +194,14 @@
         
         const KEYWORDS = {
             'Uber/Transporte': ['uber', '99', 'sem parar', 'estacionamento', 'zona azul', 'pedagio', 'veloe'],
-            'Delivery': ['ifood', 'rappi', 'ze delivery', 'aiqfome', 'delivery'],
+            'Delivery': ['ifood', 'rappi', 'ze delivery', 'aiqfome', 'delivery', 'ifd'],
             'Assinaturas': ['netflix', 'spotify', 'amazon', 'prime', 'apple', 'google', 'youtube', 'hbo', 'disney', 'globoplay', 'star+', 'paramount', 'max', 'adobe', 'smartfit', 'gympass'],
             'Mercado': ['carrefour', 'atacadao', 'pague m', 'roldao', 'tenda', 'swift', 'sao vicente', 'dia', 'extra', 'pao de acucar', 'big', 'walmart', 'sonda', 'supermercado', 'mercado', 'varejao', 'sacolao', 'comercial de alimentos'],
-            'Farmácia': ['drogaria', 'farmacia', 'drogal', 'pague menos', 'drogasil', 'raia', 'ultrafarma', 'nissei', 'bifarma'],
+            'Farmácia': ['drogaria', 'farmacia', 'drogal', 'pague menos', 'drogasil', 'raia', 'ultrafarma', 'nissei', 'bifarma', 'biolabor'],
             'Posto': ['posto', 'shell', 'ipiranga', 'petrobras', 'br', 'auto posto', 'combustivel'],
-            'Lazer': ['mc donalds', 'burger', 'subway', 'kfc', 'outback', 'madero', 'coco bambu', 'adega', 'bar', 'restaurante', 'lanche', 'cinema', 'kinoplex', 'cinemark', 'ingresso', 'sympla', 'eventim', 'airbnb', 'booking', 'hotel', 'pousada', 'cvc', 'decolar', 'casa de bolos'],
+            'Lazer': ['mc donalds', 'burger', 'subway', 'kfc', 'outback', 'madero', 'coco bambu', 'adega', 'bar', 'restaurante', 'lanche', 'cinema', 'kinoplex', 'cinemark', 'ingresso', 'sympla', 'eventim', 'airbnb', 'booking', 'hotel', 'pousada', 'cvc', 'decolar', 'casa de bolos', 'gorduchos', 'pastelaria', 'padaria'],
             'Roupa': ['caedu', 'renner', 'riachuelo', 'zara', 'c&a', 'shein', 'nike', 'adidas', 'centauro', 'polishop', 'decathlon', 'lavinia', 'polo wear', 'burguesinha', 'brecho', 'magazine'],
-            'Casa': ['leroy', 'telhanorte', 'c&c', 'sodimac', 'tokstok', 'camicado', 'utilidades'],
+            'Casa': ['leroy', 'telhanorte', 'c&c', 'sodimac', 'tokstok', 'camicado', 'utilidades', 'casa e cia'],
             'Contas': ['vivo', 'claro', 'tim', 'oi', 'net', 'sky', 'cpfl', 'enel', 'sabesp', 'sanepar', 'comgas'],
             'Outros': ['mercadolivre', 'mercadopago', 'pagseguro', 'paypal']
         };
@@ -343,13 +343,13 @@
                 const result = await parsePDF(file);
                 if (result && result.total > 0) {
                     document.getElementById('form-val').value = result.total;
-                    document.getElementById('form-desc').value = "Fatura Cartão";
+                    document.getElementById('form-desc').value = `Fatura ${result.bank}`;
                     document.getElementById('form-cat').value = "Contas";
                     document.getElementById('parsed-details').value = JSON.stringify(result.breakdown);
                     document.getElementById('pdf-status').classList.remove('hidden');
-                    document.getElementById('pdf-status').innerText = `✓ Fatura lida! Total: ${fmtMoney(result.total)}`;
+                    document.getElementById('pdf-status').innerText = `✓ Fatura ${result.bank} lida! Total: ${fmtMoney(result.total)}`;
                 } else {
-                    alert("Não foi possível identificar valores compatíveis nesta fatura.");
+                    alert("Não foi possível identificar valores. Verifique se a fatura é do Santander ou Inter.");
                 }
             } catch(err) { console.log(err); alert("Erro ao ler PDF: " + err.message); }
             toggleLoader(false);
@@ -388,57 +388,98 @@
             btn.innerText = "Salvar"; btn.disabled = false;
         };
 
-        // --- LÓGICA DE PARSE DE PDF REFEITA PARA FATURA INTER  ---
+        // --- LÓGICA DE PARSE HÍBRIDA (INTER + SANTANDER) ---
         async function parsePDF(file) {
             const buff = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument(buff).promise;
             let breakdown = {};
             let total = 0;
+            let detectedBank = 'Desconhecido';
+            let fullText = "";
             
+            // 1. Extrair Texto Completo
             for(let i=1; i<=pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
                 const content = await page.getTextContent();
-                // Une todo o texto da página para aplicar Regex
-                const text = content.items.map(s => s.str).join(' ');
+                fullText += content.items.map(s => s.str).join(' ') + " ";
+            }
 
-                // Regex ajustado para formato Inter: "23 de out. 2025 Descrição R$ 100,00"
+            // 2. Detectar Banco
+            if (fullText.includes("Santander") && fullText.includes("Detalhamento da Fatura")) {
+                detectedBank = "Santander";
+            } else if (fullText.toLowerCase().includes("inter") && fullText.toLowerCase().includes("despesas da fatura")) {
+                detectedBank = "Inter";
+            }
+
+            // 3. Aplicar Regex Específico
+            let matches = [];
+            
+            if (detectedBank === "Inter") {
+                // Formato: 23 de out. 2025 Descrição R$ 100,00
                 const regexInter = /(\d{1,2})\s+de\s+([a-zç]+)\.?\s+\d{4}\s+(.*?)\s+(R\$\s*[+-]?\s*[\d\.]*?[\d]+,\d{2})/gi;
-                
                 let match;
-                while ((match = regexInter.exec(text)) !== null) {
-                    let day = match[1];
-                    let monthStr = match[2].toLowerCase().replace('.', ''); // remove ponto se houver (out.)
-                    let desc = match[3].trim().toUpperCase();
-                    let valStr = match[4]; // ex: R$ 147,73 ou + R$ 1.000,00
-
-                    // Filtros de ignorar linhas que não são despesas reais [cite: 59, 11]
-                    if(desc.includes("SALDO") || desc.includes("TOTAL") || desc.includes("LIMITE") || desc.includes("VENCIMENTO")) continue;
-
-                    // Verificar se é pagamento/crédito (sinal de + ou palavras chave)
-                    if(valStr.includes("+") || desc.includes("PAGAMENTO ON LINE") || desc.includes("VALOR ANTECIPADO")) continue;
-                    
-                    // Limpar valor monetário
-                    let cleanVal = valStr.replace('R$','').replace('+','').trim().replace('.','').replace(',','.');
-                    let val = parseFloat(cleanVal);
-                    
-                    if(isNaN(val) || val <= 0) continue;
-
-                    // Categorização
-                    let cat = 'Outros';
-                    let descLower = desc.toLowerCase();
-                    categoryLoop:
-                    for (const [category, keys] of Object.entries(KEYWORDS)) {
-                        for (const key of keys) {
-                            if (descLower.includes(key)) { cat = category; break categoryLoop; }
-                        }
-                    }
-
-                    if (!breakdown[cat]) breakdown[cat] = [];
-                    breakdown[cat].push({ desc: desc, val: val });
-                    total += val;
+                while ((match = regexInter.exec(fullText)) !== null) {
+                    matches.push({
+                        date: match[1],
+                        month: match[2], // texto
+                        desc: match[3],
+                        valStr: match[4],
+                        isSantander: false
+                    });
+                }
+            } 
+            else {
+                // Padrão Genérico/Santander (DD/MM Descrição Valor)
+                // Ex: 06/10 AMAZONPRIMEBR 19,90  (sem R$ na linha muitas vezes)
+                // O regex abaixo procura: DATA | DESCRIÇÃO | VALOR (final da linha/bloco)
+                const regexSantander = /(\d{2}\/\d{2})\s+(.+?)\s+([-]?\d{1,3}(?:\.\d{3})*,\d{2})/g;
+                let match;
+                while ((match = regexSantander.exec(fullText)) !== null) {
+                    matches.push({
+                        date: match[1], // 06/10
+                        desc: match[2],
+                        valStr: match[3],
+                        isSantander: true
+                    });
                 }
             }
-            return { breakdown, total: parseFloat(total.toFixed(2)) };
+
+            // 4. Processar Itens
+            for (let m of matches) {
+                let desc = m.desc.trim().toUpperCase();
+                
+                // Filtros de Exclusão (Ignorar pagamentos de fatura, saldos, totais para não duplicar)
+                if(desc.includes("SALDO") || desc.includes("TOTAL") || desc.includes("LIMITE") || desc.includes("VENCIMENTO") || desc.includes("HISTÓRICO")) continue;
+                if(desc.includes("PAGAMENTO") && (desc.includes("FATURA") || desc.includes("TITULO") || desc.includes("ON LINE"))) continue;
+
+                // Valor
+                let valStr = m.valStr.replace('R$','').trim();
+                let cleanVal = valStr.replace('.','').replace(',','.');
+                let val = parseFloat(cleanVal);
+                
+                // Santander: Valores negativos são créditos/pagamentos -> ignorar na soma de gastos
+                if(m.isSantander && val < 0) continue; 
+                // Inter: Valores com "+" são pagamentos -> ignorar
+                if(!m.isSantander && m.valStr.includes("+")) continue;
+
+                if(isNaN(val) || val <= 0) continue;
+
+                // Categorização
+                let cat = 'Outros';
+                let descLower = desc.toLowerCase();
+                categoryLoop:
+                for (const [category, keys] of Object.entries(KEYWORDS)) {
+                    for (const key of keys) {
+                        if (descLower.includes(key)) { cat = category; break categoryLoop; }
+                    }
+                }
+
+                if (!breakdown[cat]) breakdown[cat] = [];
+                breakdown[cat].push({ desc: desc, val: val });
+                total += val;
+            }
+
+            return { breakdown, total: parseFloat(total.toFixed(2)), bank: detectedBank };
         }
 
         function openInvoiceDetails(id) {

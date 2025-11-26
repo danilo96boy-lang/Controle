@@ -113,9 +113,9 @@
 
                 <div id="summary-display" class="space-y-3 shrink-0"></div>
 
-                <div class="glass-card p-6 rounded-2xl flex flex-col flex-grow min-h-[320px]">
-                    <h4 class="font-bold text-gray-400 mb-4 text-xs uppercase tracking-wider text-center">Visão Geral</h4>
-                    <div class="relative flex-grow w-full flex items-center justify-center">
+                <div class="glass-card p-6 rounded-2xl flex flex-col flex-grow min-h-[350px]">
+                    <h4 class="font-bold text-gray-400 mb-2 text-xs uppercase tracking-wider text-center">Visão Geral</h4>
+                    <div class="relative w-full h-64 flex items-center justify-center">
                         <canvas id="expenseChart"></canvas>
                     </div>
                 </div>
@@ -148,7 +148,7 @@
 
                     <div class="relative group">
                         <svg class="absolute left-3 top-3 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                        <input type="text" id="search-input" placeholder="Filtrar lançamentos..." class="w-full bg-gray-900/50 border border-gray-700 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:border-indigo-500 outline-none transition-all">
+                        <input type="text" id="search-input" placeholder="Filtrar lançamentos..." class="w-full bg-gray-900/50 border border-gray-700 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:border-indigo-500 focus:bg-gray-900 outline-none transition-all placeholder-gray-600">
                     </div>
                 </div>
                 
@@ -243,6 +243,15 @@
             loadData();
         }
 
+        document.getElementById('search-input').addEventListener('input', (e) => render(e.target.value));
+        
+        document.getElementById('logout-btn').onclick = () => {
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('opacity-100');
+            document.getElementById('pass').value = '';
+        };
+
         document.getElementById('login-form').onsubmit = (e) => {
             e.preventDefault();
             if(USERS[document.getElementById('user').value.toLowerCase().trim()] === document.getElementById('pass').value.trim()) {
@@ -251,8 +260,32 @@
                 setTimeout(() => document.getElementById('app-container').classList.add('opacity-100'), 50);
                 document.getElementById('user-display').innerText = document.getElementById('user').value;
                 init();
-            } else { document.getElementById('login-msg').classList.remove('hidden'); }
+            } else { 
+                const msg = document.getElementById('login-msg');
+                msg.classList.remove('hidden');
+            }
         };
+
+        document.getElementById('form-file').addEventListener('change', async (e) => {
+            const file = e.target.files[0]; const label = document.getElementById('file-label');
+            if (!file) { label.innerText = "Clique para selecionar"; return; }
+            label.innerText = file.name.length > 25 ? file.name.substring(0,22)+'...' : file.name;
+            if (file.type === 'application/pdf') {
+                toggleLoader(true, "Analisando Fatura...");
+                try {
+                    const result = await parsePDF(file);
+                    if (result && result.total > 0) {
+                        document.getElementById('form-val').value = result.total;
+                        document.getElementById('form-desc').value = "Fatura Cartão";
+                        document.getElementById('form-cat').value = "Contas";
+                        document.getElementById('parsed-details').value = JSON.stringify(result.breakdown);
+                        document.getElementById('pdf-status').classList.remove('hidden');
+                        document.getElementById('pdf-status').innerText = `✓ Total: ${fmtMoney(result.total)}`;
+                    }
+                } catch(err) { console.log(err); }
+                toggleLoader(false);
+            }
+        });
 
         async function loadData() {
             toggleLoader(true);
@@ -352,7 +385,7 @@
             if (!file) { label.innerText = "Clique para selecionar"; return; }
             label.innerText = file.name.length > 25 ? file.name.substring(0,22)+'...' : file.name;
             if (file.type === 'application/pdf') {
-                toggleLoader(true, "Lendo Fatura...");
+                toggleLoader(true, "Analisando Fatura...");
                 try {
                     const result = await parsePDF(file);
                     if (result && result.total > 0) {
@@ -474,6 +507,8 @@
         function fmtMoney(v) { return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
         document.getElementById('prev-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()-1); loadData(); };
         document.getElementById('next-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()+1); loadData(); };
+        document.getElementById('export-btn').onclick = () => { const data = { expenses, income: incomeData }; const blob = new Blob([JSON.stringify(data, null, 2)], {type : 'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `backup.json`; a.click(); };
+        document.getElementById('import-json').onchange = (e) => { const file = e.target.files[0]; if(!file) return; const r = new FileReader(); r.onload = async (ev) => { try { const d = JSON.parse(ev.target.result); if(confirm("Restaurar?")) { expenses = d.expenses || []; incomeData = d.income || {}; render(); } } catch(err) { alert("Erro"); } }; r.readAsText(file); };
     </script>
 </body>
 </html>

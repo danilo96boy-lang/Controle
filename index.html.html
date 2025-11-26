@@ -415,13 +415,14 @@
             let matches = [];
             
             if (detectedBank === "Inter") {
-                // Formato: 23 de out. 2025 Descrição R$ 100,00
-                const regexInter = /(\d{1,2})\s+de\s+([a-zç]+)\.?\s+\d{4}\s+(.*?)\s+(R\$\s*[+-]?\s*[\d\.]*?[\d]+,\d{2})/gi;
+                // Formato: 23 de out. 2025 Descrição R$ 100,00 ou + R$ 100,00
+                // Captura o R$ e o sinal se houver
+                const regexInter = /(\d{1,2})\s+de\s+([a-zç]+)\.?\s+\d{4}\s+(.*?)\s+((?:R\$|)\s*[+-]?\s*[\d\.]*?[\d]+,\d{2}|[+-]?\s*R\$\s*[\d\.]*?[\d]+,\d{2})/gi;
                 let match;
                 while ((match = regexInter.exec(fullText)) !== null) {
                     matches.push({
                         date: match[1],
-                        month: match[2], // texto
+                        month: match[2],
                         desc: match[3],
                         valStr: match[4],
                         isSantander: false
@@ -430,13 +431,13 @@
             } 
             else {
                 // Padrão Genérico/Santander (DD/MM Descrição Valor)
-                // Ex: 06/10 AMAZONPRIMEBR 19,90  (sem R$ na linha muitas vezes)
-                // O regex abaixo procura: DATA | DESCRIÇÃO | VALOR (final da linha/bloco)
-                const regexSantander = /(\d{2}\/\d{2})\s+(.+?)\s+([-]?\d{1,3}(?:\.\d{3})*,\d{2})/g;
+                // Ex: 06/10 AMAZONPRIMEBR 19,90 (sem R$)
+                // Regex procura: DATA | DESCRIÇÃO | PARCELA? | VALOR
+                const regexSantander = /(\d{2}\/\d{2})\s+(.+?)(?:\s+\d{1,2}\/\d{1,2})?\s+([-]?\d{1,3}(?:\.\d{3})*,\d{2})/g;
                 let match;
                 while ((match = regexSantander.exec(fullText)) !== null) {
                     matches.push({
-                        date: match[1], // 06/10
+                        date: match[1],
                         desc: match[2],
                         valStr: match[3],
                         isSantander: true
@@ -448,18 +449,21 @@
             for (let m of matches) {
                 let desc = m.desc.trim().toUpperCase();
                 
-                // Filtros de Exclusão (Ignorar pagamentos de fatura, saldos, totais para não duplicar)
+                // Filtros de Exclusão Universais
                 if(desc.includes("SALDO") || desc.includes("TOTAL") || desc.includes("LIMITE") || desc.includes("VENCIMENTO") || desc.includes("HISTÓRICO")) continue;
-                if(desc.includes("PAGAMENTO") && (desc.includes("FATURA") || desc.includes("TITULO") || desc.includes("ON LINE"))) continue;
+                
+                // Filtros Específicos para Inter (Pagamentos, Créditos)
+                if(!m.isSantander && (desc.includes("PAGAMENTO") || desc.includes("CRÉDITO") || desc.includes("ANTECIPAÇÃO"))) continue;
 
                 // Valor
-                let valStr = m.valStr.replace('R$','').trim();
+                let valStr = m.valStr.replace('R$','').replace('+','').trim();
                 let cleanVal = valStr.replace('.','').replace(',','.');
                 let val = parseFloat(cleanVal);
                 
-                // Santander: Valores negativos são créditos/pagamentos -> ignorar na soma de gastos
+                // Santander: Valores negativos são pagamentos/créditos -> ignorar
                 if(m.isSantander && val < 0) continue; 
-                // Inter: Valores com "+" são pagamentos -> ignorar
+                
+                // Inter: Validação extra caso o regex tenha pego um pagamento com "+"
                 if(!m.isSantander && m.valStr.includes("+")) continue;
 
                 if(isNaN(val) || val <= 0) continue;

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FinancePro Enterprise</title>
+    <title>FinancePro Mobile & Desktop</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;700&display=swap" rel="stylesheet">
@@ -14,10 +14,8 @@
 
     <style>
         :root { 
-            --bg-grad-start: #020617; 
-            --bg-grad-end: #1e293b;   
-            --glass-bg: rgba(15, 23, 42, 0.75); 
-            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-bg: rgba(17, 24, 39, 0.85); 
+            --glass-border: rgba(255, 255, 255, 0.1);
             --primary: #38bdf8; 
         }
         
@@ -25,81 +23,67 @@
             background: radial-gradient(circle at top center, #1e293b, #020617);
             color: #f1f5f9; 
             font-family: 'Outfit', sans-serif; 
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden; /* App feel */
+            /* CORREÇÃO CRÍTICA: Permite rolagem no mobile */
+            min-height: 100vh;
+            overflow-y: auto; 
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
         
-        /* Glassmorphism */
         .glass {
             background: var(--glass-bg);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--glass-border);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
         }
 
-        /* Inputs */
+        /* Inputs otimizados para toque */
         .glass-input {
             background: rgba(2, 6, 23, 0.5); 
             border: 1px solid rgba(255,255,255,0.1);
             color: white; 
             transition: all 0.2s ease;
-            appearance: none; /* Remove estilo nativo iOS */
+            appearance: none;
+            font-size: 16px; /* Evita zoom no iOS */
         }
         .glass-input:focus {
             border-color: var(--primary);
-            background: rgba(2, 6, 23, 0.8);
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
+            background: rgba(2, 6, 23, 0.9);
             outline: none;
         }
 
-        /* Barra de Progresso */
         .progress-bar-shine {
             background: linear-gradient(90deg, #3b82f6, #06b6d4);
             box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
             transition: width 1s ease-in-out;
         }
 
+        /* Animação suave para itens */
         .expense-item { transition: background 0.2s; border-left: 3px solid transparent; }
-        .expense-item:active, .expense-item:hover { 
-            background-color: rgba(30, 41, 59, 0.9); 
-            border-left-color: var(--primary);
-        }
+        .expense-item:active { background-color: rgba(56, 189, 248, 0.1); }
         
-        /* Scrollbar */
-        .custom-scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(71, 85, 105, 0.5); border-radius: 10px; }
-
         #loading-overlay { position: fixed; inset: 0; background: rgba(2,6,23,0.95); z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-blur-sm; }
         .spinner { border: 3px solid #1e293b; border-top: 3px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Sidebar Mobile Animation */
-        #sidebar { transition: transform 0.3s ease-in-out; }
-        .sidebar-open { transform: translateX(0) !important; }
-        .sidebar-closed { transform: translateX(-100%); }
-        @media (min-width: 768px) { .sidebar-closed { transform: translateX(0); } }
-
-        .sub-chart-container { position: relative; height: 180px; width: 100%; display: flex; justify-content: center; }
+        /* Ajuste do Gráfico para Mobile */
+        .chart-wrapper { position: relative; height: 200px; width: 100%; }
+        
+        /* Modal Animation Mobile */
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-mobile-anim { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     </style>
 </head>
-<body class="flex flex-col h-full w-full">
-
-    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-[#020617] p-4">
-        <div class="absolute w-full h-full max-w-lg max-h-lg bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        
-        <div class="glass p-8 md:p-10 rounded-3xl w-full max-w-sm border-t border-white/10 relative shadow-2xl">
+<body class="pb-24 md:pb-0"> <div id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#020617] p-6">
+        <div class="glass p-8 rounded-3xl w-full max-w-sm border-t border-white/10 relative shadow-2xl">
             <h2 class="text-3xl font-bold mb-2 text-center text-white tracking-tight">Finance<span class="text-sky-400">Pro</span></h2>
-            <p class="text-center text-slate-400 mb-8 text-xs uppercase tracking-widest">Enterprise Access</p>
+            <p class="text-center text-slate-400 mb-8 text-xs uppercase tracking-widest">Acesso Seguro</p>
             <form id="login-form" class="space-y-5">
                 <input type="text" id="user" placeholder="Usuário" class="w-full p-4 glass-input rounded-xl text-center text-lg">
                 <input type="password" id="pass" placeholder="Senha" class="w-full p-4 glass-input rounded-xl text-center text-lg">
-                <button type="submit" class="w-full bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white py-4 rounded-xl font-bold transition shadow-lg shadow-sky-500/20 tracking-wide touch-manipulation">ENTRAR</button>
+                <button type="submit" class="w-full bg-gradient-to-r from-sky-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg">ENTRAR</button>
             </form>
-            <p id="login-msg" class="text-red-400 text-center mt-6 hidden text-xs font-bold bg-red-500/10 py-3 rounded-lg">Acesso Negado</p>
+            <p id="login-msg" class="text-red-400 text-center mt-6 hidden text-sm font-bold">Acesso Negado</p>
         </div>
     </div>
 
@@ -108,197 +92,189 @@
         <p class="text-slate-300 font-medium tracking-widest text-xs" id="loading-text">CARREGANDO...</p>
     </div>
 
-    <div id="mobile-overlay" class="fixed inset-0 bg-black/80 z-20 hidden md:hidden backdrop-blur-sm" onclick="toggleSidebar()"></div>
-
-    <div id="app-container" class="w-full h-full flex opacity-0 transition-opacity duration-700 hidden relative">
+    <div id="app-container" class="opacity-0 transition-opacity duration-700 hidden">
         
-        <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-64 bg-[#0b0f1a] border-r border-white/5 flex flex-col sidebar-closed md:relative md:translate-x-0 shadow-2xl">
-            <div class="h-16 flex items-center px-6 border-b border-white/5">
-                <span class="w-8 h-8 bg-sky-500 rounded-lg flex items-center justify-center mr-3 text-white font-bold">F</span>
-                <h1 class="text-xl font-bold text-white">Finance<span class="text-sky-400">Pro</span></h1>
+        <header class="fixed top-0 left-0 right-0 z-40 bg-[#020617]/90 backdrop-blur-md border-b border-white/5 h-16 flex items-center justify-between px-4 md:px-8 shadow-lg">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-sky-500 rounded-lg flex items-center justify-center font-bold text-white">F</div>
+                <h1 class="text-lg font-bold text-white hidden md:block">Visão Geral</h1>
+                <span id="mobile-user-display" class="md:hidden text-sm font-bold text-sky-400 capitalize ml-2"></span>
             </div>
+
+            <div class="flex items-center bg-slate-800/50 rounded-full p-1 border border-white/10">
+                <button id="prev-month" class="p-2 w-8 h-8 flex items-center justify-center text-slate-300 hover:bg-white/10 rounded-full">‹</button>
+                <span id="current-month" class="mx-2 font-bold text-xs text-white uppercase min-w-[90px] text-center"></span>
+                <button id="next-month" class="p-2 w-8 h-8 flex items-center justify-center text-slate-300 hover:bg-white/10 rounded-full">›</button>
+            </div>
+
+            <div class="hidden md:flex items-center gap-4">
+                <p class="text-sm text-slate-400">Olá, <span id="user-display" class="text-white font-bold capitalize"></span></p>
+                <button id="logout-btn-desktop" class="text-red-400 hover:text-white transition">Sair</button>
+            </div>
+        </header>
+
+        <div class="h-16 w-full"></div>
+
+        <div class="max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            <nav class="p-4 space-y-2 flex-1">
-                <a href="#" class="flex items-center px-4 py-3 text-sm font-bold bg-white/5 text-sky-400 rounded-xl border border-sky-500/20">
-                    <span class="mr-3">📊</span> Visão Geral
-                </a>
-            </nav>
-
-            <div class="p-4 border-t border-white/5 bg-white/5">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold text-white border border-slate-600">U</div>
-                    <div class="ml-3 overflow-hidden">
-                        <p class="text-sm font-bold text-white capitalize truncate" id="user-display">Usuário</p>
-                        <p class="text-[10px] text-emerald-400 font-bold uppercase">Online</p>
+            <div class="lg:col-span-4 space-y-5">
+                
+                <div id="summary-display" class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3">
                     </div>
-                    <button id="logout-btn" class="ml-auto text-slate-400 hover:text-red-400 p-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                    </button>
+
+                <div class="glass p-5 rounded-2xl border-l-4 border-sky-500">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xs font-bold text-sky-400 uppercase tracking-widest">Salários</h3>
+                        <span id="income-saved-msg" class="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded font-bold opacity-0 transition-opacity">Salvo!</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 lg:grid-cols-1">
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-slate-500 text-xs font-bold">R$</span>
+                            <input type="number" id="income1" placeholder="Gabi" class="w-full glass-input rounded-xl py-2.5 pl-8 pr-2 text-sm font-bold text-white">
+                        </div>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-slate-500 text-xs font-bold">R$</span>
+                            <input type="number" id="income2" placeholder="Danilo" class="w-full glass-input rounded-xl py-2.5 pl-8 pr-2 text-sm font-bold text-white">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass p-5 rounded-2xl relative overflow-hidden">
+                    <div class="flex justify-between items-end mb-2">
+                        <div><h3 class="text-sm font-bold text-white">Reserva</h3><p class="text-[10px] text-slate-400">Meta: R$ 1k</p></div>
+                        <span id="reserve-current" class="text-lg font-bold text-emerald-400">R$ 0</span>
+                    </div>
+                    <div class="w-full bg-slate-900/80 rounded-full h-3 overflow-hidden border border-white/5">
+                        <div id="reserve-bar" class="progress-bar-shine h-full rounded-full" style="width: 0%"></div>
+                    </div>
+                    <p id="reserve-msg" class="text-center text-[10px] mt-2 text-slate-400">Calculando...</p>
+                </div>
+
+                <div class="glass p-4 rounded-2xl flex flex-col items-center justify-center">
+                    <h4 class="font-bold text-slate-400 mb-2 text-[10px] uppercase">Categorias</h4>
+                    <div class="chart-wrapper"><canvas id="expenseChart"></canvas></div>
                 </div>
             </div>
-        </aside>
 
-        <main class="flex-1 flex flex-col h-full w-full relative overflow-hidden bg-gradient-to-br from-[#020617] to-[#0f172a]">
-            
-            <header class="h-16 flex items-center justify-between px-4 md:px-6 border-b border-white/5 shrink-0 bg-[#020617]/80 backdrop-blur-md z-10">
-                <div class="flex items-center gap-3">
-                    <button onclick="toggleSidebar()" class="md:hidden text-white p-2 glass rounded-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-                    </button>
-                    <h2 class="text-lg font-bold text-white hidden md:block">Dashboard</h2>
-                </div>
-
-                <div class="flex items-center gap-2 md:gap-4">
-                    <div class="flex items-center glass rounded-lg p-1 border-white/5">
-                        <button id="prev-month" class="p-1.5 text-slate-400 hover:text-white">◀</button>
-                        <span id="current-month" class="mx-2 font-bold text-xs md:text-sm text-white capitalize min-w-[80px] md:min-w-[120px] text-center"></span>
-                        <button id="next-month" class="p-1.5 text-slate-400 hover:text-white">▶</button>
+            <div class="lg:col-span-8 glass p-4 md:p-6 rounded-2xl flex flex-col min-h-[500px]">
+                
+                <div class="flex flex-col sm:flex-row gap-3 mb-4 justify-between items-center">
+                    <h3 class="font-bold text-lg text-white w-full sm:w-auto">Extrato</h3>
+                    <div class="relative w-full sm:w-64">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">🔍</span>
+                        <input type="text" id="search-input" placeholder="Buscar..." class="w-full glass-input rounded-lg py-2 pl-9 pr-3 text-sm">
                     </div>
-                </div>
-            </header>
-
-            <div class="flex-1 custom-scroll p-4 md:p-6 overflow-x-hidden">
-                <div class="max-w-[1600px] mx-auto grid grid-cols-1 xl:grid-cols-3 gap-6">
-                    
-                    <div class="xl:col-span-1 space-y-5">
-                        
-                        <div id="summary-display" class="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-1 gap-3">
-                            </div>
-
-                        <div class="glass p-5 rounded-2xl border-l-4 border-sky-500">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-xs font-bold text-sky-400 uppercase tracking-widest">Salários</h3>
-                                <span id="income-saved-msg" class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20 font-bold opacity-0 transition-opacity">OK ✓</span>
-                            </div>
-                            <div class="grid grid-cols-2 gap-3 xl:grid-cols-1">
-                                <div class="relative">
-                                    <span class="absolute left-3 top-2.5 text-slate-500 text-xs font-bold">R$</span>
-                                    <input type="number" id="income1" placeholder="Gabi" class="w-full glass-input rounded-xl py-2 pl-8 pr-2 text-sm font-bold text-white">
-                                </div>
-                                <div class="relative">
-                                    <span class="absolute left-3 top-2.5 text-slate-500 text-xs font-bold">R$</span>
-                                    <input type="number" id="income2" placeholder="Danilo" class="w-full glass-input rounded-xl py-2 pl-8 pr-2 text-sm font-bold text-white">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="glass p-5 rounded-2xl border-t border-white/5 relative overflow-hidden">
-                            <div class="flex justify-between items-end mb-2">
-                                <div><h3 class="text-sm font-bold text-white">Reserva</h3><p class="text-[10px] text-slate-400">Meta: R$ 1k</p></div>
-                                <span id="reserve-current" class="text-lg font-bold text-emerald-400">R$ 0</span>
-                            </div>
-                            <div class="w-full bg-slate-900/50 rounded-full h-3 overflow-hidden border border-white/5">
-                                <div id="reserve-bar" class="progress-bar-shine h-full rounded-full" style="width: 0%"></div>
-                            </div>
-                            <p id="reserve-msg" class="text-center text-[10px] mt-2 text-slate-400">Calculando...</p>
-                        </div>
-
-                        <div class="glass p-4 rounded-2xl flex flex-col items-center">
-                            <h4 class="font-bold text-slate-400 mb-2 text-[10px] uppercase">Categorias</h4>
-                            <div class="relative h-48 w-full"><canvas id="expenseChart"></canvas></div>
-                        </div>
-                    </div>
-
-                    <div class="xl:col-span-2 glass p-4 md:p-6 rounded-2xl flex flex-col h-[600px] md:h-[800px] relative">
-                        
-                        <div class="flex flex-col sm:flex-row gap-3 mb-4 pb-4 border-b border-white/5 justify-between items-start sm:items-center">
-                            <h3 class="font-bold text-lg text-white">Extrato</h3>
-                            
-                            <div class="flex items-center gap-2 w-full sm:w-auto">
-                                <div class="relative flex-1 sm:w-48">
-                                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">🔍</span>
-                                    <input type="text" id="search-input" placeholder="Buscar..." class="w-full glass-input rounded-lg py-2 pl-9 pr-3 text-xs">
-                                </div>
-                                
-                                <button onclick="openModal(null, true)" class="bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 px-3 py-2 rounded-lg text-xs font-bold">PDF</button>
-                                <button onclick="openModal()" class="bg-sky-500 hover:bg-sky-400 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg shadow-sky-500/20 active:scale-95 transition whitespace-nowrap">+ Novo</button>
-                            </div>
-                        </div>
-                        
-                        <div id="expense-list" class="flex-1 overflow-y-auto pr-1 space-y-2 custom-scroll pb-10"></div>
-                        
-                        <div class="absolute bottom-0 left-0 w-full p-3 bg-[#0f172a]/90 backdrop-blur border-t border-white/5 flex justify-between items-center rounded-b-2xl">
-                             <label class="text-[10px] text-slate-500 flex items-center gap-1 cursor-pointer"><span class="text-lg">📂</span> <input type="file" id="import-json" class="hidden"> Restaurar</label>
-                             <button id="export-btn" class="text-[10px] font-bold text-sky-500 uppercase">💾 Backup</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <div id="expense-modal" class="fixed inset-0 bg-black/90 hidden z-[60] items-end sm:items-center justify-center sm:p-4 backdrop-blur-sm transition-all">
-        <div class="glass w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl border-t sm:border border-white/10 shadow-2xl transform transition-transform duration-300">
-            <div class="p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-bold text-white" id="modal-title">Lançamento</h3>
-                    <button onclick="closeModal('expense-modal')" class="bg-white/10 rounded-full p-1 text-slate-300 hover:text-white text-xl w-8 h-8 flex items-center justify-center">&times;</button>
                 </div>
                 
-                <form id="expense-form" class="space-y-4">
+                <div id="expense-list" class="space-y-2 pb-4"></div>
+                
+                <div class="hidden md:flex mt-auto pt-4 border-t border-white/5 justify-end gap-3">
+                     <label class="text-xs text-slate-400 cursor-pointer hover:text-white flex items-center gap-1">
+                        📂 Restaurar <input type="file" id="import-json" class="hidden" accept=".json">
+                     </label>
+                     <button id="export-btn" class="text-xs font-bold text-sky-500 uppercase hover:text-white">Backup JSON</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="md:hidden fixed bottom-0 left-0 right-0 bg-[#0b0f1a]/95 backdrop-blur-lg border-t border-white/10 px-6 py-3 flex justify-between items-center z-40 pb-safe">
+            <button onclick="window.scrollTo({top:0, behavior:'smooth'})" class="flex flex-col items-center text-sky-400">
+                <span class="text-xl">📊</span>
+                <span class="text-[10px] font-medium">Home</span>
+            </button>
+            
+            <button onclick="openModal()" class="bg-sky-500 hover:bg-sky-400 text-white w-14 h-14 rounded-full flex items-center justify-center text-3xl shadow-lg shadow-sky-500/30 -mt-8 border-4 border-[#020617] active:scale-95 transition">
+                +
+            </button>
+            
+            <button id="logout-btn-mobile" class="flex flex-col items-center text-slate-400 hover:text-red-400">
+                <span class="text-xl">🚪</span>
+                <span class="text-[10px] font-medium">Sair</span>
+            </button>
+        </div>
+
+    </div>
+
+    <div id="expense-modal" class="fixed inset-0 bg-black/90 hidden z-[60] flex items-end md:items-center justify-center md:p-4 backdrop-blur-sm transition-all">
+        <div class="absolute inset-0" onclick="closeModal('expense-modal')"></div>
+        
+        <div class="glass w-full md:max-w-md rounded-t-3xl md:rounded-3xl border-t md:border border-white/10 shadow-2xl relative modal-mobile-anim max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="w-12 h-1 bg-slate-700 rounded-full mx-auto mb-6 md:hidden"></div>
+
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-white" id="modal-title">Novo Lançamento</h3>
+                    <button onclick="closeModal('expense-modal')" class="bg-white/10 rounded-full p-1 text-slate-300 hover:text-white w-8 h-8 flex items-center justify-center">&times;</button>
+                </div>
+                
+                <form id="expense-form" class="space-y-4 pb-8 md:pb-0">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="text-[10px] uppercase font-bold text-slate-400 ml-1">Data</label>
-                            <input type="date" id="form-date" class="w-full glass-input rounded-xl p-3 text-white mt-1 text-sm">
+                            <input type="date" id="form-date" class="w-full glass-input rounded-xl p-3 text-white mt-1">
                         </div>
                         <div>
                             <label class="text-[10px] uppercase font-bold text-slate-400 ml-1">Categoria</label>
-                            <select id="form-cat" class="w-full glass-input rounded-xl p-3 text-white bg-[#0f172a] mt-1 text-sm"></select>
+                            <select id="form-cat" class="w-full glass-input rounded-xl p-3 text-white bg-[#0f172a] mt-1"></select>
                         </div>
                     </div>
                     
                     <div>
                         <label class="text-[10px] uppercase font-bold text-slate-400 ml-1">Descrição</label>
-                        <input type="text" id="form-desc" class="w-full glass-input rounded-xl p-3 text-white mt-1 text-sm" placeholder="Ex: Mercado">
+                        <input type="text" id="form-desc" class="w-full glass-input rounded-xl p-3 text-white mt-1" placeholder="Ex: Mercado">
                     </div>
                     
                     <div>
                         <label class="text-[10px] uppercase font-bold text-slate-400 ml-1">Valor</label>
                         <div class="relative mt-1">
-                            <span class="absolute left-3 top-3 text-emerald-400 font-bold text-sm">R$</span>
-                            <input type="number" step="0.01" id="form-val" class="w-full glass-input rounded-xl p-3 pl-10 text-white font-bold text-lg" placeholder="0.00">
+                            <span class="absolute left-3 top-3 text-emerald-400 font-bold text-lg">R$</span>
+                            <input type="number" step="0.01" id="form-val" class="w-full glass-input rounded-xl p-3 pl-10 text-white font-bold text-xl" placeholder="0.00">
                         </div>
                     </div>
                     
                     <div class="border border-dashed border-slate-600 rounded-xl p-3 bg-slate-900/30 flex items-center justify-between">
-                        <span class="text-xs text-slate-400 ml-1">Anexar PDF</span>
-                        <input type="file" id="form-file" class="text-xs text-slate-500 w-24 overflow-hidden file:hidden" accept="application/pdf, image/*">
-                        <span id="pdf-status" class="text-[10px] text-emerald-400 font-bold hidden">Lido!</span>
-                        <input type="hidden" id="existing-file"><input type="hidden" id="parsed-details"> 
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-slate-300">Ler Fatura (PDF)</span>
+                            <span class="text-[10px] text-slate-500">Inter / Santander / Nubank</span>
+                        </div>
+                        <label class="bg-indigo-600/30 text-indigo-300 px-3 py-2 rounded-lg text-xs font-bold cursor-pointer border border-indigo-500/30">
+                            Selecionar
+                            <input type="file" id="form-file" class="hidden" accept="application/pdf, image/*">
+                        </label>
                     </div>
+                    <p id="pdf-status" class="text-center text-xs text-emerald-400 font-bold hidden bg-emerald-900/20 p-2 rounded">✓ Fatura Processada!</p>
 
                     <div class="flex gap-3 pt-2">
                         <button type="button" id="delete-btn" onclick="deleteItem()" class="bg-red-500/10 text-red-400 rounded-xl px-4 py-3 font-bold text-sm hidden">🗑</button>
-                        <button type="submit" class="flex-1 bg-sky-500 text-white rounded-xl py-3 font-bold text-sm shadow-lg shadow-sky-500/20 active:scale-95 transition">Salvar</button>
+                        <button type="submit" class="flex-1 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl py-3.5 font-bold text-sm shadow-lg active:scale-95 transition">SALVAR</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <div id="invoice-details-modal" class="fixed inset-0 bg-black/95 hidden z-[60] items-center justify-center p-2 sm:p-4 backdrop-blur-md">
-        <div class="glass w-full max-w-2xl rounded-2xl border border-white/10 shadow-2xl flex flex-col max-h-[85vh]">
-            <div class="p-4 border-b border-white/5 flex justify-between items-center">
-                <h3 class="text-lg font-bold text-white">Detalhes</h3>
+    <div id="invoice-details-modal" class="fixed inset-0 bg-black/95 hidden z-[70] items-center justify-center p-4 backdrop-blur-md overflow-y-auto">
+        <div class="glass w-full max-w-2xl rounded-2xl border border-white/10 shadow-2xl flex flex-col relative my-4">
+            <div class="p-4 border-b border-white/5 flex justify-between items-center sticky top-0 bg-[#0f172a] z-10 rounded-t-2xl">
+                <h3 class="text-lg font-bold text-white">Detalhes Fatura</h3>
                 <button onclick="closeModal('invoice-details-modal')" class="text-2xl text-slate-400">&times;</button>
             </div>
-            <div class="p-4 overflow-y-auto custom-scroll space-y-4">
+            <div class="p-4 space-y-4">
                 <div class="flex justify-center h-40"><canvas id="invoiceChart"></canvas></div>
                 <div>
                     <div class="flex justify-between items-center mb-2"><h4 class="text-xs font-bold text-slate-300 uppercase">Itens</h4> <a id="download-invoice-btn" href="#" class="text-xs text-sky-400 underline">Baixar PDF</a></div>
                     <div id="invoice-items-list" class="space-y-2"></div>
                 </div>
-            </div>
-            <div class="p-4 border-t border-white/5">
-                <button onclick="deleteItem()" class="w-full text-red-400 text-xs font-bold uppercase py-2">Apagar Lançamento</button>
+                <button onclick="deleteItem()" class="w-full text-red-400 text-xs font-bold uppercase py-3 border border-red-500/20 rounded-xl hover:bg-red-500/10">Apagar Lançamento</button>
             </div>
         </div>
     </div>
 
     <script>
+        // Configuração PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        // Firebase Config (Placeholder)
+        // Configuração Firebase
         const firebaseConfig = { apiKey: "AIzaSyBf1nzx6mH1lWckWQyXDnWZKLlh-5cfcv0", authDomain: "controle-a9909.firebaseapp.com", projectId: "controle-a9909", storageBucket: "controle-a9909.appspot.com", messagingSenderId: "43886457318", appId: "1:43886457318:web:289e82579a38c28fefa627" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
@@ -307,7 +283,7 @@
         
         const CATEGORIES = ['Mercado', 'Contas', 'Cartões', 'Apartamento', 'Carro', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Poupança Maria Luisa', 'Reserva', 'Outros'];
         const COLORS = { 'Mercado': '#fbbf24', 'Contas': '#34d399', 'Cartões': '#38bdf8', 'Apartamento': '#c084fc', 'Carro': '#60a5fa', 'Lazer': '#f87171', 'Delivery': '#e879f9', 'Posto': '#fb923c', 'Farmácia': '#a3e635', 'Roupa': '#f472b6', 'Escola': '#818cf8', 'Poupança Maria Luisa': '#2dd4bf', 'Reserva': '#10b981', 'Outros': '#94a3b8' };
-        const KEYWORDS = { 'Uber/Transporte': ['uber','99','sem parar','estacionamento'], 'Delivery': ['ifood','rappi','ze delivery'], 'Mercado': ['carrefour','atacadao','dia','extra','mercado'], 'Farmácia': ['drogaria','farmacia','drogasil'], 'Posto': ['posto','shell','ipiranga'], 'Lazer': ['mc donalds','burger','cinema'], 'Roupa': ['renner','c&a','shein'] };
+        const KEYWORDS = { 'Uber/Transporte': ['uber','99','sem parar','estacionamento'], 'Delivery': ['ifood','rappi','ze delivery','aiqfome'], 'Mercado': ['carrefour','atacadao','dia','extra','mercado','sonda'], 'Farmácia': ['drogaria','farmacia','drogasil'], 'Posto': ['posto','shell','ipiranga'], 'Lazer': ['mc donalds','burger','cinema'], 'Roupa': ['renner','c&a','shein'] };
 
         let expenses = [], incomeData = {}, currentDate = new Date(), currentEditId = null, mainChart = null, invoiceChart = null;
 
@@ -316,24 +292,11 @@
             loadData();
         }
 
-        // Sidebar Toggle
-        function toggleSidebar() {
-            const sb = document.getElementById('sidebar');
-            const overlay = document.getElementById('mobile-overlay');
-            if (sb.classList.contains('sidebar-closed')) {
-                sb.classList.remove('sidebar-closed');
-                sb.classList.add('sidebar-open');
-                overlay.classList.remove('hidden');
-            } else {
-                sb.classList.add('sidebar-closed');
-                sb.classList.remove('sidebar-open');
-                overlay.classList.add('hidden');
-            }
-        }
-
         // Logic
         document.getElementById('search-input').addEventListener('input', (e) => render(e.target.value));
-        document.getElementById('logout-btn').onclick = () => window.location.reload();
+        const doLogout = () => window.location.reload();
+        document.getElementById('logout-btn-desktop').onclick = doLogout;
+        document.getElementById('logout-btn-mobile').onclick = doLogout;
         
         document.getElementById('login-form').onsubmit = (e) => {
             e.preventDefault();
@@ -342,8 +305,10 @@
             if(USERS[u] && USERS[u] === p) {
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app-container').classList.remove('hidden');
+                document.getElementById('app-container').classList.add('flex');
                 setTimeout(() => document.getElementById('app-container').classList.remove('opacity-0'), 50);
                 document.getElementById('user-display').innerText = u;
+                document.getElementById('mobile-user-display').innerText = u;
                 init();
             } else { document.getElementById('login-msg').classList.remove('hidden'); }
         };
@@ -380,7 +345,7 @@
             const totInc = (parseFloat(inc.s1)||0) + (parseFloat(inc.s2)||0);
             const bal = totInc - totExp;
 
-            // Reserva logic
+            // Reserva
             const resTarget = 1000;
             const curRes = allM.filter(e => e.category === 'Reserva').reduce((a,b) => a + b.value, 0);
             const resPct = Math.min((curRes / resTarget) * 100, 100);
@@ -398,39 +363,39 @@
 
             // KPIs
             document.getElementById('summary-display').innerHTML = `
-                <div class="glass p-3 rounded-xl flex justify-between items-center border-l-4 border-emerald-500">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">Receita</span><span class="font-bold text-emerald-400">${fmtMoney(totInc)}</span>
+                <div class="glass p-4 rounded-xl flex justify-between items-center border-l-4 border-emerald-500 bg-slate-800/50">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Receita</span><span class="font-bold text-emerald-400 text-lg">${fmtMoney(totInc)}</span>
                 </div>
-                <div class="glass p-3 rounded-xl flex justify-between items-center border-l-4 border-rose-500">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">Saídas</span><span class="font-bold text-rose-400">${fmtMoney(totExp)}</span>
+                <div class="glass p-4 rounded-xl flex justify-between items-center border-l-4 border-rose-500 bg-slate-800/50">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Saídas</span><span class="font-bold text-rose-400 text-lg">${fmtMoney(totExp)}</span>
                 </div>
-                <div class="glass p-3 rounded-xl flex justify-between items-center border-l-4 ${bal>=0?'border-blue-500':'border-orange-500'}">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">Saldo</span><span class="font-bold ${bal>=0?'text-blue-400':'text-orange-400'}">${fmtMoney(bal)}</span>
+                <div class="glass p-4 rounded-xl flex justify-between items-center border-l-4 ${bal>=0?'border-blue-500':'border-orange-500'} bg-slate-800/50">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Saldo</span><span class="font-bold ${bal>=0?'text-blue-400':'text-orange-400'} text-lg">${fmtMoney(bal)}</span>
                 </div>
             `;
 
             const listEl = document.getElementById('expense-list');
             listEl.innerHTML = '';
             
-            if(!curExp.length) listEl.innerHTML = '<div class="text-center text-slate-500 py-10 text-xs">Sem dados.</div>';
+            if(!curExp.length) listEl.innerHTML = '<div class="text-center text-slate-500 py-10 text-sm">Nenhum lançamento neste mês.</div>';
             else {
                 curExp.forEach(item => {
                     const color = COLORS[item.category] || '#666';
                     const hasDet = item.details && Object.keys(item.details).length > 0;
                     let act = hasDet ? `onclick="openInvoiceDetails('${item.id}')"` : `onclick="openModal('${item.id}')"`;
                     let icon = hasDet ? '💳' : '💸';
-                    let tag = hasDet ? '<span class="text-[9px] bg-indigo-500/20 text-indigo-300 px-1 rounded ml-1">FATURA</span>' : '';
+                    let tag = hasDet ? '<span class="text-[9px] bg-indigo-500/20 text-indigo-300 px-1 rounded ml-1 border border-indigo-500/30">FATURA</span>' : '';
 
                     listEl.innerHTML += `
-                        <div ${act} class="bg-slate-800/40 p-3 rounded-xl flex items-center justify-between border-l-2 mb-2 border-white/5 hover:bg-slate-700/60 active:scale-[0.99] transition" style="border-left-color:${color}">
+                        <div ${act} class="bg-slate-800/60 p-3.5 rounded-xl flex items-center justify-between border-l-2 mb-2 border-white/5 hover:bg-slate-700 active:scale-[0.98] transition cursor-pointer touch-manipulation shadow-sm" style="border-left-color:${color}">
                             <div class="flex items-center gap-3 overflow-hidden">
-                                <div class="bg-slate-900/50 w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-sm" style="color:${color}">${icon}</div>
+                                <div class="bg-slate-900 w-10 h-10 rounded-lg flex items-center justify-center text-lg shadow-sm shrink-0" style="color:${color}">${icon}</div>
                                 <div class="min-w-0">
-                                    <div class="flex items-center"><p class="font-bold text-xs text-slate-200 truncate">${item.description}</p>${tag}</div>
-                                    <p class="text-[10px] text-slate-500">${new Date(item.date).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})} • ${item.category}</p>
+                                    <div class="flex items-center"><p class="font-bold text-sm text-slate-200 truncate">${item.description}</p>${tag}</div>
+                                    <p class="text-[10px] text-slate-500 font-medium">${new Date(item.date).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})} • ${item.category}</p>
                                 </div>
                             </div>
-                            <span class="font-bold text-slate-200 text-sm whitespace-nowrap">${fmtMoney(item.value)}</span>
+                            <span class="font-bold text-white text-sm whitespace-nowrap">${fmtMoney(item.value)}</span>
                         </div>
                     `;
                 });
@@ -451,7 +416,7 @@
                     document.getElementById('parsed-details').value = JSON.stringify(res.breakdown);
                     document.getElementById('pdf-status').classList.remove('hidden');
                 }
-            } catch(e) { console.log(e); alert("Erro PDF"); }
+            } catch(e) { console.log(e); alert("Erro ao ler PDF. Verifique o formato."); }
             toggleLoader(false);
         });
 
@@ -476,22 +441,25 @@
                 if(currentEditId) await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).update(data);
                 else await db.collection('users').doc(userId).collection('expenses').add(data);
                 closeModal('expense-modal'); loadData();
-            } catch(err) { alert(err.message); }
-            btn.innerText = "Salvar"; btn.disabled = false;
+            } catch(err) { alert("Erro: " + err.message); }
+            btn.innerText = "SALVAR"; btn.disabled = false;
         };
 
-        // PDF Logic (Simplified for brevity)
+        // PDF Logic
         async function parsePDF(file) {
             const buff = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument(buff).promise;
             let breakdown = {}, total = 0, txt = '';
             for (let i=1; i<=pdf.numPages; i++) txt += (await (await pdf.getPage(i)).getTextContent()).items.map(s=>s.str).join(' ');
             
+            // Regex ajustado para pegar R$ negativo e positivo
             const regex = /(\d{2}\/\d{2})\s+(.*?)\s+(-?[\d\.]*?[\d]+,\d{2})/g;
             let m;
             while ((m = regex.exec(txt)) !== null) {
                 let d = m[2].trim().toUpperCase(), v = parseFloat(m[3].replace('.','').replace(',','.'));
-                if (["PAGAMENTO","SALDO"].some(x=>d.includes(x))) continue;
+                // Ignorar pagamentos e itens cancelados
+                if (["PAGAMENTO","SALDO","CREDITO"].some(x=>d.includes(x)) || v <= 0) continue;
+                
                 let c = 'Outros'; 
                 for(let [k,v] of Object.entries(KEYWORDS)) if(v.some(x=>d.toLowerCase().includes(x))) c = k;
                 if (!breakdown[c]) breakdown[c] = [];
@@ -503,7 +471,12 @@
         // UI Helpers
         function openInvoiceDetails(id) {
             currentEditId = id; const item = expenses.find(e => e.id === id);
-            document.getElementById('invoice-subtitle').innerText = `${item.description} - ${fmtMoney(item.value)}`;
+            if(item.attachment) { 
+                document.getElementById('download-invoice-btn').href = item.attachment; 
+                document.getElementById('download-invoice-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('download-invoice-btn').classList.add('hidden');
+            }
             const list = document.getElementById('invoice-items-list'); list.innerHTML = '';
             const ctx = document.getElementById('invoiceChart').getContext('2d');
             if(invoiceChart) invoiceChart.destroy();
@@ -514,8 +487,8 @@
                 cats.forEach(k => {
                     const t = item.details[k].reduce((a,b)=>a+b.val,0);
                     l.push(k); d.push(t); c.push(COLORS[k]||'#666');
-                    let h = `<div class="bg-slate-800/50 rounded-lg overflow-hidden mb-2"><div class="px-3 py-1 bg-slate-800 flex justify-between text-xs font-bold"><span style="color:${COLORS[k]}">${k}</span><span>${fmtMoney(t)}</span></div><div class="p-2">`;
-                    item.details[k].forEach(i => h+=`<div class="flex justify-between text-[10px] text-slate-400 border-b border-white/5 last:border-0 py-1"><span class="truncate pr-2">${i.desc}</span><span>${fmtMoney(i.val)}</span></div>`);
+                    let h = `<div class="bg-slate-800/50 rounded-lg overflow-hidden mb-2"><div class="px-3 py-2 bg-slate-800 flex justify-between text-xs font-bold text-slate-200"><span style="color:${COLORS[k]}">${k}</span><span>${fmtMoney(t)}</span></div><div class="p-2 space-y-1">`;
+                    item.details[k].forEach(i => h+=`<div class="flex justify-between text-[10px] text-slate-400 border-b border-white/5 last:border-0 pb-1"><span class="truncate pr-2">${i.desc}</span><span>${fmtMoney(i.val)}</span></div>`);
                     h+=`</div></div>`; list.innerHTML += h;
                 });
                 invoiceChart = new Chart(ctx, { type:'doughnut', data:{labels:l, datasets:[{data:d, backgroundColor:c, borderWidth:0}]}, options:{plugins:{legend:{display:false}}, cutout:'65%'} });
@@ -530,6 +503,10 @@
             document.getElementById('pdf-status').classList.add('hidden');
             document.getElementById('parsed-details').value = "";
             document.getElementById('expense-form').reset();
+            
+            // Data de hoje por padrão
+            document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
+
             if(id) {
                 const i = expenses.find(e => e.id === id);
                 document.getElementById('form-date').value = i.date;
@@ -538,8 +515,9 @@
                 document.getElementById('form-val').value = i.value;
                 document.getElementById('existing-file').value = i.attachment || '';
                 document.getElementById('delete-btn').classList.remove('hidden');
+                document.getElementById('modal-title').innerText = "Editar";
             } else {
-                document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
+                document.getElementById('modal-title').innerText = "Novo Lançamento";
                 if(isImport) setTimeout(() => document.getElementById('form-file').click(), 300);
             }
             document.getElementById('expense-modal').classList.remove('hidden');
@@ -547,7 +525,7 @@
         }
 
         async function deleteDirectly(id, e) { e.stopPropagation(); currentEditId = id; deleteItem(); }
-        async function deleteItem() { if(confirm("Excluir?")) { await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete(); closeModal('expense-modal'); closeModal('invoice-details-modal'); loadData(); } }
+        async function deleteItem() { if(confirm("Excluir item?")) { await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete(); closeModal('expense-modal'); closeModal('invoice-details-modal'); loadData(); } }
         const convertBase64 = (f) => new Promise((r,j)=>{const rd=new FileReader(); rd.readAsDataURL(f); rd.onload=()=>r(rd.result); rd.onerror=j;});
 
         async function saveIncome() {
@@ -563,14 +541,33 @@
         document.getElementById('income1').onchange = saveIncome;
         document.getElementById('income2').onchange = saveIncome;
 
+        document.getElementById('export-btn').onclick = () => {
+            const data = { expenses, income: incomeData };
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type : 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `backup_${currentDate.toISOString().slice(0,10)}.json`; a.click();
+        };
+        
+        document.getElementById('import-json').onchange = (e) => {
+            const f = e.target.files[0]; if(!f) return;
+            const r = new FileReader();
+            r.onload = async (ev) => {
+                try {
+                    const d = JSON.parse(ev.target.result);
+                    if(confirm("Restaurar backup?")) { expenses = d.expenses||[]; incomeData = d.income||{}; render(); }
+                } catch(err) { alert("Arquivo inválido"); }
+            }; r.readAsText(f);
+        }
+
         function updateMainChart(data) {
             const ctx = document.getElementById('expenseChart').getContext('2d');
             if(mainChart) mainChart.destroy();
-            const cats = {}; data.forEach(d => cats[d.category] = (cats[d.category]||0) + d.value);
+            const cats = {};
+            data.forEach(d => cats[d.category] = (cats[d.category]||0) + d.value);
             mainChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: Object.keys(cats).map(k=>COLORS[k]||'#666'), borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#cbd5e1', font: {size: 10}, boxWidth: 8 } } }, layout: { padding: 5 } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: {family: 'Outfit', size: 10}, usePointStyle: true, boxWidth: 6 } } }, layout: { padding: 0 } }
             });
         }
 

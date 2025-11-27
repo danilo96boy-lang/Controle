@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Financeiro Moderno</title>
+    <title>Painel Financeiro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -18,9 +18,19 @@
                 extend: {
                     fontFamily: { sans: ['Outfit', 'sans-serif'] },
                     colors: {
-                        dark: { 900: '#0f172a', 800: '#1e293b', 700: '#334155' },
-                        primary: '#6366f1',
-                        accent: '#8b5cf6'
+                        app: {
+                            bg: '#0B0E14',       /* Fundo quase preto */
+                            card: '#151B2B',     /* Fundo dos cards azul escuro */
+                            hover: '#1E2538',    /* Hover das linhas */
+                            border: '#2D3748',   /* Bordas sutis */
+                            input: '#0F131F',    /* Fundo dos inputs */
+                        },
+                        brand: {
+                            blue: '#3B82F6',
+                            purple: '#8B5CF6',
+                            green: '#10B981',
+                            red: '#EF4444'
+                        }
                     }
                 }
             }
@@ -28,256 +38,247 @@
     </script>
 
     <style>
-        body { background: linear-gradient(135deg, #020617 0%, #0f172a 100%); color: #f8fafc; }
+        body { background-color: #0B0E14; color: #E2E8F0; }
         
-        .glass-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .input-modern {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            transition: all 0.3s ease;
-        }
-        .input-modern:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-        }
-
-        /* Scrollbar */
+        /* Scrollbar Personalizada */
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+        ::-webkit-scrollbar-track { background: #0B0E14; }
+        ::-webkit-scrollbar-thumb { background: #2D3748; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4A5568; }
 
-        .spinner { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #6366f1; border-radius: 50%; width: 30px; height: 30px; animation: spin 0.8s linear infinite; }
+        .spinner { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #3B82F6; border-radius: 50%; width: 30px; height: 30px; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .expense-row:hover { transform: translateX(4px); background: rgba(255,255,255,0.03); }
-        
-        /* Progress Bar Animation */
-        .progress-bar-fill { transition: width 1s ease-in-out, background-color 0.5s; }
+        /* Utilitários de ícones */
+        .icon-box { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; }
     </style>
 </head>
-<body class="flex flex-col min-h-screen p-4 md:p-6 antialiased">
+<body class="flex flex-col min-h-screen antialiased selection:bg-brand-blue selection:text-white">
 
-    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-[#020617]">
-        <div class="glass-card p-8 rounded-2xl w-full max-w-sm relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-600"></div>
-            <h2 class="text-3xl font-bold mb-2 text-center text-white tracking-tight">Finanças</h2>
-            <p class="text-center text-gray-400 mb-8 text-sm">Controle financeiro do casal</p>
+    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-[#05080F] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]">
+        <div class="bg-[#111625] border border-[#2D3748] p-8 rounded-2xl w-full max-w-sm shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-full h-1 bg-gradient-to-r from-brand-blue to-brand-purple opacity-50"></div>
+            
+            <div class="flex flex-col items-center mb-8">
+                <div class="w-12 h-12 bg-brand-blue/20 rounded-xl flex items-center justify-center mb-4 text-brand-blue">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                </div>
+                <h2 class="text-2xl font-bold text-white">Finanças</h2>
+                <p class="text-gray-400 text-sm">Acesse o painel de controle do casal</p>
+            </div>
+
             <form id="login-form" class="space-y-4">
-                <input type="text" id="user" placeholder="Usuário" class="input-modern w-full p-3 rounded-lg text-white text-center outline-none">
-                <input type="password" id="pass" placeholder="Senha" class="input-modern w-full p-3 rounded-lg text-white text-center outline-none">
-                <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 py-3 rounded-lg font-bold transition shadow-lg shadow-indigo-500/20">Acessar Painel</button>
+                <input type="text" id="user" placeholder="Usuário" class="w-full bg-[#0B0E14] border border-[#2D3748] text-white p-3 rounded-lg focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none transition text-center">
+                <input type="password" id="pass" placeholder="Senha" class="w-full bg-[#0B0E14] border border-[#2D3748] text-white p-3 rounded-lg focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none transition text-center">
+                <button type="submit" class="w-full bg-brand-blue hover:bg-blue-600 text-white font-bold py-3 rounded-lg shadow-[0_0_20px_rgba(59,130,246,0.5)] transition-all">Entrar</button>
             </form>
-            <p id="login-msg" class="text-red-400 text-center mt-4 hidden text-sm font-medium">Credenciais inválidas.</p>
+            <p id="login-msg" class="text-red-400 text-center mt-4 hidden text-sm">Credenciais inválidas.</p>
         </div>
     </div>
 
-    <div id="loading-overlay" class="fixed inset-0 bg-black/80 z-[100] hidden flex-col items-center justify-center backdrop-blur-sm">
+    <div id="loading-overlay" class="fixed inset-0 bg-[#0B0E14]/90 z-[100] hidden flex-col items-center justify-center backdrop-blur-sm">
         <div class="spinner mb-4"></div>
-        <p class="text-indigo-300 font-medium text-sm animate-pulse" id="loading-text">Processando...</p>
+        <p class="text-brand-blue font-medium text-sm animate-pulse" id="loading-text">Carregando...</p>
     </div>
 
-    <div id="app-container" class="max-w-7xl mx-auto w-full opacity-0 transition-opacity duration-700 hidden">
+    <div id="app-container" class="max-w-[1440px] mx-auto w-full opacity-0 transition-opacity duration-700 hidden p-4 md:p-8">
         
-        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 glass-card p-4 rounded-2xl">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white text-lg">F</div>
-                <div>
-                    <h1 class="text-xl font-bold text-white leading-tight">Painel Financeiro</h1>
-                    <p class="text-xs text-slate-400">Bem-vindo, <span id="user-display" class="text-indigo-400 font-bold capitalize"></span></p>
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div>
+                <div class="flex items-center gap-2 text-brand-blue mb-1">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" /><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd" /></svg>
+                    <span class="font-bold text-lg">Painel Financeiro</span>
                 </div>
+                <p class="text-gray-400 text-sm">Bem-vindo de volta, <span id="user-display" class="text-brand-blue font-bold capitalize"></span></p>
             </div>
             
             <div class="flex items-center gap-4">
-                <div class="flex items-center bg-dark-900/50 rounded-full px-1 py-1 border border-slate-700">
-                    <button id="prev-month" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-700 text-slate-300 hover:text-white transition">‹</button>
-                    <span id="current-month" class="mx-3 font-semibold min-w-[120px] text-center capitalize text-sm text-slate-200"></span>
-                    <button id="next-month" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-700 text-slate-300 hover:text-white transition">›</button>
+                <div class="bg-app-card border border-app-border rounded-lg flex items-center px-2 py-1">
+                    <button id="prev-month" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 rounded transition">‹</button>
+                    <span id="current-month" class="mx-4 font-semibold text-sm min-w-[140px] text-center capitalize text-white"></span>
+                    <button id="next-month" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 rounded transition">›</button>
                 </div>
-                <button id="logout-btn" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 w-10 h-10 flex items-center justify-center rounded-full transition-all" title="Sair">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                <button id="logout-btn" class="w-10 h-10 rounded-lg border border-red-500/20 text-red-400 hover:bg-red-500/10 flex items-center justify-center transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                 </button>
             </div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div id="summary-display" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <div class="lg:col-span-4 space-y-6">
+            <div class="space-y-6">
                 
-                <div class="glass-card p-6 rounded-2xl">
+                <div class="bg-app-card border border-app-border rounded-2xl p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Entradas do Mês</h3>
-                        <span id="income-saved-msg" class="text-[10px] text-emerald-400 font-bold opacity-0 transition-opacity bg-emerald-900/30 px-2 py-0.5 rounded-full">Salvo ✓</span>
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Entradas Mensais</h3>
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                     </div>
-                    <div class="grid grid-cols-2 gap-3 mb-6">
-                        <div>
-                            <label class="text-[10px] text-slate-500 block mb-1">Renda Gabi</label>
-                            <input type="number" id="income1" placeholder="R$ 0,00" step="0.01" class="input-modern w-full rounded-lg p-2 text-sm text-white outline-none font-medium">
+                    <div class="space-y-3">
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">R$</span>
+                            <input type="number" id="income1" placeholder="2400" step="0.01" class="w-full bg-app-input border border-app-border rounded-lg py-3 pl-8 pr-4 text-white font-medium focus:border-brand-blue outline-none transition placeholder-gray-600">
                         </div>
-                        <div>
-                            <label class="text-[10px] text-slate-500 block mb-1">Renda Danilo</label>
-                            <input type="number" id="income2" placeholder="R$ 0,00" step="0.01" class="input-modern w-full rounded-lg p-2 text-sm text-white outline-none font-medium">
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">R$</span>
+                            <input type="number" id="income2" placeholder="6480" step="0.01" class="w-full bg-app-input border border-app-border rounded-lg py-3 pl-8 pr-4 text-white font-medium focus:border-brand-blue outline-none transition placeholder-gray-600">
                         </div>
-                    </div>
-
-                    <div id="summary-display" class="space-y-3">
-                        </div>
-
-                    <div class="mt-6 pt-5 border-t border-slate-700/50">
-                        <div class="flex justify-between items-end mb-2">
-                            <div>
-                                <h4 class="text-xs font-bold text-slate-300">Meta de Reserva</h4>
-                                <p class="text-[10px] text-slate-500">Objetivo: <span class="text-slate-300">R$ 1.000,00</span></p>
-                            </div>
-                            <span id="reserve-percent-text" class="text-sm font-bold text-white">0%</span>
-                        </div>
-                        <div class="w-full bg-slate-900 rounded-full h-3 overflow-hidden shadow-inner border border-slate-800">
-                            <div id="reserve-bar" class="progress-bar-fill bg-gradient-to-r from-blue-600 to-cyan-500 h-3 rounded-full relative" style="width: 0%">
-                                <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
-                            </div>
-                        </div>
-                        <p id="reserve-msg" class="text-[10px] text-right mt-1 text-slate-400 font-medium">Calulando...</p>
+                        <p id="income-saved-msg" class="text-[10px] text-brand-green text-right opacity-0 transition-opacity">Salvo ✓</p>
                     </div>
                 </div>
 
-                <div class="glass-card p-5 rounded-2xl flex flex-col items-center justify-center min-h-[300px]">
-                    <h4 class="font-bold text-slate-400 mb-4 text-xs uppercase tracking-wider w-full text-left">Distribuição de Gastos</h4>
-                    <div class="relative w-full h-64">
+                <div class="bg-app-card border border-app-border rounded-2xl p-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-5">
+                        <svg class="w-24 h-24 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" /><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd" /></svg>
+                    </div>
+
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-brand-blue">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" /><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd" /></svg>
+                        </span>
+                        <h3 class="text-xs font-bold text-gray-300 uppercase">Meta Reserva</h3>
+                    </div>
+                    
+                    <div class="flex items-end gap-2 mb-2">
+                         <span id="reserve-current" class="text-2xl font-bold text-white">R$ 0,00</span>
+                         <span class="text-xs text-gray-500 mb-1">/ R$ 1.000,00</span>
+                         <span id="reserve-percent-text" class="ml-auto bg-brand-blue/20 text-brand-blue text-xs font-bold px-2 py-1 rounded">0%</span>
+                    </div>
+
+                    <div class="w-full bg-app-input rounded-full h-2 mb-2 overflow-hidden">
+                        <div id="reserve-bar" class="bg-brand-blue h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                    <p class="text-[10px] text-gray-500 text-right italic">Baseado na sobra mensal</p>
+                </div>
+
+                <div class="bg-app-card border border-app-border rounded-2xl p-6 flex flex-col items-center">
+                    <h4 class="text-xs font-bold text-gray-400 uppercase w-full text-left mb-4">Distribuição de Gastos</h4>
+                    <div class="relative w-full h-48">
                         <canvas id="expenseChart"></canvas>
                     </div>
                 </div>
             </div>
 
-            <div class="lg:col-span-8 glass-card rounded-2xl flex flex-col h-[800px] shadow-2xl relative overflow-hidden">
+            <div class="lg:col-span-2 bg-app-card border border-app-border rounded-2xl flex flex-col h-[750px] shadow-lg overflow-hidden">
                 
-                <div class="p-6 border-b border-slate-700/50 bg-slate-900/20">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-                        <div>
-                            <h3 class="font-bold text-xl text-white">Extrato de Lançamentos</h3>
-                            <p class="text-xs text-slate-400 mt-1">Gerencie suas despesas e faturas</p>
+                <div class="p-6 border-b border-app-border">
+                    <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-4">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                            <h3 class="font-bold text-lg text-white">Lançamentos</h3>
                         </div>
-                        <div class="flex gap-2">
-                            <label for="import-json" class="hidden md:inline-flex items-center px-3 py-2 text-xs font-medium text-slate-300 bg-slate-800 border border-slate-700 rounded-lg cursor-pointer hover:bg-slate-700 transition">
-                                <span>📥 Restaurar</span>
+                        <div class="flex gap-2 w-full xl:w-auto">
+                             <label for="import-json" class="flex items-center gap-2 bg-app-hover hover:bg-[#2D3748] text-gray-300 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition border border-app-border">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                <span class="hidden sm:inline">Restaurar</span>
                             </label>
                             <input type="file" id="import-json" class="hidden" accept=".json">
-                            
-                            <button onclick="openModal(null, true)" class="bg-violet-600/20 hover:bg-violet-600/40 text-violet-300 border border-violet-500/30 px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2">
-                                <span>📄 Importar Fatura</span>
+
+                            <button onclick="openModal(null, true)" class="flex items-center gap-2 bg-brand-purple hover:bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow-lg shadow-purple-900/20">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                                <span class="hidden sm:inline">Importar Fatura</span>
+                                <span class="sm:hidden">Importar</span>
                             </button>
-                            <button onclick="openModal()" class="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/20 transition flex items-center gap-2 transform hover:scale-105">
+                            <button onclick="openModal()" class="flex items-center gap-2 bg-brand-blue hover:bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-bold transition shadow-lg shadow-blue-900/20">
                                 <span>+ Novo</span>
                             </button>
                         </div>
                     </div>
                     
-                    <div class="relative group">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 group-focus-within:text-indigo-400 transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         </span>
-                        <input type="text" id="search-input" placeholder="Buscar por descrição, valor ou categoria..." class="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition placeholder-slate-600">
+                        <input type="text" id="search-input" placeholder="Buscar por descrição, valor ou categoria..." class="w-full bg-app-input border border-app-border rounded-lg py-3 pl-12 pr-4 text-sm text-white focus:border-brand-blue outline-none transition placeholder-gray-600">
                     </div>
                 </div>
                 
-                <div id="expense-list" class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                <div id="expense-list" class="flex-1 overflow-y-auto p-4 space-y-3">
                     </div>
                 
-                <div class="p-3 border-t border-slate-700/50 bg-slate-900/40 flex justify-end">
-                     <button id="export-btn" class="text-xs text-slate-500 hover:text-indigo-400 transition flex items-center gap-1">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                        Salvar Backup (JSON)
-                    </button>
+                <div class="p-4 border-t border-app-border flex justify-end">
+                     <button id="export-btn" class="text-xs text-gray-500 hover:text-white transition">Salvar Backup (JSON)</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="expense-modal" class="fixed inset-0 bg-black/80 hidden z-50 items-center justify-center p-4 backdrop-blur-md">
-        <div class="glass-card p-6 rounded-2xl w-full max-w-md shadow-2xl transform transition-all scale-100">
-            <h3 class="text-xl font-bold mb-6 text-white border-b border-slate-700 pb-2" id="modal-title">Novo Lançamento</h3>
+    <div id="expense-modal" class="fixed inset-0 bg-black/80 hidden z-50 items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-app-card border border-app-border p-6 rounded-2xl w-full max-w-md shadow-2xl">
+            <h3 class="text-xl font-bold mb-6 text-white" id="modal-title">Novo Lançamento</h3>
             <form id="expense-form" class="space-y-4">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="text-xs text-slate-400 font-semibold mb-1 block">Data</label>
-                        <input type="date" id="form-date" class="input-modern w-full rounded-lg p-2.5 text-white text-sm">
+                        <label class="text-xs text-gray-400 mb-1 block">Data</label>
+                        <input type="date" id="form-date" class="w-full bg-app-input border border-app-border rounded-lg p-3 text-white text-sm outline-none focus:border-brand-blue">
                     </div>
                     <div>
-                        <label class="text-xs text-slate-400 font-semibold mb-1 block">Categoria</label>
-                        <select id="form-cat" class="input-modern w-full rounded-lg p-2.5 text-white text-sm bg-slate-900"></select>
+                        <label class="text-xs text-gray-400 mb-1 block">Categoria</label>
+                        <select id="form-cat" class="w-full bg-app-input border border-app-border rounded-lg p-3 text-white text-sm outline-none focus:border-brand-blue"></select>
                     </div>
                 </div>
                 <div>
-                    <label class="text-xs text-slate-400 font-semibold mb-1 block">Descrição</label>
-                    <input type="text" id="form-desc" class="input-modern w-full rounded-lg p-2.5 text-white text-sm" placeholder="Ex: Mercado Semanal">
+                    <label class="text-xs text-gray-400 mb-1 block">Descrição</label>
+                    <input type="text" id="form-desc" class="w-full bg-app-input border border-app-border rounded-lg p-3 text-white text-sm outline-none focus:border-brand-blue" placeholder="Ex: Mercado">
                 </div>
                 <div>
-                    <label class="text-xs text-slate-400 font-semibold mb-1 block">Valor Total (R$)</label>
-                    <input type="number" step="0.01" id="form-val" class="input-modern w-full rounded-lg p-2.5 text-white text-sm font-bold text-lg" placeholder="0,00">
+                    <label class="text-xs text-gray-400 mb-1 block">Valor (R$)</label>
+                    <input type="number" step="0.01" id="form-val" class="w-full bg-app-input border border-app-border rounded-lg p-3 text-white text-lg font-bold outline-none focus:border-brand-blue" placeholder="0,00">
                 </div>
                 
-                <div class="pt-3 border-t border-slate-700/50">
-                    <label class="flex items-center gap-2 w-full p-3 rounded-lg border border-dashed border-slate-600 hover:border-indigo-500 hover:bg-slate-800/50 cursor-pointer transition group">
-                        <span class="text-xl group-hover:scale-110 transition">📎</span>
+                <div class="pt-3 border-t border-app-border">
+                    <label class="flex items-center gap-3 w-full p-3 rounded-lg border border-dashed border-gray-600 hover:border-brand-blue hover:bg-app-hover cursor-pointer transition">
+                        <span class="text-lg">📎</span>
                         <div>
-                            <span class="text-xs text-slate-300 block font-medium">Anexar Fatura (PDF) ou Imagem</span>
-                            <span class="text-[10px] text-slate-500">Suporta leitura automática de Inter e Santander</span>
+                            <span class="text-xs text-gray-300 block font-medium">Anexar Fatura (PDF)</span>
+                            <span class="text-[10px] text-gray-500">Leitura automática Inter/Santander</span>
                         </div>
                         <input type="file" id="form-file" class="hidden" accept="application/pdf, image/*">
                     </label>
-                    <p class="text-xs text-emerald-400 mt-2 hidden font-bold flex items-center gap-1" id="pdf-status">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        PDF Processado com sucesso!
-                    </p>
+                    <p class="text-xs text-brand-green mt-2 hidden font-bold" id="pdf-status">✓ PDF Lido!</p>
                     <input type="hidden" id="existing-file">
                     <input type="hidden" id="parsed-details"> 
                 </div>
 
                 <div class="flex justify-between pt-4 mt-2">
-                    <button type="button" id="delete-btn" onclick="deleteItem()" class="text-red-400 font-bold hidden hover:text-red-300 text-sm px-2">Excluir</button>
+                    <button type="button" id="delete-btn" onclick="deleteItem()" class="text-red-400 hover:text-red-300 text-sm font-bold hidden">Excluir</button>
                     <div class="flex gap-3 ml-auto">
-                        <button type="button" onclick="closeModal('expense-modal')" class="px-5 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 text-sm font-medium transition">Cancelar</button>
-                        <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-900/50 transition transform active:scale-95">Salvar</button>
+                        <button type="button" onclick="closeModal('expense-modal')" class="text-gray-400 hover:text-white text-sm font-medium px-4">Cancelar</button>
+                        <button type="submit" class="bg-brand-blue hover:bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-bold transition">Salvar</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="invoice-details-modal" class="fixed inset-0 bg-black/90 hidden z-50 items-center justify-center p-4 backdrop-blur-md">
-        <div class="glass-card p-0 rounded-2xl w-full max-w-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
-            <div class="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-900/50">
+    <div id="invoice-details-modal" class="fixed inset-0 bg-black/90 hidden z-50 items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-app-card border border-app-border p-0 rounded-2xl w-full max-w-3xl flex flex-col max-h-[90vh] overflow-hidden shadow-2xl">
+            <div class="p-5 border-b border-app-border flex justify-between items-center bg-app-card">
                 <div>
-                    <h3 class="text-lg font-bold text-white">Detalhamento da Fatura</h3>
-                    <p class="text-sm text-slate-400" id="invoice-subtitle">--</p>
+                    <h3 class="text-lg font-bold text-white">Detalhes da Fatura</h3>
+                    <p class="text-sm text-gray-400" id="invoice-subtitle">--</p>
                 </div>
-                <button onclick="closeModal('invoice-details-modal')" class="text-slate-400 hover:text-white transition bg-slate-800 rounded-full w-8 h-8 flex items-center justify-center">&times;</button>
+                <button onclick="closeModal('invoice-details-modal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 overflow-hidden h-full">
-                <div class="bg-slate-900/30 p-6 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-700">
+                <div class="bg-app-input p-6 flex flex-col items-center justify-center border-r border-app-border">
                     <div class="relative w-48 h-48 mb-4">
                         <canvas id="invoiceChart"></canvas>
                     </div>
-                    <p class="text-xs text-slate-500 text-center">Categorização automática via PDF</p>
+                    <p class="text-xs text-gray-500">Gráfico de Categorias da Fatura</p>
                 </div>
                 
-                <div class="flex flex-col h-full bg-slate-800/20">
-                    <div class="p-4 flex justify-between items-center border-b border-slate-700/50">
-                        <h4 class="text-xs font-bold text-slate-300 uppercase">Itens Identificados</h4>
-                        <a id="download-invoice-btn" href="#" download="fatura.pdf" class="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Baixar Original
-                        </a>
+                <div class="flex flex-col h-full bg-app-card">
+                    <div class="p-4 flex justify-between items-center border-b border-app-border bg-app-hover">
+                        <h4 class="text-xs font-bold text-gray-300 uppercase">Lista de Itens</h4>
+                        <a id="download-invoice-btn" href="#" download="fatura.pdf" class="text-xs text-brand-blue hover:underline">Baixar Original</a>
                     </div>
-                    <div id="invoice-items-list" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar"></div>
-                    <div class="p-4 border-t border-slate-700/50">
-                         <button onclick="deleteItem()" class="w-full border border-red-500/30 text-red-400 hover:bg-red-500/10 py-2.5 rounded-lg text-sm font-semibold transition">Excluir este Lançamento</button>
+                    <div id="invoice-items-list" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+                    <div class="p-4 border-t border-app-border">
+                         <button onclick="deleteItem()" class="w-full text-red-400 hover:bg-red-900/10 py-2 rounded text-sm transition font-medium border border-red-900/30">Excluir Lançamento</button>
                     </div>
                 </div>
             </div>
@@ -300,26 +301,27 @@
         const userId = 'casal_principal';
         const USERS = { 'gabi': '19071996', 'danilo': '08042020' };
         
-        // Cores Modernas (Neon/Pastel para Dark Mode)
+        // Cores vibrantes estilo Neon/Fintech
         const COLORS = {
-            'Mercado': '#fbbf24',    // Amber
-            'Contas': '#34d399',     // Emerald
-            'Cartões': '#38bdf8',    // Sky Blue
-            'Apartamento': '#a78bfa',// Soft Purple
-            'Carro': '#60a5fa',      // Blue
-            'Lazer': '#f472b6',      // Pink
-            'Delivery': '#e879f9',   // Fuchsia
-            'Posto': '#fb923c',      // Orange
-            'Farmácia': '#a3e635',   // Lime
-            'Roupa': '#f87171',      // Red-Pink
-            'Escola': '#2dd4bf',     // Teal
-            'Poupança Maria Luisa': '#facc15', // Yellow
-            'Reserva': '#818cf8',    // Indigo
-            'Outros': '#94a3b8'      // Slate
+            'Mercado': '#F59E0B',    // Amber
+            'Contas': '#10B981',     // Emerald
+            'Cartões': '#3B82F6',    // Blue
+            'Apartamento': '#8B5CF6',// Purple
+            'Carro': '#6366F1',      // Indigo
+            'Lazer': '#EC4899',      // Pink
+            'Delivery': '#D946EF',   // Fuchsia
+            'Posto': '#F97316',      // Orange
+            'Farmácia': '#84CC16',   // Lime
+            'Roupa': '#EF4444',      // Red
+            'Escola': '#06B6D4',     // Cyan
+            'Poupança Maria Luisa': '#EC4899', // Pink (Como na imagem)
+            'Reserva': '#3B82F6',    // Blue
+            'Outros': '#9CA3AF'      // Gray
         };
 
         const CATEGORIES = Object.keys(COLORS);
         
+        // Keywords (Mantidas do original)
         const KEYWORDS = {
             'Uber/Transporte': ['uber', '99', 'sem parar', 'estacionamento', 'zona azul', 'pedagio', 'veloe'],
             'Delivery': ['ifood', 'rappi', 'ze delivery', 'aiqfome', 'delivery'],
@@ -347,7 +349,6 @@
         }
 
         document.getElementById('search-input').addEventListener('input', (e) => { render(e.target.value); });
-
         document.getElementById('logout-btn').onclick = () => {
             document.getElementById('login-screen').classList.remove('hidden');
             document.getElementById('app-container').classList.add('hidden');
@@ -405,103 +406,78 @@
             const totalInc = (parseFloat(inc.s1)||0) + (parseFloat(inc.s2)||0);
             const balance = totalInc - totalExp;
 
-            // --- ATUALIZAÇÃO DA BARRA DE RESERVA ---
-            const reserveGoal = 1000;
-            // A barra mostra a % do saldo em relação a meta de 1000
-            let reservePercent = 0;
-            let barColor = 'from-red-500 to-red-600'; // Default Ruim
-            let msg = '';
-
-            if (balance <= 0) {
-                reservePercent = 0;
-                msg = `Saldo negativo: ${fmtMoney(balance)}`;
-                barColor = 'from-red-600 to-red-500';
-            } else {
-                reservePercent = (balance / reserveGoal) * 100;
-                if(reservePercent > 100) reservePercent = 100;
-                
-                const remaining = reserveGoal - balance;
-                
-                if (balance >= reserveGoal) {
-                    msg = "Meta atingida! 🚀";
-                    barColor = 'from-emerald-500 to-teal-500';
-                } else {
-                    msg = `Faltam ${fmtMoney(remaining)} para a meta`;
-                    // Gradiente de amarelo para azul conforme enche
-                    barColor = 'from-blue-500 to-violet-500';
-                }
-            }
-
-            document.getElementById('reserve-percent-text').innerText = `${reservePercent.toFixed(0)}%`;
-            const barEl = document.getElementById('reserve-bar');
-            barEl.style.width = `${reservePercent}%`;
-            barEl.className = `progress-bar-fill h-3 rounded-full relative bg-gradient-to-r ${barColor}`;
-            document.getElementById('reserve-msg').innerText = msg;
-            // ----------------------------------------
-
+            // --- KPI CARDS (Baseado na imagem: Verde, Vermelho, Azul) ---
             document.getElementById('summary-display').innerHTML = `
-                <div class="glass-card p-4 rounded-xl border border-slate-700/50 flex justify-between items-center group hover:bg-slate-800/50 transition">
-                    <span class="text-slate-400 text-sm">Renda Total</span>
-                    <span class="font-bold text-emerald-400 text-lg">${fmtMoney(totalInc)}</span>
+                <div class="bg-[#0e2a22] border border-[#10b981]/30 p-6 rounded-2xl relative overflow-hidden group">
+                    <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition"><svg class="w-24 h-24 text-[#10b981]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg></div>
+                    <p class="text-[#10b981] font-bold text-xs uppercase mb-1">Renda Total</p>
+                    <p class="text-3xl font-bold text-white">${fmtMoney(totalInc)}</p>
                 </div>
-                <div class="glass-card p-4 rounded-xl border border-slate-700/50 flex justify-between items-center group hover:bg-slate-800/50 transition">
-                    <span class="text-slate-400 text-sm">Saídas</span>
-                    <span class="font-bold text-rose-400 text-lg">${fmtMoney(totalExp)}</span>
+                <div class="bg-[#2a1215] border border-[#ef4444]/30 p-6 rounded-2xl relative overflow-hidden group">
+                     <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition"><svg class="w-24 h-24 text-[#ef4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg></div>
+                    <p class="text-[#ef4444] font-bold text-xs uppercase mb-1">Despesas</p>
+                    <p class="text-3xl font-bold text-white">${fmtMoney(totalExp)}</p>
                 </div>
-                <div class="p-4 rounded-xl border flex justify-between items-center text-lg mt-2 ${balance>=0 ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-red-500/10 border-red-500/30'}">
-                    <span class="text-slate-200 text-sm font-semibold">Sobra (Saldo)</span>
-                    <span class="font-bold ${balance>=0?'text-indigo-300':'text-red-300'}">${fmtMoney(balance)}</span>
+                <div class="bg-[#1e1b4b] border border-[#6366f1]/30 p-6 rounded-2xl relative overflow-hidden group">
+                     <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition"><svg class="w-24 h-24 text-[#6366f1]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+                    <p class="text-[#818cf8] font-bold text-xs uppercase mb-1">Saldo Restante</p>
+                    <p class="text-3xl font-bold text-white">${fmtMoney(balance)}</p>
                 </div>
             `;
+
+            // --- META RESERVA (Baseado na imagem) ---
+            const reserveGoal = 1000;
+            let reservePercent = 0;
+            if (balance > 0) reservePercent = (balance / reserveGoal) * 100;
+            if(reservePercent > 100) reservePercent = 100;
+            
+            document.getElementById('reserve-current').innerText = balance > 0 ? fmtMoney(balance) : "R$ 0,00";
+            document.getElementById('reserve-percent-text').innerText = `${reservePercent.toFixed(0)}%`;
+            document.getElementById('reserve-bar').style.width = `${reservePercent}%`;
 
             const listEl = document.getElementById('expense-list');
             listEl.innerHTML = '';
             
             if(!curExpenses.length) {
-                listEl.innerHTML = `
-                    <div class="flex flex-col items-center justify-center py-20 text-slate-500 opacity-50">
-                        <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                        <p>Nenhum lançamento neste período.</p>
-                    </div>`;
+                listEl.innerHTML = `<div class="text-center text-gray-500 py-10">Nenhum lançamento.</div>`;
             } else {
                 curExpenses.forEach(item => {
-                    const color = COLORS[item.category] || '#94a3b8';
+                    const color = COLORS[item.category] || '#9CA3AF';
                     const hasDetails = item.details && Object.keys(item.details).length > 0;
                     
-                    let actionButton = '';
                     let clickAction = `onclick="openModal('${item.id}')"`;
-                    
-                    // Ícones SVG baseados no tipo
-                    let iconSvg = `<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`; // Dinheiro default
+                    let tag = '';
+                    let subtext = item.category;
 
-                    if (item.category === 'Cartões') iconSvg = `<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>`;
-                    if (item.category === 'Contas') iconSvg = `<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>`;
-                    if (item.category === 'Mercado') iconSvg = `<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`;
-
+                    // Lógica visual da imagem (Tag Fatura)
                     if (hasDetails) {
                         clickAction = `onclick="openInvoiceDetails('${item.id}')"`;
-                        actionButton = `<span class="bg-indigo-500/20 text-indigo-300 text-[10px] px-2 py-0.5 rounded border border-indigo-500/30 ml-2 uppercase font-bold tracking-wide flex items-center gap-1">📊 Detalhes</span>`;
+                        tag = `<span class="bg-[#3B82F6]/20 text-[#3B82F6] text-[10px] px-2 py-0.5 rounded ml-2 font-bold uppercase tracking-wider flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> FATURA</span>`;
                     } else if (item.attachment) {
-                         actionButton = `<span class="text-slate-500 text-xs ml-2 flex items-center">📎</span>`;
+                         tag = `<span class="text-gray-500 text-xs ml-2">📎</span>`;
                     }
 
+                    // Ícone específico da imagem (Círculo colorido com icone dentro)
+                    let iconBg = color + '20'; // 20% opacity
+                    let iconColor = color;
+
                     listEl.innerHTML += `
-                        <div ${clickAction} class="expense-row group bg-slate-800/40 p-3 rounded-xl flex items-center justify-between border border-transparent hover:border-slate-600 cursor-pointer transition-all mb-2 relative overflow-hidden">
-                             <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: ${color}"></div>
-                            <div class="flex items-center gap-4 pl-2 overflow-hidden">
-                                <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-lg" style="background-color: ${color}20; border: 1px solid ${color}40">
-                                    <div style="color: ${color}">${iconSvg}</div>
+                        <div ${clickAction} class="group bg-app-hover border border-transparent hover:border-[#2D3748] p-4 rounded-xl flex items-center justify-between cursor-pointer transition mb-2">
+                            <div class="flex items-center gap-4">
+                                <div class="icon-box shrink-0" style="background-color: ${iconBg}; color: ${iconColor}">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                                 </div>
-                                <div class="min-w-0">
-                                    <p class="font-bold text-sm text-slate-100 truncate">${item.description}</p>
-                                    <p class="text-xs text-slate-400 flex items-center">${item.category} ${actionButton}</p>
+                                <div>
+                                    <p class="font-bold text-sm text-white flex items-center gap-2">${item.description}</p>
+                                    <div class="flex items-center">
+                                        <p class="text-xs text-brand-purple font-medium">${subtext}</p>
+                                        ${tag}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-3">
-                                <span class="font-bold text-slate-200 whitespace-nowrap text-sm bg-slate-900/50 px-3 py-1 rounded-lg border border-slate-700">${fmtMoney(item.value)}</span>
-                                <button onclick="deleteDirectly('${item.id}', event)" class="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 p-2 rounded-lg hover:bg-red-500/10 transition-all" title="Excluir">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
+                            <div class="text-right">
+                                <p class="font-bold text-white text-sm bg-[#0B0E14] px-3 py-1 rounded border border-[#2D3748]">${fmtMoney(item.value)}</p>
+                                <button onclick="deleteDirectly('${item.id}', event)" class="text-[10px] text-red-500 hover:text-red-400 mt-1 opacity-0 group-hover:opacity-100 transition">Excluir</button>
                             </div>
                         </div>
                     `;
@@ -510,11 +486,11 @@
             updateMainChart(allMonthExpenses); 
         }
 
+        // Funções de PDF e Lógica (Mantidas)
         document.getElementById('form-file').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file || file.type !== 'application/pdf') return;
-
-            toggleLoader(true, "Lendo Fatura Inteligente...");
+            toggleLoader(true, "Lendo Fatura...");
             try {
                 const result = await parsePDF(file);
                 if (result && result.total > 0) {
@@ -523,7 +499,6 @@
                     document.getElementById('form-cat').value = "Cartões"; 
                     document.getElementById('parsed-details').value = JSON.stringify(result.breakdown);
                     document.getElementById('pdf-status').classList.remove('hidden');
-                    document.getElementById('pdf-status').innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Leitura OK! R$ ${fmtMoney(result.total)}`;
                 }
             } catch(err) { console.log(err); }
             toggleLoader(false);
@@ -532,19 +507,12 @@
         document.getElementById('expense-form').onsubmit = async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
-            const originalText = btn.innerText;
-            btn.innerText = "Salvando..."; btn.disabled = true;
-
+            btn.innerText = "..."; btn.disabled = true;
             try {
                 const fileInput = document.getElementById('form-file');
                 let attachment = document.getElementById('existing-file').value;
                 let details = document.getElementById('parsed-details').value ? JSON.parse(document.getElementById('parsed-details').value) : null;
-
-                if (fileInput.files.length > 0) {
-                    const file = fileInput.files[0];
-                    if(file.size > 1024*1024*2) throw new Error("Arquivo maior que 2MB");
-                    attachment = await convertBase64(file);
-                }
+                if (fileInput.files.length > 0) attachment = await convertBase64(fileInput.files[0]);
 
                 const data = {
                     date: document.getElementById('form-date').value,
@@ -554,13 +522,11 @@
                     attachment: attachment,
                     details: details 
                 };
-
                 if(currentEditId) await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).update(data);
                 else await db.collection('users').doc(userId).collection('expenses').add(data);
-                
                 closeModal('expense-modal'); loadData();
-            } catch(err) { alert("Erro: " + err.message); }
-            btn.innerText = originalText; btn.disabled = false;
+            } catch(err) { alert(err.message); }
+            btn.innerText = "Salvar"; btn.disabled = false;
         };
 
         async function parsePDF(file) {
@@ -574,39 +540,21 @@
                 const page = await pdf.getPage(i);
                 const content = await page.getTextContent();
                 const text = content.items.map(s => s.str).join(' ');
-
                 const regexInter = /(\d{2})\s+de\s+([a-zç]{3,4})\.?\s+\d{4}\s+(.*?)\s+(R\$\s?-?[\d\.]*?[\d]+,\d{2})/gi;
                 const regexStd = /(\d{2}\/\d{2})\s+(.*?)\s+(-?[\d\.]*?[\d]+,\d{2})/g;
-
                 let match;
                 while ((match = regexInter.exec(text)) !== null) {
-                    let desc = match[3].trim().toUpperCase();
-                    let valStr = match[4].replace('R$', '').trim();
-                    if (ignoreTerms.some(term => desc.includes(term)) || match[0].includes("+ R$")) continue; 
-                    processItem(desc, valStr);
+                    if (!ignoreTerms.some(t => match[3].toUpperCase().includes(t)) && !match[0].includes("+ R$")) processItem(match[3], match[4].replace('R$', ''));
                 }
                 while ((match = regexStd.exec(text)) !== null) {
-                    let desc = match[2].trim().toUpperCase();
-                    let valStr = match[3];
-                    if (ignoreTerms.some(term => desc.includes(term))) continue;
-                    processItem(desc, valStr);
+                    if (!ignoreTerms.some(t => match[2].toUpperCase().includes(t))) processItem(match[2], match[3]);
                 }
             }
-
             function processItem(desc, valStr) {
                 let val = parseFloat(valStr.replace(/\./g, '').replace(',', '.'));
-                if (isNaN(val) || val <= 0) return; 
+                if (isNaN(val) || val <= 0) return;
                 let cat = 'Outros';
-                let descLower = desc.toLowerCase();
-                categoryLoop:
-                for (const [category, keys] of Object.entries(KEYWORDS)) {
-                    for (const key of keys) {
-                        if (descLower.includes(key)) {
-                            cat = category;
-                            break categoryLoop;
-                        }
-                    }
-                }
+                for (const [c, k] of Object.entries(KEYWORDS)) if(k.some(key => desc.toLowerCase().includes(key))) cat = c;
                 if (!breakdown[cat]) breakdown[cat] = [];
                 breakdown[cat].push({ desc: desc, val: val });
                 total += val;
@@ -617,58 +565,27 @@
         function openInvoiceDetails(id) {
             currentEditId = id; 
             const item = expenses.find(e => e.id === id);
-            document.getElementById('invoice-subtitle').innerText = `${item.description} - ${fmtMoney(item.value)}`;
+            document.getElementById('invoice-subtitle').innerText = `${item.description}`;
             const dlBtn = document.getElementById('download-invoice-btn');
-            if(item.attachment) { dlBtn.href = item.attachment; dlBtn.style.display = 'flex'; } 
-            else { dlBtn.style.display = 'none'; }
+            item.attachment ? (dlBtn.href = item.attachment, dlBtn.style.display = 'block') : dlBtn.style.display = 'none';
+            const list = document.getElementById('invoice-items-list'); list.innerHTML = '';
             
-            const listContainer = document.getElementById('invoice-items-list');
-            listContainer.innerHTML = '';
-            const ctx = document.getElementById('invoiceChart').getContext('2d');
-            if(invoiceChart) invoiceChart.destroy();
-
             if (item.details) {
-                const cats = Object.keys(item.details).sort((a,b) => {
-                    const sumA = item.details[a].reduce((acc, cur) => acc + cur.val, 0);
-                    const sumB = item.details[b].reduce((acc, cur) => acc + cur.val, 0);
-                    return sumB - sumA;
-                });
-
-                let chartLabels = [];
-                let chartData = [];
-                let chartColors = [];
-
-                cats.forEach(catName => {
-                    const items = item.details[catName];
-                    const catTotal = items.reduce((acc, cur) => acc + cur.val, 0);
-                    chartLabels.push(catName);
-                    chartData.push(catTotal);
-                    chartColors.push(COLORS[catName] || '#666');
-
-                    let html = `
-                        <div class="mb-3 border border-slate-700 rounded-lg overflow-hidden">
-                            <div class="bg-slate-800 px-3 py-2 flex justify-between font-bold text-slate-200 text-xs">
-                                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" style="background:${COLORS[catName]}"></span>${catName}</span>
-                                <span>${fmtMoney(catTotal)}</span>
-                            </div>
-                            <div class="bg-slate-900/30 px-3 py-1">
-                    `;
-                    items.forEach(subItem => {
-                        html += `
-                            <div class="flex justify-between text-[11px] py-1 text-slate-400 border-b border-slate-800 last:border-0">
-                                <span class="truncate pr-2">${subItem.desc}</span>
-                                <span class="shrink-0 text-slate-300">${fmtMoney(subItem.val)}</span>
-                            </div>
-                        `;
-                    });
-                    html += `</div></div>`;
-                    listContainer.innerHTML += html;
-                });
+                const cats = Object.keys(item.details).sort((a,b) => item.details[b].reduce((s,i)=>s+i.val,0) - item.details[a].reduce((s,i)=>s+i.val,0));
+                const chartD = { labels: [], data: [], colors: [] };
                 
-                invoiceChart = new Chart(ctx, {
+                cats.forEach(c => {
+                    const sum = item.details[c].reduce((a,b)=>a+b.val,0);
+                    chartD.labels.push(c); chartD.data.push(sum); chartD.colors.push(COLORS[c]||'#666');
+                    list.innerHTML += `<div class="mb-3"><div class="flex justify-between text-xs font-bold text-gray-300 bg-[#2D3748] p-2 rounded mb-1"><span>${c}</span><span>${fmtMoney(sum)}</span></div>` +
+                    item.details[c].map(i => `<div class="flex justify-between text-[11px] text-gray-500 py-1 border-b border-[#2D3748] px-2"><span>${i.desc}</span><span>${fmtMoney(i.val)}</span></div>`).join('') + `</div>`;
+                });
+
+                if(invoiceChart) invoiceChart.destroy();
+                invoiceChart = new Chart(document.getElementById('invoiceChart'), {
                     type: 'doughnut',
-                    data: { labels: chartLabels, datasets: [{ data: chartData, backgroundColor: chartColors, borderWidth: 0 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '70%' }
+                    data: { labels: chartD.labels, datasets: [{ data: chartD.data, backgroundColor: chartD.colors, borderWidth: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
                 });
             }
             document.getElementById('invoice-details-modal').classList.remove('hidden');
@@ -680,18 +597,17 @@
             document.getElementById('delete-btn').classList.add('hidden');
             document.getElementById('pdf-status').classList.add('hidden');
             document.getElementById('parsed-details').value = "";
-            
             if(id) {
-                document.getElementById('modal-title').innerText = "Editar Lançamento";
+                document.getElementById('modal-title').innerText = "Editar";
                 document.getElementById('delete-btn').classList.remove('hidden');
-                const item = expenses.find(e => e.id === id);
-                document.getElementById('form-date').value = item.date;
-                document.getElementById('form-desc').value = item.description;
-                document.getElementById('form-cat').value = item.category;
-                document.getElementById('form-val').value = item.value;
-                document.getElementById('existing-file').value = item.attachment || '';
+                const i = expenses.find(e => e.id === id);
+                document.getElementById('form-date').value = i.date;
+                document.getElementById('form-desc').value = i.description;
+                document.getElementById('form-cat').value = i.category;
+                document.getElementById('form-val').value = i.value;
+                document.getElementById('existing-file').value = i.attachment || '';
             } else {
-                document.getElementById('modal-title').innerText = isImport ? "Importar Fatura" : "Novo Lançamento";
+                document.getElementById('modal-title').innerText = isImport ? "Importar" : "Novo";
                 document.getElementById('expense-form').reset();
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
                 document.getElementById('existing-file').value = '';
@@ -701,89 +617,39 @@
             document.getElementById('expense-modal').classList.add('flex');
         }
 
-        async function deleteDirectly(id, event) {
-            event.stopPropagation();
-            currentEditId = id;
-            deleteItem();
-        }
-
+        async function deleteDirectly(id, event) { event.stopPropagation(); currentEditId = id; deleteItem(); }
         async function deleteItem() {
-            if(confirm("Tem certeza que deseja excluir este lançamento?")) {
+            if(confirm("Excluir?")) {
                 await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete();
-                closeModal('expense-modal');
-                closeModal('invoice-details-modal');
-                loadData();
+                closeModal('expense-modal'); closeModal('invoice-details-modal'); loadData();
             }
         }
-
-        const convertBase64 = (file) => new Promise((res, rej) => {
-            const r = new FileReader(); r.readAsDataURL(file);
-            r.onload = () => res(r.result); r.onerror = rej;
-        });
-
+        const convertBase64 = (f) => new Promise((r, j) => { const fr = new FileReader(); fr.readAsDataURL(f); fr.onload=()=>r(fr.result); fr.onerror=j; });
         async function saveIncome() {
             const mk = currentDate.toISOString().slice(0, 7);
             const s1 = document.getElementById('income1').value;
             const s2 = document.getElementById('income2').value;
-            if(!incomeData[mk]) incomeData[mk] = {};
-            incomeData[mk].s1 = s1;
-            incomeData[mk].s2 = s2;
-            const msg = document.getElementById('income-saved-msg');
-            msg.classList.remove('opacity-0');
-            setTimeout(() => msg.classList.add('opacity-0'), 2000);
-            render(); 
-            await db.collection('users').doc(userId).collection('income').doc(mk).set({ s1: s1, s2: s2 }, {merge:true});
+            if(!incomeData[mk]) incomeData[mk] = {}; incomeData[mk].s1 = s1; incomeData[mk].s2 = s2;
+            document.getElementById('income-saved-msg').classList.remove('opacity-0');
+            setTimeout(() => document.getElementById('income-saved-msg').classList.add('opacity-0'), 2000);
+            render(); await db.collection('users').doc(userId).collection('income').doc(mk).set({ s1, s2 }, {merge:true});
         }
-        document.getElementById('income1').onchange = saveIncome;
-        document.getElementById('income2').onchange = saveIncome;
-
+        document.getElementById('income1').onchange = saveIncome; document.getElementById('income2').onchange = saveIncome;
         document.getElementById('export-btn').onclick = () => {
-            const data = { expenses, income: incomeData };
-            const blob = new Blob([JSON.stringify(data, null, 2)], {type : 'application/json'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `backup.json`; a.click();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ expenses, income: incomeData }, null, 2)], {type : 'application/json'}));
+            a.download = `backup.json`; a.click();
         };
-
         document.getElementById('import-json').onchange = (e) => {
-            const file = e.target.files[0];
-            if(!file) return;
-            const r = new FileReader();
-            r.onload = async (ev) => {
-                try {
-                    const d = JSON.parse(ev.target.result);
-                    if(confirm("Restaurar este backup substituirá a visualização atual.")) {
-                        expenses = d.expenses || [];
-                        incomeData = d.income || {};
-                        render();
-                    }
-                } catch(err) { alert("Erro JSON"); }
-            };
-            r.readAsText(file);
+            const r = new FileReader(); r.onload = (ev) => { if(confirm("Restaurar?")) { const d = JSON.parse(ev.target.result); expenses = d.expenses || []; incomeData = d.income || {}; render(); } };
+            if(e.target.files[0]) r.readAsText(e.target.files[0]);
         };
-
         function updateMainChart(data) {
             const ctx = document.getElementById('expenseChart').getContext('2d');
             if(mainChart) mainChart.destroy();
-            const cats = {};
-            data.forEach(d => cats[d.category] = (cats[d.category]||0) + d.value);
-            mainChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: Object.keys(cats).map(k=>COLORS[k]||'#666'), borderWidth: 0 }] },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    cutout: '60%',
-                    plugins: { 
-                        legend: { display: false } 
-                    } 
-                }
-            });
+            const cats = {}; data.forEach(d => cats[d.category] = (cats[d.category]||0) + d.value);
+            mainChart = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: Object.keys(cats).map(k=>COLORS[k]||'#666'), borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } } });
         }
-
-        function toggleLoader(s, t="Carregando...") { 
-            document.getElementById('loading-overlay').style.display = s ? 'flex' : 'none'; 
-            document.getElementById('loading-text').innerText = t;
-        }
+        function toggleLoader(s, t="...") { document.getElementById('loading-overlay').style.display = s ? 'flex' : 'none'; document.getElementById('loading-text').innerText = t; }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
         function fmtMoney(v) { return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
 

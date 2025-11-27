@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Financeiro - Correção Reserva</title>
+    <title>Painel Financeiro - Reserva Exclusiva</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -25,6 +25,9 @@
                         accent: '#6366F1',    
                         success: '#10B981',   
                         danger: '#EF4444'     
+                    },
+                    backgroundImage: {
+                        'gradient-reserve': 'linear-gradient(90deg, #6366F1 0%, #A855F7 100%)',
                     }
                 }
             }
@@ -93,27 +96,24 @@
                     <div>
                         <h4 class="text-xs font-bold text-white flex items-center gap-2">
                             Meta de Reserva
-                            <span class="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 rounded border border-blue-500/30">LANÇAMENTOS</span>
                         </h4>
                         <p class="text-[10px] text-slate-500 mt-1">Objetivo: <span class="text-slate-300">R$ 1.000,00</span></p>
                     </div>
                     <div class="text-right">
-                        <span id="reserve-percent-text" class="text-lg font-bold text-blue-400">0%</span>
+                        <span id="reserve-percent-text" class="text-lg font-bold text-white">0%</span>
                     </div>
                 </div>
                 
-                <div class="w-full bg-bg rounded-full h-3 mb-2 relative z-10 border border-border">
-                    <div id="reserve-bar" class="bg-blue-500 h-3 rounded-full transition-all duration-1000 relative overflow-hidden" style="width: 0%">
-                         <div class="absolute inset-0 bg-white/10 animate-pulse"></div>
-                    </div>
+                <div class="w-full bg-bg rounded-full h-2 mb-2 relative z-10 border border-border">
+                    <div id="reserve-bar" class="bg-gradient-reserve h-2 rounded-full transition-all duration-1000 relative shadow-[0_0_10px_rgba(99,102,241,0.5)]" style="width: 0%"></div>
                 </div>
                 
                 <div class="flex justify-between items-center relative z-10">
-                    <p id="reserve-current" class="text-xs text-white font-bold">Guardado: R$ 0,00</p>
+                    <p id="reserve-current" class="text-xs text-indigo-300 font-bold">Guardado: R$ 0,00</p>
                     <p id="reserve-msg" class="text-[10px] text-slate-500">Falta R$ 1.000,00</p>
                 </div>
                 
-                <div class="absolute -right-5 -bottom-10 w-32 h-32 bg-blue-600/10 blur-3xl rounded-full group-hover:bg-blue-600/20 transition duration-700"></div>
+                <div class="absolute -right-5 -bottom-10 w-32 h-32 bg-accent/10 blur-3xl rounded-full group-hover:bg-accent/20 transition duration-700"></div>
             </div>
 
             <div class="bg-card border border-border p-5 rounded-xl card-shadow h-[300px] flex flex-col">
@@ -183,7 +183,7 @@
                 </div>
                 <div>
                     <label class="text-xs text-slate-400 font-bold mb-1 block">Descrição</label>
-                    <input type="text" id="form-desc" class="w-full bg-input border border-border rounded-lg p-2.5 text-white text-sm outline-none focus:border-accent" placeholder="Ex: Poupança">
+                    <input type="text" id="form-desc" class="w-full bg-input border border-border rounded-lg p-2.5 text-white text-sm outline-none focus:border-accent" placeholder="Ex: Reserva">
                 </div>
                 <div>
                     <label class="text-xs text-slate-400 font-bold mb-1 block">Valor (R$)</label>
@@ -251,15 +251,13 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         
-        // --- ID LIMPO ---
         const userId = 'casal_novo_v1'; 
-        // ----------------
 
         const COLORS = {
             'Mercado': '#F59E0B', 'Contas': '#10B981', 'Cartões': '#3B82F6', 'Apartamento': '#8B5CF6',
             'Carro': '#6366F1', 'Lazer': '#EC4899', 'Delivery': '#D946EF', 'Posto': '#F97316',
             'Farmácia': '#84CC16', 'Roupa': '#EF4444', 'Escola': '#06B6D4', 
-            'Reserva': '#3B82F6', 'Poupança': '#3B82F6', 'Investimento': '#2563EB', // Azul para reservas
+            'Reserva': '#6366F1', 'Poupança': '#3B82F6', // CORES DISTINTAS
             'Outros': '#9CA3AF'
         };
         const CATEGORIES = Object.keys(COLORS);
@@ -270,7 +268,8 @@
             'Farmácia': ['drogaria', 'farmacia', 'drogasil'], 'Posto': ['posto', 'shell', 'ipiranga', 'petrobras'],
             'Lazer': ['mc donalds', 'burger', 'outback', 'cinema'], 'Roupa': ['renner', 'riachuelo', 'zara', 'c&a', 'shein'],
             'Contas': ['vivo', 'claro', 'tim', 'cpfl', 'enel', 'sabesp'], 
-            'Reserva': ['poupanca', 'guardar', 'investimento', 'reserva', 'nubank guardar', 'porquinho', 'caixinha'], // Detecção automática
+            'Reserva': ['reserva', 'guardar', 'meta'],
+            'Poupança': ['poupanca', 'investimento', 'nuinvest'], 
             'Outros': ['mercadolivre', 'pix']
         };
 
@@ -284,7 +283,6 @@
         function init() {
             document.getElementById('form-cat').innerHTML = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
             
-            // Auto-selecionar categoria ao digitar
             document.getElementById('form-desc').addEventListener('input', (e) => {
                 const val = e.target.value.toLowerCase();
                 for (const [cat, keys] of Object.entries(KEYWORDS)) {
@@ -294,7 +292,6 @@
                     }
                 }
             });
-
             loadData();
         }
 
@@ -337,7 +334,6 @@
             const totalInc = (parseFloat(inc.s1)||0) + (parseFloat(inc.s2)||0);
             const balance = totalInc - totalExp;
 
-            // Cards Laterais
             document.getElementById('summary-display').innerHTML = `
                 <div class="bg-input border border-border p-4 rounded-lg flex justify-between items-center">
                     <span class="text-slate-400 text-sm font-medium">Renda Total</span>
@@ -353,11 +349,10 @@
                 </div>
             `;
 
-            // --- LÓGICA NOVA DA META RESERVA ---
-            // Soma apenas categorias de Reserva/Poupança/Investimento
-            const reserveCategories = ['Reserva', 'Poupança', 'Investimento'];
+            // --- LÓGICA EXCLUSIVA PARA RESERVA ---
+            // Apenas categoria 'Reserva' conta
             const totalReserva = curExpenses
-                .filter(e => reserveCategories.includes(e.category))
+                .filter(e => e.category === 'Reserva') 
                 .reduce((acc, curr) => acc + curr.value, 0);
 
             const reserveGoal = 1000;
@@ -372,7 +367,6 @@
             document.getElementById('reserve-msg').innerText = missing <= 0 ? "Meta atingida! 🚀" : `Falta ${fmtMoney(missing)}`;
             // -------------------------------------
 
-            // Lista
             const listEl = document.getElementById('expense-list');
             listEl.innerHTML = '';
             
@@ -387,8 +381,8 @@
                     let tag = hasDetails ? `<span class="bg-slate-700 text-[10px] px-2 py-0.5 rounded ml-2 uppercase font-bold tracking-wide">FATURA</span>` : '';
                     let icon = hasDetails ? '💳' : '💸';
 
-                    // Ícone específico para reserva
-                    if (['Reserva', 'Poupança', 'Investimento'].includes(item.category)) icon = '💰';
+                    if (item.category === 'Reserva') icon = '💰';
+                    if (item.category === 'Poupança') icon = '🐷';
 
                     listEl.innerHTML += `
                         <div ${clickAction} class="group bg-input hover:bg-card border border-border hover:border-slate-600 p-4 rounded-xl flex items-center justify-between cursor-pointer transition mb-2">
@@ -412,7 +406,7 @@
             updateMainChart(allMonthExpenses); 
         }
 
-        // --- MANIPULADORES E OUTRAS FUNÇÕES ---
+        // --- RESTANTE DAS FUNÇÕES (PADRÃO) ---
         document.getElementById('form-file').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file || file.type !== 'application/pdf') return;

@@ -214,6 +214,7 @@
 
         let expenses = [], incomeData = {}, currentDate = new Date(), currentEditId = null, mainChart = null;
 
+        // Login
         document.getElementById('login-form').onsubmit = async (e) => {
             e.preventDefault();
             const u = document.getElementById('user').value.toLowerCase().trim();
@@ -257,15 +258,18 @@
             document.getElementById('income1').value = inc.s1;
             document.getElementById('income2').value = inc.s2;
 
-            // --- LÓGICA DE CÁLCULO ATUALIZADA ---
-            const gastosReais = curExp.filter(item => item.category !== 'Reserva');
-            const apenasReserva = curExp.filter(item => item.category === 'Reserva');
+            // --- LÓGICA DE SEPARAÇÃO FINAL ---
+            // 1. Despesas Reais (TUDO exceto Reserva)
+            const realExpenses = curExp.filter(item => item.category !== 'Reserva');
+            // 2. Apenas itens de Reserva
+            const reserveItems = curExp.filter(item => item.category === 'Reserva');
 
             const totalEntradas = (parseFloat(inc.s1)||0) + (parseFloat(inc.s2)||0);
-            const totalSaidas = gastosReais.reduce((acc, item) => acc + item.value, 0);
-            const totalReservado = apenasReserva.reduce((acc, item) => acc + item.value, 0);
+            const totalSaidas = realExpenses.reduce((acc, item) => acc + item.value, 0);
+            const totalReservado = reserveItems.reduce((acc, item) => acc + item.value, 0);
             
-            // CORREÇÃO: Reserva não compõe o saldo líquido (não é subtraída aqui)
+            // CORREÇÃO: Líquido é estritamente Entradas - Despesas Reais.
+            // A Reserva não deve ser subtraída aqui para não gerar saldo negativo.
             const saldoLivre = totalEntradas - totalSaidas;
 
             document.getElementById('summary-display').innerHTML = `
@@ -303,9 +307,10 @@
             `).join('') || '<p class="p-10 text-center text-slate-600 text-xs uppercase tracking-widest">Sem movimentações</p>';
             
             document.getElementById('total-items-count').innerText = `${curExp.length} Registros`;
-            updateMainChart(gastosReais);
+            updateMainChart(realExpenses);
         }
 
+        // Eventos
         document.getElementById('save-income').onclick = async () => {
             const monthKey = currentDate.toISOString().slice(0, 7);
             const s1 = document.getElementById('income1').value;

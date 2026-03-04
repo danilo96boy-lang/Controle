@@ -17,7 +17,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-auth-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -66,13 +65,13 @@
                 </div>
                 <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold transition-all shadow-lg shadow-blue-900/30 text-sm uppercase tracking-wider">Desbloquear Sistema</button>
             </form>
-            <p id="login-msg" class="text-red-400 text-center mt-4 hidden text-xs bg-red-950/30 border border-red-900/50 py-2 rounded">Credenciais inválidas ou acesso negado.</p>
+            <p id="login-msg" class="text-red-400 text-center mt-4 hidden text-xs bg-red-950/30 border border-red-900/50 py-2 rounded">Credenciais inválidas.</p>
         </div>
     </div>
 
     <div id="loading-overlay">
         <div class="spinner mb-4"></div>
-        <p class="text-slate-400 text-sm font-medium" id="loading-text">Sincronizando...</p>
+        <p class="text-slate-400 text-sm font-medium">Sincronizando...</p>
     </div>
 
     <div id="app-container" class="max-w-7xl mx-auto w-full opacity-0 hidden transition-opacity duration-500 pb-10 px-4 lg:px-8">
@@ -98,7 +97,7 @@
                 </button>
             </div>
             
-            <button id="logout-btn" class="text-xs text-slate-500 hover:text-red-400 flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-red-950/10 transition border border-transparent hover:border-red-900/20">
+            <button id="logout-btn" class="text-xs text-slate-500 hover:text-red-400 flex items-center gap-2 px-4 py-2 rounded-lg transition hover:bg-red-950/10 border border-transparent hover:border-red-900/20">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                 <span>Sair</span>
             </button>
@@ -107,11 +106,8 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div class="lg:col-span-4 space-y-6">
                 <div class="card rounded-2xl p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Receita Mensal</h3>
-                        <span id="income-saved-msg" class="text-[10px] text-emerald-500 font-bold opacity-0 transition-opacity">SALVO</span>
-                    </div>
-                    <div class="space-y-5">
+                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-6">Receita Mensal</h3>
+                    <div class="space-y-4">
                         <div class="flex flex-col gap-1">
                             <label class="text-xs text-slate-400 ml-1">Fonte Gabi</label>
                             <input type="number" id="income1" placeholder="0.00" step="0.01" class="w-full bg-slate-950 p-3 rounded-lg text-white font-mono text-sm border border-slate-800 focus:border-blue-500 outline-none transition">
@@ -120,13 +116,14 @@
                             <label class="text-xs text-slate-400 ml-1">Fonte Danilo</label>
                             <input type="number" id="income2" placeholder="0.00" step="0.01" class="w-full bg-slate-950 p-3 rounded-lg text-white font-mono text-sm border border-slate-800 focus:border-blue-500 outline-none transition">
                         </div>
+                        <button id="save-income" class="w-full bg-slate-800 hover:bg-slate-700 text-xs font-bold py-2 rounded-lg transition uppercase tracking-widest">Salvar Receitas</button>
                     </div>
                 </div>
 
                 <div id="summary-display" class="grid grid-cols-1 gap-4"></div>
 
                 <div class="card rounded-2xl p-6">
-                    <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 text-center">Distribuição de Gastos</h4>
+                    <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 text-center">Distribuição de Gastos Reais</h4>
                     <div class="relative h-64 w-full"><canvas id="expenseChart"></canvas></div>
                 </div>
             </div>
@@ -136,13 +133,9 @@
                     <div class="flex flex-wrap justify-between items-center gap-4">
                         <h3 class="font-bold text-xl text-white">Transações</h3>
                         <div class="flex items-center gap-3">
-                            <button onclick="openModal(null, true)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path></svg>
-                                Importar PDF
-                            </button>
                             <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition shadow-lg shadow-blue-900/40 flex items-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                Novo
+                                Novo Lançamento
                             </button>
                         </div>
                     </div>
@@ -158,7 +151,6 @@
 
                 <div class="p-4 border-t border-slate-800 bg-slate-900/50 flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                     <span id="total-items-count">0 registros</span>
-                    <button id="export-btn" class="hover:text-blue-400 transition flex items-center gap-2">EXPORTAR BACKUP JSON</button>
                 </div>
             </div>
         </div>
@@ -192,11 +184,6 @@
                         <input type="number" step="0.01" id="form-val" class="w-full p-3 pl-12 input-corp rounded-xl text-sm font-mono font-bold" placeholder="0.00">
                     </div>
                 </div>
-                <div class="p-4 bg-slate-950 border border-dashed border-slate-800 rounded-xl">
-                    <input type="file" id="form-file" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-blue-600 file:text-white cursor-pointer" accept="application/pdf">
-                    <p id="pdf-status" class="mt-2 text-[10px] text-emerald-500 hidden font-bold">✓ PDF PROCESSADO</p>
-                    <input type="hidden" id="existing-file"><input type="hidden" id="parsed-details">
-                </div>
                 <div class="flex justify-between items-center pt-4">
                     <button type="button" id="delete-btn" onclick="deleteItem()" class="text-red-500 text-[10px] font-bold uppercase tracking-widest hover:bg-red-950/20 px-4 py-2 rounded-lg transition hidden">Excluir</button>
                     <div class="flex gap-3 ml-auto">
@@ -209,7 +196,6 @@
     </div>
 
     <script type="module">
-        // Configuração Firebase (Mantida conforme original)
         const firebaseConfig = {
             apiKey: "AIzaSyBf1nzx6mH1lWckWQyXDnWZKLlh-5cfcv0",
             authDomain: "controle-a9909.firebaseapp.com",
@@ -222,37 +208,18 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // --- SEGURANÇA: HASHING ---
-        async function hashStr(str) {
-            const buffer = new TextEncoder().encode(str);
-            const hash = await crypto.subtle.digest('SHA-256', buffer);
-            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-
-        // Hashes das credenciais (Gabi/Danilo e Senhas)
-        const AUTH_MAP = {
-            "89104192b67f18579d4944b5816f1bc41f2378f5666f7f2b1d7d9633e734c51b": "f866160875e54d8985161f364e5659851776999946e4c703b44b822d56d11394", // gabi -> 19071996
-            "76184976450689622d140e69f82163351d528b99c71c4c96561f5256e6328352": "2e3c0804860183181d528b99c71c4c96561f5256e63283526509424606f3640b"  // danilo -> 08042020
-        };
-
         const userId = 'casal_principal';
         const CATEGORIES = ['Mercado', 'Contas', 'Cartões', 'Apartamento', 'Carro', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Poupança Maria Luisa', 'Reserva', 'Outros'];
         const COLORS = { 'Mercado': '#f59e0b', 'Contas': '#ef4444', 'Cartões': '#3b82f6', 'Apartamento': '#6366f1', 'Carro': '#0ea5e9', 'Lazer': '#ec4899', 'Delivery': '#d946ef', 'Posto': '#f97316', 'Farmácia': '#84cc16', 'Roupa': '#14b8a6', 'Escola': '#8b5cf6', 'Poupança Maria Luisa': '#10b981', 'Reserva': '#22c55e', 'Outros': '#64748b' };
 
         let expenses = [], incomeData = {}, currentDate = new Date(), currentEditId = null, mainChart = null;
 
-        // Login Seguro
         document.getElementById('login-form').onsubmit = async (e) => {
             e.preventDefault();
             const u = document.getElementById('user').value.toLowerCase().trim();
             const p = document.getElementById('pass').value.trim();
             
-            const uH = await hashStr(u);
-            const pH = await hashStr(p);
-
-            // Nota: No AUTH_MAP acima, você deve colocar os hashes REAIS das suas senhas.
-            // Para facilitar, mantive a lógica de validação.
-            if (u === 'gabi' && p === '19071996' || u === 'danilo' && p === '08042020') {
+            if ((u === 'gabi' && p === '19071996') || (u === 'danilo' && p === '08042020')) {
                 auth.signInAnonymously().then(() => {
                     document.getElementById('login-screen').classList.add('hidden');
                     document.getElementById('app-container').classList.remove('hidden');
@@ -293,20 +260,30 @@
             document.getElementById('income1').value = inc.s1;
             document.getElementById('income2').value = inc.s2;
 
-            const tExp = curExp.reduce((a,b) => a + b.value, 0);
+            // --- LÓGICA DE SEPARAÇÃO DA RESERVA ---
+            const despesasReais = curExp.filter(e => e.category !== 'Reserva');
+            const reservasMensais = curExp.filter(e => e.category === 'Reserva');
+
+            const tExp = despesasReais.reduce((a,b) => a + b.value, 0);
+            const tRes = reservasMensais.reduce((a,b) => a + b.value, 0);
             const tInc = (parseFloat(inc.s1)||0) + (parseFloat(inc.s2)||0);
-            
+            const tLiq = tInc - tExp - tRes;
+
             document.getElementById('summary-display').innerHTML = `
                 <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-emerald-500 bg-slate-900/20">
                     <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Entradas</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tInc)}</p></div>
                     <div class="text-emerald-500 bg-emerald-500/10 p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg></div>
                 </div>
                 <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-red-500 bg-slate-900/20">
-                    <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Saídas</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tExp)}</p></div>
+                    <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Saídas (Despesas)</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tExp)}</p></div>
                     <div class="text-red-500 bg-red-500/10 p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg></div>
                 </div>
+                <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-amber-500 bg-slate-900/20">
+                    <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Reservado (Economia)</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tRes)}</p></div>
+                    <div class="text-amber-500 bg-amber-500/10 p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>
+                </div>
                 <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-blue-500 bg-slate-800">
-                    <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Líquido</p><p class="text-xl font-mono font-bold ${tInc-tExp>=0?'text-blue-400':'text-red-400'}">${fmtMoney(tInc-tExp)}</p></div>
+                    <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Saldo Livre (Líquido)</p><p class="text-xl font-mono font-bold ${tLiq>=0?'text-blue-400':'text-red-400'}">${fmtMoney(tLiq)}</p></div>
                 </div>
             `;
 
@@ -314,7 +291,7 @@
             listEl.innerHTML = curExp.map(item => `
                 <div onclick="openModal('${item.id}')" class="flex items-center justify-between px-6 py-4 hover:bg-slate-800/40 cursor-pointer transition group">
                     <div class="flex items-center gap-4 overflow-hidden">
-                        <div class="w-2.5 h-2.5 rounded-full shrink-0 shadow-[0_0_8px]" style="background-color:${COLORS[item.category]}; shadow-color:${COLORS[item.category]}"></div>
+                        <div class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color:${COLORS[item.category]}; box-shadow: 0 0 8px ${COLORS[item.category]}"></div>
                         <div class="truncate">
                             <p class="text-sm font-semibold text-slate-200 group-hover:text-white truncate">${item.description}</p>
                             <p class="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">${item.category} • ${item.date.split('-').reverse().join('/')}</p>
@@ -327,17 +304,19 @@
             `).join('') || '<p class="p-10 text-center text-slate-600 text-xs uppercase tracking-widest">Sem movimentações</p>';
             
             document.getElementById('total-items-count').innerText = `${curExp.length} Registros`;
-            updateMainChart(curExp);
+            updateMainChart(despesasReais); // Gráfico focado apenas no que é gasto de fato
         }
 
-        // Eventos de Navegação e Logout
-        document.getElementById('logout-btn').onclick = () => { auth.signOut(); location.reload(); };
-        document.getElementById('prev-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()-1); loadData(); };
-        document.getElementById('next-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()+1); loadData(); };
-        document.getElementById('search-input').oninput = (e) => render(e.target.value);
+        // Funções de Ação
+        document.getElementById('save-income').onclick = async () => {
+            const monthKey = currentDate.toISOString().slice(0, 7);
+            const s1 = document.getElementById('income1').value;
+            const s2 = document.getElementById('income2').value;
+            await db.collection('users').doc(userId).collection('income').doc(monthKey).set({s1, s2});
+            loadData();
+        };
 
-        // Funções Globais (Necessárias para os onclick do HTML)
-        window.openModal = (id = null, isImport = false) => {
+        window.openModal = (id = null) => {
             currentEditId = id;
             document.getElementById('delete-btn').classList.toggle('hidden', !id);
             if(id) {
@@ -349,7 +328,6 @@
             } else {
                 document.getElementById('expense-form').reset();
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
-                if(isImport) setTimeout(() => document.getElementById('form-file').click(), 200);
             }
             document.getElementById('expense-modal').classList.remove('hidden');
             document.getElementById('expense-modal').classList.add('flex');
@@ -388,6 +366,10 @@
             });
         }
 
+        document.getElementById('prev-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()-1); loadData(); };
+        document.getElementById('next-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()+1); loadData(); };
+        document.getElementById('logout-btn').onclick = () => { auth.signOut(); location.reload(); };
+        document.getElementById('search-input').oninput = (e) => render(e.target.value);
         function toggleLoader(s) { document.getElementById('loading-overlay').style.display = s ? 'flex' : 'none'; }
         function fmtMoney(v) { return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
 

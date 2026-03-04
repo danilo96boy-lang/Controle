@@ -211,9 +211,6 @@
         const userId = 'casal_principal';
         const CATEGORIES = ['Mercado', 'Contas', 'Cartões', 'Apartamento', 'Carro', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Poupança Maria Luisa', 'Reserva', 'Outros'];
         const COLORS = { 'Mercado': '#f59e0b', 'Contas': '#ef4444', 'Cartões': '#3b82f6', 'Apartamento': '#6366f1', 'Carro': '#0ea5e9', 'Lazer': '#ec4899', 'Delivery': '#d946ef', 'Posto': '#f97316', 'Farmácia': '#84cc16', 'Roupa': '#14b8a6', 'Escola': '#8b5cf6', 'Poupança Maria Luisa': '#10b981', 'Reserva': '#22c55e', 'Outros': '#64748b' };
-        
-        // META DE RESERVA
-        const GOAL = 3000;
 
         let expenses = [], incomeData = {}, currentDate = new Date(), currentEditId = null, mainChart = null;
 
@@ -260,16 +257,16 @@
             document.getElementById('income1').value = inc.s1;
             document.getElementById('income2').value = inc.s2;
 
+            // --- LÓGICA DE CÁLCULO ATUALIZADA ---
             const gastosReais = curExp.filter(item => item.category !== 'Reserva');
-            const reserveItems = curExp.filter(item => item.category === 'Reserva');
+            const apenasReserva = curExp.filter(item => item.category === 'Reserva');
 
             const totalEntradas = (parseFloat(inc.s1)||0) + (parseFloat(inc.s2)||0);
             const totalSaidas = gastosReais.reduce((acc, item) => acc + item.value, 0);
-            const totalReservado = reserveItems.reduce((acc, item) => acc + item.value, 0);
+            const totalReservado = apenasReserva.reduce((acc, item) => acc + item.value, 0);
+            
+            // CORREÇÃO: Reserva não compõe o saldo líquido (não é subtraída aqui)
             const saldoLivre = totalEntradas - totalSaidas;
-
-            // Cálculo da barra de progresso
-            const progress = Math.min((totalReservado / GOAL) * 100, 100);
 
             document.getElementById('summary-display').innerHTML = `
                 <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-emerald-500 bg-slate-900/20">
@@ -280,15 +277,9 @@
                     <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Saídas (Despesas)</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(totalSaidas)}</p></div>
                     <div class="text-red-500 bg-red-500/10 p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg></div>
                 </div>
-                <div class="card p-5 rounded-2xl flex flex-col border-l-4 border-amber-500 bg-slate-900/20 gap-4">
-                    <div class="flex items-center justify-between">
-                        <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Reservado (Meta ${fmtMoney(GOAL)})</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(totalReservado)}</p></div>
-                        <div class="text-amber-500 bg-amber-500/10 p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>
-                    </div>
-                    <div class="w-full bg-slate-950 rounded-full h-2 shadow-inner overflow-hidden">
-                        <div class="bg-amber-500 h-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(245,158,11,0.5)]" style="width: ${progress}%"></div>
-                    </div>
-                    <p class="text-[8px] text-slate-500 font-bold uppercase text-right tracking-widest">${progress.toFixed(1)}% atingido</p>
+                <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-amber-500 bg-slate-900/20">
+                    <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Reservado (Economia)</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(totalReservado)}</p></div>
+                    <div class="text-amber-500 bg-amber-500/10 p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>
                 </div>
                 <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-blue-500 bg-slate-800">
                     <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Saldo Livre (Líquido)</p><p class="text-xl font-mono font-bold ${saldoLivre>=0?'text-blue-400':'text-red-400'}">${fmtMoney(saldoLivre)}</p></div>

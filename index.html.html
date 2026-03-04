@@ -135,7 +135,7 @@
                         <div class="flex items-center gap-3">
                             <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition shadow-lg shadow-blue-900/40 flex items-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                Novo
+                                Novo Lançamento
                             </button>
                         </div>
                     </div>
@@ -214,7 +214,6 @@
 
         let expenses = [], incomeData = {}, currentDate = new Date(), currentEditId = null, mainChart = null;
 
-        // Login
         document.getElementById('login-form').onsubmit = async (e) => {
             e.preventDefault();
             const u = document.getElementById('user').value.toLowerCase().trim();
@@ -258,17 +257,16 @@
             document.getElementById('income1').value = inc.s1;
             document.getElementById('income2').value = inc.s2;
 
-            // --- LÓGICA DE SEPARAÇÃO DA RESERVA CORRIGIDA ---
-            // 1. Filtrar o que é gasto real (Mercado, Contas, etc)
+            // --- LÓGICA DE CÁLCULO ATUALIZADA ---
             const gastosReais = curExp.filter(item => item.category !== 'Reserva');
-            // 2. Filtrar o que é apenas Reserva
             const apenasReserva = curExp.filter(item => item.category === 'Reserva');
 
-            // 3. Somar os totais separadamente
             const totalEntradas = (parseFloat(inc.s1)||0) + (parseFloat(inc.s2)||0);
             const totalSaidas = gastosReais.reduce((acc, item) => acc + item.value, 0);
             const totalReservado = apenasReserva.reduce((acc, item) => acc + item.value, 0);
-            const saldoLivre = totalEntradas - totalSaidas - totalReservado;
+            
+            // CORREÇÃO: Reserva não compõe o saldo líquido (não é subtraída aqui)
+            const saldoLivre = totalEntradas - totalSaidas;
 
             document.getElementById('summary-display').innerHTML = `
                 <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-emerald-500 bg-slate-900/20">
@@ -280,11 +278,11 @@
                     <div class="text-red-500 bg-red-500/10 p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg></div>
                 </div>
                 <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-amber-500 bg-slate-900/20">
-                    <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Reserva</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(totalReservado)}</p></div>
+                    <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Reservado (Economia)</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(totalReservado)}</p></div>
                     <div class="text-amber-500 bg-amber-500/10 p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>
                 </div>
                 <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-blue-500 bg-slate-800">
-                    <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Líquido</p><p class="text-xl font-mono font-bold ${saldoLivre>=0?'text-blue-400':'text-red-400'}">${fmtMoney(saldoLivre)}</p></div>
+                    <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Saldo Livre (Líquido)</p><p class="text-xl font-mono font-bold ${saldoLivre>=0?'text-blue-400':'text-red-400'}">${fmtMoney(saldoLivre)}</p></div>
                 </div>
             `;
 
@@ -305,10 +303,9 @@
             `).join('') || '<p class="p-10 text-center text-slate-600 text-xs uppercase tracking-widest">Sem movimentações</p>';
             
             document.getElementById('total-items-count').innerText = `${curExp.length} Registros`;
-            updateMainChart(gastosReais); // Gráfico focado apenas nas despesas reais
+            updateMainChart(gastosReais);
         }
 
-        // Eventos
         document.getElementById('save-income').onclick = async () => {
             const monthKey = currentDate.toISOString().slice(0, 7);
             const s1 = document.getElementById('income1').value;

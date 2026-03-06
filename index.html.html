@@ -37,7 +37,12 @@
 
     <div id="app-container" class="max-w-7xl mx-auto w-full hidden p-4 lg:p-8">
         <header class="flex justify-between items-center mb-8">
-            <h1 class="text-xl font-bold">Painel Executivo • <span id="user-display" class="text-blue-400"></span></h1>
+            <div class="flex items-center gap-3">
+                <h1 class="text-xl font-bold">Painel Executivo • <span id="user-display" class="text-blue-400"></span></h1>
+                <button onclick="openCatModal()" class="text-slate-500 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </button>
+            </div>
             <div class="flex items-center gap-4 bg-slate-900 p-2 rounded-xl border border-slate-800 shadow-lg">
                 <button id="prev-month">◀</button>
                 <span id="current-month" class="font-mono text-sm font-bold uppercase min-w-[140px] text-center"></span>
@@ -48,14 +53,11 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div class="lg:col-span-4 space-y-6">
-                
                 <div id="summary-display" class="space-y-4"></div>
-
                 <div class="card rounded-2xl p-6">
                     <h4 class="text-[10px] font-bold text-slate-500 uppercase mb-6 text-center tracking-widest">Distribuição de Gastos</h4>
                     <div class="relative h-64"><canvas id="expenseChart"></canvas></div>
                 </div>
-
                 <div class="card rounded-2xl p-6">
                     <h4 class="text-[10px] font-bold text-slate-500 uppercase mb-6 text-center tracking-widest">Comparativo Mês Anterior</h4>
                     <div class="relative h-48"><canvas id="comparisonChart"></canvas></div>
@@ -74,6 +76,22 @@
                 <div class="p-4 bg-slate-900/50 text-[10px] font-bold text-slate-500 uppercase text-right tracking-widest">
                     <span id="total-items-count">0 registros</span>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="cat-modal" class="fixed inset-0 bg-black/90 hidden z-[60] items-center justify-center p-4 backdrop-blur-md">
+        <div class="card w-full max-w-md rounded-2xl p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-white uppercase text-sm tracking-widest">Gerenciar Categorias</h3>
+                <button onclick="closeModal('cat-modal')" class="text-slate-400">✕</button>
+            </div>
+            <div class="space-y-4">
+                <div class="flex gap-2">
+                    <input type="text" id="new-cat-name" placeholder="Nova Categoria" class="flex-1 p-2.5 input-corp rounded-lg text-sm">
+                    <button onclick="addNewCategory()" class="bg-emerald-600 px-4 rounded-lg text-xs font-bold uppercase">Add</button>
+                </div>
+                <div id="cat-list-admin" class="max-h-64 overflow-y-auto space-y-2 pr-2"></div>
             </div>
         </div>
     </div>
@@ -115,8 +133,9 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
         const userId = 'casal_principal';
-        const CATEGORIES = ['Mercado', 'Contas', 'Cartões', 'Apartamento', 'Carro', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Poupança Maria Luisa', 'Reserva', 'Outros'];
-        const COLORS = { 'Mercado': '#f59e0b', 'Contas': '#ef4444', 'Cartões': '#3b82f6', 'Apartamento': '#6366f1', 'Carro': '#0ea5e9', 'Lazer': '#ec4899', 'Delivery': '#d946ef', 'Posto': '#f97316', 'Farmácia': '#84cc16', 'Roupa': '#14b8a6', 'Escola': '#8b5cf6', 'Poupança Maria Luisa': '#10b981', 'Reserva': '#22c55e', 'Outros': '#64748b' };
+
+        let categories = ['Mercado', 'Contas', 'Cartões', 'Apartamento', 'Carro', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Poupança Maria Luisa', 'Reserva', 'Outros'];
+        const COLORS_PALETTE = ['#f59e0b', '#ef4444', '#3b82f6', '#6366f1', '#0ea5e9', '#ec4899', '#d946ef', '#f97316', '#84cc16', '#14b8a6', '#8b5cf6', '#10b981', '#22c55e', '#64748b', '#94a3b8', '#fb7185', '#38bdf8', '#c084fc'];
         
         const GOAL = 3000;
         let expenses = [], currentDate = new Date(), currentEditId = null, mainChart = null, compChart = null;
@@ -135,10 +154,57 @@
             } else { document.getElementById('login-msg').classList.remove('hidden'); }
         };
 
-        function init() {
-            document.getElementById('form-cat').innerHTML = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
+        async function init() {
+            await loadCategories();
             loadData();
         }
+
+        async function loadCategories() {
+            const doc = await db.collection('users').doc(userId).get();
+            if (doc.exists && doc.data().customCategories) {
+                categories = doc.data().customCategories;
+            }
+            updateCatDropdown();
+        }
+
+        function updateCatDropdown() {
+            document.getElementById('form-cat').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
+        window.openCatModal = () => {
+            renderAdminCats();
+            document.getElementById('cat-modal').classList.remove('hidden');
+            document.getElementById('cat-modal').classList.add('flex');
+        };
+
+        function renderAdminCats() {
+            document.getElementById('cat-list-admin').innerHTML = categories.map((c, i) => `
+                <div class="flex justify-between items-center bg-slate-950 p-2 rounded-lg border border-slate-800">
+                    <span class="text-sm font-medium">${c}</span>
+                    <button onclick="removeCategory('${c}')" class="text-red-500 text-xs px-2">Remover</button>
+                </div>
+            `).join('');
+        }
+
+        window.addNewCategory = async () => {
+            const name = document.getElementById('new-cat-name').value.trim();
+            if (name && !categories.includes(name)) {
+                categories.push(name);
+                await db.collection('users').doc(userId).set({ customCategories: categories }, { merge: true });
+                document.getElementById('new-cat-name').value = '';
+                renderAdminCats();
+                updateCatDropdown();
+            }
+        };
+
+        window.removeCategory = async (name) => {
+            if (confirm(`Remover "${name}"? Registros existentes com esta categoria não serão apagados.`)) {
+                categories = categories.filter(c => c !== name);
+                await db.collection('users').doc(userId).set({ customCategories: categories }, { merge: true });
+                renderAdminCats();
+                updateCatDropdown();
+            }
+        };
 
         async function loadData() {
             toggleLoader(true);
@@ -172,7 +238,6 @@
             const tRes = itensReserva.reduce((acc, item) => acc + item.value, 0);
             const progress = Math.min((tRes / GOAL) * 100, 100);
 
-            // Resumo sem o card de Entradas
             document.getElementById('summary-display').innerHTML = `
                 <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-red-500 bg-red-500/5">
                     <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Saídas (Despesas)</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tExp)}</p></div>
@@ -191,17 +256,13 @@
                     <div class="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden">
                         <div class="bg-amber-500 h-full transition-all duration-1000 ease-out" style="width: ${progress}%"></div>
                     </div>
-                    <div class="flex justify-between items-center text-[10px] font-black font-mono">
-                        <span class="text-amber-500 uppercase tracking-tighter">Status Reserva</span>
-                        <span class="text-white">${progress.toFixed(1)}%</span>
-                    </div>
                 </div>
             `;
 
             document.getElementById('expense-list').innerHTML = curExp.map(item => `
                 <div onclick="openModal('${item.id}')" class="flex items-center justify-between px-6 py-4 hover:bg-slate-800/40 cursor-pointer transition group">
                     <div class="flex items-center gap-4">
-                        <div class="w-2.5 h-2.5 rounded-full" style="background-color:${COLORS[item.category]}; box-shadow: 0 0 8px ${COLORS[item.category]}"></div>
+                        <div class="w-2.5 h-2.5 rounded-full" style="background-color:${getCatColor(item.category)}; box-shadow: 0 0 8px ${getCatColor(item.category)}"></div>
                         <div>
                             <p class="text-sm font-semibold text-slate-200 group-hover:text-white">${item.description}</p>
                             <p class="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">${item.category} • ${item.date.split('-').reverse().join('/')}</p>
@@ -214,6 +275,11 @@
             document.getElementById('total-items-count').innerText = `${curExp.length} Registros`;
             updateMainChart(despesasReais);
             updateComparisonChart(tExp, tExpPrev);
+        }
+
+        function getCatColor(cat) {
+            const index = categories.indexOf(cat);
+            return COLORS_PALETTE[index % COLORS_PALETTE.length];
         }
 
         function updateMainChart(data) {
@@ -230,7 +296,7 @@
                     labels: Object.keys(cats), 
                     datasets: [{ 
                         data: Object.values(cats), 
-                        backgroundColor: Object.keys(cats).map(k=>COLORS[k]), 
+                        backgroundColor: Object.keys(cats).map(k=>getCatColor(k)), 
                         borderWidth: 0,
                         hoverOffset: 10
                     }] 

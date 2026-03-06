@@ -18,6 +18,8 @@
         #loading-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98); z-index: 100; display: none; align-items: center; justify-content: center; }
         .spinner { width: 40px; height: 40px; border: 3px solid rgba(59, 130, 246, 0.3); border-radius: 50%; border-top-color: #3b82f6; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     </style>
 </head>
 <body class="antialiased">
@@ -25,11 +27,11 @@
         <div class="w-full max-w-sm text-center">
             <h2 class="text-2xl font-bold text-white mb-8 tracking-tighter">Financial Vault</h2>
             <form id="login-form" class="space-y-4 text-left">
-                <input type="text" id="user" placeholder="Usuário" class="w-full p-3 input-corp rounded-lg">
+                <input type="text" id="user" placeholder="Usuário" class="w-full p-3 input-corp rounded-lg" autocapitalize="none">
                 <input type="password" id="pass" placeholder="Senha" class="w-full p-3 input-corp rounded-lg">
-                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold uppercase tracking-widest text-xs">Desbloquear Sistema</button>
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold uppercase tracking-widest text-xs">Acessar Painel</button>
             </form>
-            <p id="login-msg" class="text-red-400 mt-4 hidden text-xs">Credenciais inválidas.</p>
+            <p id="login-msg" class="text-red-400 mt-4 hidden text-xs bg-red-950/20 p-2 rounded border border-red-900/50">Credenciais inválidas.</p>
         </div>
     </div>
 
@@ -51,12 +53,8 @@
                 <div id="summary-display" class="space-y-4"></div>
 
                 <div class="card rounded-2xl p-6">
-                    <h4 class="text-[10px] font-bold text-slate-500 uppercase mb-6 text-center tracking-widest">Comparativo por Categoria (vs Mês Anterior)</h4>
-                    <div class="relative h-72"><canvas id="radarChart"></canvas></div>
-                    <div class="mt-4 flex justify-center gap-4 text-[9px] font-bold uppercase">
-                        <span class="flex items-center gap-1 text-slate-400"><span class="w-2 h-2 bg-slate-500 rounded-full"></span> Mês Anterior</span>
-                        <span class="flex items-center gap-1 text-blue-400"><span class="w-2 h-2 bg-blue-500 rounded-full"></span> Mês Atual</span>
-                    </div>
+                    <h4 class="text-[10px] font-bold text-slate-500 uppercase mb-6 text-center tracking-widest">Evolução por Categoria (vs Mês Anterior)</h4>
+                    <div class="relative h-72"><canvas id="categoryComparisonChart"></canvas></div>
                 </div>
 
                 <div class="card rounded-2xl p-6">
@@ -65,56 +63,41 @@
                         <input type="number" id="income1" placeholder="Gabi" class="bg-slate-950 p-2 rounded-lg text-xs border border-slate-800">
                         <input type="number" id="income2" placeholder="Danilo" class="bg-slate-950 p-2 rounded-lg text-xs border border-slate-800">
                     </div>
-                    <button id="save-income" class="w-full bg-slate-800 hover:bg-blue-600 text-white text-[10px] font-bold py-2 rounded-lg transition uppercase">Atualizar Valores</button>
+                    <button id="save-income" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold py-2 rounded-lg transition uppercase tracking-widest shadow-lg shadow-blue-900/20">Salvar</button>
                 </div>
             </div>
 
             <div class="lg:col-span-8 card rounded-2xl flex flex-col overflow-hidden shadow-2xl">
                 <div class="p-6 border-b border-slate-800 bg-slate-900/30 flex justify-between items-center">
                     <h3 class="font-bold text-xl">Transações</h3>
-                    <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition shadow-lg shadow-blue-900/40">Novo</button>
+                    <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg">Novo</button>
                 </div>
                 <div class="p-4 bg-slate-950/50 border-b border-slate-800">
                     <input type="text" id="search-input" placeholder="Filtrar lançamentos..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:border-blue-500 transition outline-none">
                 </div>
                 <div id="expense-list" class="flex-1 overflow-y-auto min-h-[600px] divide-y divide-slate-800/50 custom-scroll"></div>
-                <div class="p-4 bg-slate-900/50 text-[10px] font-bold text-slate-500 uppercase text-right tracking-widest">
-                    <span id="total-items-count">0 registros</span>
-                </div>
             </div>
         </div>
     </div>
 
     <div id="expense-modal" class="fixed inset-0 bg-black/90 hidden z-50 items-center justify-center p-4 backdrop-blur-md">
-        <div class="card w-full max-w-lg rounded-2xl p-6 border-slate-700 shadow-2xl">
-            <h3 class="font-bold text-white mb-6 uppercase text-sm tracking-widest">Lançamento Financeiro</h3>
+        <div class="card w-full max-w-lg rounded-2xl p-6">
+            <h3 class="font-bold text-white mb-6 uppercase text-sm tracking-widest">Lançamento</h3>
             <form id="expense-form" class="space-y-4">
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[9px] font-bold text-slate-500 uppercase mb-1 block">Data</label>
-                        <input type="date" id="form-date" class="p-3 input-corp rounded-xl text-sm w-full">
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-bold text-slate-500 uppercase mb-1 block">Categoria</label>
-                        <select id="form-cat" class="p-3 input-corp rounded-xl text-sm w-full"></select>
-                    </div>
+                    <input type="date" id="form-date" class="p-3 input-corp rounded-xl text-sm w-full">
+                    <select id="form-cat" class="p-3 input-corp rounded-xl text-sm w-full"></select>
                 </div>
-                <div>
-                    <label class="text-[9px] font-bold text-slate-500 uppercase mb-1 block">Descrição / Histórico</label>
-                    <input type="text" id="form-desc" placeholder="Ex: Mercado Atacadão" class="w-full p-3 input-corp rounded-xl text-sm">
-                </div>
-                <div>
-                    <label class="text-[9px] font-bold text-slate-500 uppercase mb-1 block">Valor da Transação</label>
-                    <div class="relative">
-                        <span class="absolute left-4 top-3 text-slate-500 font-mono text-sm">R$</span>
-                        <input type="number" step="0.01" id="form-val" placeholder="0.00" class="w-full p-3 pl-12 input-corp rounded-xl text-sm font-mono font-bold text-white">
-                    </div>
+                <input type="text" id="form-desc" placeholder="Descrição" class="w-full p-3 input-corp rounded-xl text-sm">
+                <div class="relative">
+                    <span class="absolute left-4 top-3 text-slate-500 font-mono text-sm">R$</span>
+                    <input type="number" step="0.01" id="form-val" placeholder="0.00" class="w-full p-3 pl-12 input-corp rounded-xl text-sm font-mono font-bold text-white">
                 </div>
                 <div class="flex justify-between pt-4">
-                    <button type="button" id="delete-btn" onclick="deleteItem()" class="text-red-500 text-[10px] font-bold uppercase tracking-widest hover:bg-red-950/20 px-4 py-2 rounded-lg transition hidden">Excluir</button>
+                    <button type="button" id="delete-btn" onclick="deleteItem()" class="text-red-500 text-[10px] font-bold uppercase tracking-widest hidden">Excluir</button>
                     <div class="flex gap-2 ml-auto">
-                        <button type="button" onclick="closeModal('expense-modal')" class="px-5 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold transition">Cancelar</button>
-                        <button type="submit" class="px-8 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-900/30">Gravar</button>
+                        <button type="button" onclick="closeModal('expense-modal')" class="px-5 py-2.5 bg-slate-800 text-white rounded-xl text-xs">Cancelar</button>
+                        <button type="submit" class="px-8 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest">Gravar</button>
                     </div>
                 </div>
             </form>
@@ -138,7 +121,7 @@
         const COLORS = { 'Mercado': '#f59e0b', 'Contas': '#ef4444', 'Cartões': '#3b82f6', 'Apartamento': '#6366f1', 'Carro': '#0ea5e9', 'Lazer': '#ec4899', 'Delivery': '#d946ef', 'Posto': '#f97316', 'Farmácia': '#84cc16', 'Roupa': '#14b8a6', 'Escola': '#8b5cf6', 'Poupança Maria Luisa': '#10b981', 'Reserva': '#22c55e', 'Outros': '#64748b' };
         
         const GOAL = 3000;
-        let expenses = [], incomeData = {}, currentDate = new Date(), currentEditId = null, radarChart = null;
+        let expenses = [], incomeData = {}, currentDate = new Date(), currentEditId = null, compChart = null;
 
         document.getElementById('login-form').onsubmit = async (e) => {
             e.preventDefault();
@@ -193,59 +176,68 @@
             const tRes = itensReserva.reduce((acc, item) => acc + item.value, 0);
             const progress = Math.min((tRes / GOAL) * 100, 100);
 
+            // Interface Limpa: Sem Saldo Livre
             document.getElementById('summary-display').innerHTML = `
                 <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-emerald-500 bg-emerald-500/5">
                     <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Entradas</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tInc)}</p></div>
-                    <div class="text-emerald-500 bg-emerald-500/10 p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg></div>
                 </div>
-                <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-red-500 bg-red-500/5 shadow-lg shadow-red-900/10">
+                <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-red-500 bg-red-500/5">
                     <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Saídas (Gasto Real)</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tExp)}</p></div>
-                    <div class="text-red-500 bg-red-500/10 p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg></div>
                 </div>
                 <div class="card p-5 rounded-2xl flex flex-col border-l-4 border-amber-500 bg-amber-500/5 gap-4">
                     <div class="flex items-center justify-between">
                         <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Reserva (Meta ${fmtMoney(GOAL)})</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tRes)}</p></div>
-                        <div class="text-amber-500 bg-amber-500/10 p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zM12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z" fill="currentColor"></svg></div>
                     </div>
-                    <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden"><div class="bg-amber-500 h-full transition-all duration-1000" style="width: ${progress}%"></div></div>
+                    <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden"><div class="bg-amber-500 h-full" style="width: ${progress}%"></div></div>
                     <div class="flex justify-between items-center text-[10px] font-black font-mono text-white"><span>Objetivo</span><span>${progress.toFixed(1)}%</span></div>
                 </div>
             `;
 
             document.getElementById('expense-list').innerHTML = curExp.map(item => `
-                <div onclick="openModal('${item.id}')" class="flex items-center justify-between px-6 py-4 hover:bg-slate-800/40 cursor-pointer transition group">
+                <div onclick="openModal('${item.id}')" class="flex items-center justify-between px-6 py-4 hover:bg-slate-800/40 cursor-pointer transition">
                     <div class="flex items-center gap-4">
-                        <div class="w-2.5 h-2.5 rounded-full" style="background-color:${COLORS[item.category]}; box-shadow: 0 0 8px ${COLORS[item.category]}"></div>
-                        <div><p class="text-sm font-semibold text-slate-200 group-hover:text-white">${item.description}</p><p class="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">${item.category} • ${item.date.split('-').reverse().join('/')}</p></div>
+                        <div class="w-2.5 h-2.5 rounded-full" style="background-color:${COLORS[item.category]}"></div>
+                        <div><p class="text-sm font-semibold text-slate-200">${item.description}</p><p class="text-[10px] text-slate-500 uppercase">${item.category} • ${item.date.split('-').reverse().join('/')}</p></div>
                     </div>
-                    <p class="font-mono text-sm font-bold text-slate-300 group-hover:text-white">${fmtMoney(item.value)}</p>
+                    <p class="font-mono text-sm font-bold text-slate-300">${fmtMoney(item.value)}</p>
                 </div>
-            `).join('') || '<p class="p-10 text-center text-slate-600 text-xs uppercase tracking-widest">Sem movimentações</p>';
+            `).join('') || '<p class="p-10 text-center text-slate-600 text-xs uppercase">Sem movimentações</p>';
             
-            document.getElementById('total-items-count').innerText = `${curExp.length} Registros`;
-            updateRadarChart(monthKey, prevMonthKey);
+            updateComparisonChart(monthKey, prevMonthKey);
         }
 
-        function updateRadarChart(currentMonth, prevMonth) {
-            const ctx = document.getElementById('radarChart').getContext('2d');
-            if(radarChart) radarChart.destroy();
+        function updateComparisonChart(currentMonth, prevMonth) {
+            const ctx = document.getElementById('categoryComparisonChart').getContext('2d');
+            if(compChart) compChart.destroy();
             
             const catsToCompare = CATEGORIES.filter(c => c !== 'Reserva');
             const dataCurrent = catsToCompare.map(c => expenses.filter(e => e.date.startsWith(currentMonth) && e.category === c).reduce((a,b) => a + b.value, 0));
             const dataPrev = catsToCompare.map(c => expenses.filter(e => e.date.startsWith(prevMonth) && e.category === c).reduce((a,b) => a + b.value, 0));
 
-            radarChart = new Chart(ctx, {
-                type: 'radar',
+            // Filtra apenas categorias que tiveram gasto em um dos dois meses para não poluir o gráfico
+            const finalLabels = []; const finalCurrent = []; const finalPrev = [];
+            catsToCompare.forEach((c, i) => {
+                if (dataCurrent[i] > 0 || dataPrev[i] > 0) {
+                    finalLabels.push(c); finalCurrent.push(dataCurrent[i]); finalPrev.push(dataPrev[i]);
+                }
+            });
+
+            compChart = new Chart(ctx, {
+                type: 'bar',
                 data: {
-                    labels: catsToCompare,
+                    labels: finalLabels,
                     datasets: [
-                        { label: 'Mês Anterior', data: dataPrev, backgroundColor: 'rgba(148, 163, 184, 0.1)', borderColor: 'rgba(148, 163, 184, 0.4)', borderWidth: 1, pointRadius: 0 },
-                        { label: 'Mês Atual', data: dataCurrent, backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: '#3b82f6', borderWidth: 2, pointBackgroundColor: '#3b82f6' }
+                        { label: 'Mês Anterior', data: finalPrev, backgroundColor: 'rgba(148, 163, 184, 0.4)', borderRadius: 4 },
+                        { label: 'Mês Atual', data: finalCurrent, backgroundColor: '#3b82f6', borderRadius: 4 }
                     ]
                 },
                 options: {
+                    indexAxis: 'y',
                     responsive: true, maintainAspectRatio: false,
-                    scales: { r: { grid: { color: '#1e293b' }, angleLines: { color: '#1e293b' }, ticks: { display: false }, pointLabels: { color: '#64748b', font: { size: 9, weight: 'bold' } } } },
+                    scales: {
+                        x: { display: false, grid: { display: false } },
+                        y: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10, weight: 'bold' } } }
+                    },
                     plugins: { legend: { display: false } }
                 }
             });

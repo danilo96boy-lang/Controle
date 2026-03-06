@@ -1,139 +1,185 @@
-<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-    
-    <div class="bg-white p-6 rounded-xl shadow-sm">
-        <h3 class="text-gray-600 text-sm font-medium mb-4 uppercase tracking-wider">Distribuição de Gastos</h3>
-        <div class="relative h-64">
-            <canvas id="currentMonthChart"></canvas>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Financeiro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-2xl font-bold text-gray-800 mb-8 text-center">Resumo de Gastos</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-gray-600 text-sm font-bold uppercase tracking-wider">Distribuição Atual</h3>
+                    <span class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full font-semibold">Este Mês</span>
+                </div>
+                <div class="relative h-72">
+                    <canvas id="currentMonthChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-gray-600 text-sm font-bold uppercase tracking-wider">Comparativo de Categorias</h3>
+                    <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full font-semibold">Vs. Mês Anterior</span>
+                </div>
+                <div class="relative h-72">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
+            </div>
+
         </div>
     </div>
 
-    <div class="bg-white p-6 rounded-xl shadow-sm">
-        <h3 class="text-gray-600 text-sm font-medium mb-4 uppercase tracking-wider">Comparativo (Atual vs Anterior)</h3>
-        <div class="relative h-64">
-            <canvas id="comparisonChart"></canvas>
-        </div>
-    </div>
-</div>
+    <script>
+        // --- PLUGIN: Valor Total no Centro da Rosca ---
+        const centerTextPlugin = {
+            id: 'centerText',
+            afterDraw: (chart) => {
+                if (chart.config.type !== 'doughnut') return;
+                const { ctx, chartArea: { top, bottom, left, right, width, height } } = chart;
+                ctx.save();
+                
+                const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                const value = "R$ " + total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
 
-<script>
-let doughnutChart;
-let barChart;
+                // Texto "Gasto Total"
+                ctx.font = '600 12px sans-serif';
+                ctx.fillStyle = '#9CA3AF';
+                ctx.fillText('GASTO TOTAL', left + width / 2, top + height / 2 - 12);
 
-// --- Plugin para escrever o Total no centro da Rosca ---
-const centerTextPlugin = {
-    id: 'centerText',
-    afterDraw: (chart) => {
-        if (chart.config.type !== 'doughnut') return;
-        const { ctx, chartArea: { top, bottom, left, right, width, height } } = chart;
-        ctx.save();
-        
-        const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-        const label = "TOTAL";
-        const value = "R$ " + total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                // Valor Central
+                ctx.font = 'bold 20px sans-serif';
+                ctx.fillStyle = '#1F2937';
+                ctx.fillText(value, left + width / 2, top + height / 2 + 10);
+                ctx.restore();
+            }
+        };
 
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+        Chart.register(centerTextPlugin);
 
-        // Desenhar "TOTAL" (menor)
-        ctx.font = 'bold 12px sans-serif';
-        ctx.fillStyle = '#6B7280';
-        ctx.fillText(label, left + width / 2, top + height / 2 - 10);
+        let doughnutChart;
+        let barChart;
 
-        // Desenhar o Valor (maior)
-        ctx.font = 'bold 18px sans-serif';
-        ctx.fillStyle = '#111827';
-        ctx.fillText(value, left + width / 2, top + height / 2 + 10);
-        ctx.restore();
-    }
-};
+        // --- FUNÇÃO PRINCIPAL DE RENDERIZAÇÃO ---
+        function renderizarGraficos(dados) {
+            // 1. Configuração do Gráfico de Rosca (Distribuição)
+            const ctxRosca = document.getElementById('currentMonthChart').getContext('2d');
+            if (doughnutChart) doughnutChart.destroy();
 
-// Registrar o plugin globalmente
-Chart.register(centerTextPlugin);
+            const cats = dados.atual.map(d => d.categoria);
+            const vals = dados.atual.map(d => d.valor);
+            const somaTotal = vals.reduce((a, b) => a + b, 0);
 
-function updateCharts(dataAtual, dataAnterior) {
-    // 1. ATUALIZAR GRÁFICO DE ROSCA (DISTRIBUIÇÃO)
-    const ctxRosca = document.getElementById('currentMonthChart').getContext('2d');
-    if (doughnutChart) doughnutChart.destroy();
-
-    const categorias = dataAtual.map(d => d.categoria);
-    const valores = dataAtual.map(d => d.valor);
-    const totalGeral = valores.reduce((a, b) => a + b, 0);
-
-    doughnutChart = new Chart(ctxRosca, {
-        type: 'doughnut',
-        data: {
-            labels: categorias,
-            datasets: [{
-                data: valores,
-                backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'],
-                hoverOffset: 4,
-                borderWidth: 2,
-                cutout: '75%' // Deixa o buraco maior para o texto central
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const val = context.raw;
-                            const percent = ((val / totalGeral) * 100).toFixed(1);
-                            return ` R$ ${val.toLocaleString('pt-BR')} (${percent}%)`;
+            doughnutChart = new Chart(ctxRosca, {
+                type: 'doughnut',
+                data: {
+                    labels: cats,
+                    datasets: [{
+                        data: vals,
+                        backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'],
+                        borderWidth: 3,
+                        borderColor: '#ffffff',
+                        hoverOffset: 10,
+                        cutout: '75%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1F2937',
+                            padding: 12,
+                            callbacks: {
+                                label: function(item) {
+                                    let v = item.raw;
+                                    let p = ((v / somaTotal) * 100).toFixed(1);
+                                    return ` R$ ${v.toLocaleString('pt-BR')} (${p}%)`;
+                                }
+                            }
                         }
                     }
                 }
-            }
-        }
-    });
+            });
 
-    // 2. ATUALIZAR GRÁFICO DE BARRAS (COMPARATIVO)
-    const ctxBarra = document.getElementById('comparisonChart').getContext('2d');
-    if (barChart) barChart.destroy();
+            // 2. Configuração do Gráfico de Barras (Comparativo)
+            const ctxBarra = document.getElementById('comparisonChart').getContext('2d');
+            if (barChart) barChart.destroy();
 
-    // Unir categorias únicas dos dois meses
-    const todasCategorias = [...new Set([...dataAtual.map(d => d.categoria), ...dataAnterior.map(d => d.categoria)])];
-    
-    const seriesAtual = todasCategorias.map(cat => (dataAtual.find(d => d.categoria === cat)?.valor || 0));
-    const seriesAnterior = todasCategorias.map(cat => (dataAnterior.find(d => d.categoria === cat)?.valor || 0));
+            // Pega todas as categorias únicas entre os dois meses
+            const todasCats = [...new Set([...dados.atual.map(d => d.categoria), ...dados.anterior.map(d => d.categoria)])];
+            
+            const serieAtual = todasCats.map(c => (dados.atual.find(d => d.categoria === c)?.valor || 0));
+            const serieAnterior = todasCats.map(c => (dados.anterior.find(d => d.categoria === c)?.valor || 0));
 
-    barChart = new Chart(ctxBarra, {
-        type: 'bar',
-        data: {
-            labels: todasCategorias,
-            datasets: [
-                {
-                    label: 'Mês Anterior',
-                    data: seriesAnterior,
-                    backgroundColor: '#E5E7EB',
-                    borderRadius: 4
+            barChart = new Chart(ctxBarra, {
+                type: 'bar',
+                data: {
+                    labels: todasCats,
+                    datasets: [
+                        {
+                            label: 'Anterior',
+                            data: serieAnterior,
+                            backgroundColor: '#E5E7EB',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Atual',
+                            data: serieAtual,
+                            backgroundColor: '#3B82F6',
+                            borderRadius: 6
+                        }
+                    ]
                 },
-                {
-                    label: 'Mês Atual',
-                    data: seriesAtual,
-                    backgroundColor: '#3B82F6',
-                    borderRadius: 4
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
+                    },
+                    scales: {
+                        x: { 
+                            grid: { display: false },
+                            ticks: { callback: (v) => 'R$ ' + v }
+                        },
+                        y: { grid: { display: false } }
+                    }
                 }
-            ]
-        },
-        options: {
-            indexAxis: 'y', // Barras horizontais são melhores para ler categorias
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'bottom' }
-            },
-            scales: {
-                x: { ticks: { callback: (v) => 'R$ ' + v } }
-            }
+            });
         }
-    });
-}
 
-// Exemplo de como chamar a função com seus dados:
-// updateCharts(seusDadosMesAtual, seusDadosMesAnterior);
-</script>
+        // --- MOCK DE DADOS (Substitua pela sua lógica de carregamento do banco/JSON) ---
+        const dadosExemplo = {
+            atual: [
+                { categoria: 'Alimentação', valor: 1250.50 },
+                { categoria: 'Aluguel', valor: 2200.00 },
+                { categoria: 'Transporte', valor: 450.00 },
+                { categoria: 'Lazer', valor: 320.00 },
+                { categoria: 'Saúde', valor: 150.00 }
+            ],
+            anterior: [
+                { categoria: 'Alimentação', valor: 1100.00 },
+                { categoria: 'Aluguel', valor: 2200.00 },
+                { categoria: 'Transporte', valor: 600.00 },
+                { categoria: 'Lazer', valor: 200.00 },
+                { categoria: 'Saúde', valor: 0 }
+            ]
+        };
+
+        // Iniciar os gráficos ao carregar a página
+        window.onload = () => renderizarGraficos(dadosExemplo);
+    </script>
+</body>
+</html>

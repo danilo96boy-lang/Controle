@@ -58,8 +58,13 @@
                 <div id="summary-display" class="space-y-4"></div>
 
                 <div class="card rounded-2xl p-6">
-                    <h4 class="text-[10px] font-bold text-slate-500 uppercase mb-6 text-center tracking-widest">Distribuição de Gastos</h4>
-                    <div class="relative h-64"><canvas id="expenseChart"></canvas></div>
+                    <h4 class="text-[10px] font-bold text-slate-500 uppercase mb-6 text-center tracking-widest">Categorias (Mês Atual)</h4>
+                    <div class="relative h-48"><canvas id="expenseChart"></canvas></div>
+                </div>
+
+                <div class="card rounded-2xl p-6">
+                    <h4 class="text-[10px] font-bold text-slate-500 uppercase mb-6 text-center tracking-widest">Evolução de Gastos (vs Mês Anterior)</h4>
+                    <div class="relative h-48"><canvas id="comparisonChart"></canvas></div>
                 </div>
             </div>
 
@@ -120,7 +125,8 @@
         const COLORS = { 'Mercado': '#f59e0b', 'Contas': '#ef4444', 'Cartões': '#3b82f6', 'Apartamento': '#6366f1', 'Carro': '#0ea5e9', 'Lazer': '#ec4899', 'Delivery': '#d946ef', 'Posto': '#f97316', 'Farmácia': '#84cc16', 'Roupa': '#14b8a6', 'Escola': '#8b5cf6', 'Poupança Maria Luisa': '#10b981', 'Reserva': '#22c55e', 'Outros': '#64748b' };
         
         const GOAL = 3000;
-        let expenses = [], incomeData = {}, currentDate = new Date(), currentEditId = null, mainChart = null;
+        let expenses = [], incomeData = {}, currentDate = new Date(), currentEditId = null;
+        let mainChart = null, comparisonChart = null;
 
         document.getElementById('login-form').onsubmit = async (e) => {
             e.preventDefault();
@@ -155,6 +161,12 @@
 
         function render(filter = '') {
             const monthKey = currentDate.toISOString().slice(0, 7);
+            
+            // Lógica para mês anterior
+            const prevDate = new Date(currentDate);
+            prevDate.setMonth(prevDate.getMonth() - 1);
+            const prevMonthKey = prevDate.toISOString().slice(0, 7);
+
             document.getElementById('current-month').innerText = currentDate.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
             
             let curExp = expenses.filter(e => e.date.startsWith(monthKey)).sort((a,b) => new Date(b.date) - new Date(a.date));
@@ -167,19 +179,22 @@
             const despesasReais = curExp.filter(item => item.category !== 'Reserva');
             const itensReserva = curExp.filter(item => item.category === 'Reserva');
 
+            // Totais Mês Atual
             const tInc = (parseFloat(inc.s1)||0) + (parseFloat(inc.s2)||0);
             const tExp = despesasReais.reduce((acc, item) => acc + item.value, 0);
             const tRes = itensReserva.reduce((acc, item) => acc + item.value, 0);
             const progress = Math.min((tRes / GOAL) * 100, 100);
 
+            // Total Mês Anterior para o Gráfico
+            const despesasAnteriores = expenses.filter(e => e.date.startsWith(prevMonthKey) && e.category !== 'Reserva');
+            const tExpPrev = despesasAnteriores.reduce((acc, item) => acc + item.value, 0);
+
             document.getElementById('summary-display').innerHTML = `
-                <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-emerald-500 bg-emerald-500/5 shadow-inner">
+                <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-emerald-500 bg-emerald-500/5">
                     <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Entradas</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tInc)}</p></div>
-                    <div class="text-emerald-500 bg-emerald-500/10 p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg></div>
                 </div>
                 <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-red-500 bg-red-500/5">
                     <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Saídas (Despesas)</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tExp)}</p></div>
-                    <div class="text-red-500 bg-red-500/10 p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg></div>
                 </div>
                 <div class="card p-5 rounded-2xl flex flex-col border-l-4 border-amber-500 bg-amber-500/5 gap-4">
                     <div class="flex items-center justify-between">
@@ -187,15 +202,12 @@
                             <p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Reservado (Meta ${fmtMoney(GOAL)})</p>
                             <p class="text-xl font-mono font-bold text-white">${fmtMoney(tRes)}</p>
                         </div>
-                        <div class="text-amber-500 bg-amber-500/10 p-2 rounded-lg">
-                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zM12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z" fill="currentColor"></svg>
-                        </div>
                     </div>
                     <div class="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden">
                         <div class="bg-amber-500 h-full transition-all duration-1000 ease-out" style="width: ${progress}%"></div>
                     </div>
                     <div class="flex justify-between items-center text-[10px] font-black font-mono">
-                        <span class="text-amber-500 uppercase tracking-tighter">Status</span>
+                        <span class="text-amber-500 uppercase tracking-tighter">Status Reserva</span>
                         <span class="text-white">${progress.toFixed(1)}%</span>
                     </div>
                 </div>
@@ -215,36 +227,58 @@
             `).join('') || '<p class="p-10 text-center text-slate-600 text-xs">Sem movimentações</p>';
             
             document.getElementById('total-items-count').innerText = `${curExp.length} Registros`;
+            
             updateMainChart(despesasReais);
+            updateComparisonChart(tExpPrev, tExp);
         }
 
         function updateMainChart(data) {
-            const canvas = document.getElementById('expenseChart');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
+            const ctx = document.getElementById('expenseChart').getContext('2d');
             if(mainChart) mainChart.destroy();
-            
-            const cats = {}; 
-            data.forEach(d => cats[d.category] = (cats[d.category]||0) + d.value);
-            
+            const cats = {}; data.forEach(d => cats[d.category] = (cats[d.category]||0) + d.value);
             if (Object.keys(cats).length === 0) return;
-
             mainChart = new Chart(ctx, {
                 type: 'doughnut',
-                data: { 
-                    labels: Object.keys(cats), 
-                    datasets: [{ 
-                        data: Object.values(cats), 
-                        backgroundColor: Object.keys(cats).map(k=>COLORS[k]), 
-                        borderWidth: 0,
-                        hoverOffset: 10
-                    }] 
+                data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: Object.keys(cats).map(k=>COLORS[k]), borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '75%' }
+            });
+        }
+
+        // FUNÇÃO DO NOVO GRÁFICO COMPARATIVO
+        function updateComparisonChart(prevTotal, currentTotal) {
+            const ctx = document.getElementById('comparisonChart').getContext('2d');
+            if(comparisonChart) comparisonChart.destroy();
+            
+            comparisonChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mês Anterior', 'Mês Atual'],
+                    datasets: [{
+                        label: 'Gasto Total',
+                        data: [prevTotal, currentTotal],
+                        backgroundColor: [
+                            'rgba(148, 163, 184, 0.3)', // Cinza para o passado
+                            currentTotal > prevTotal ? 'rgba(239, 68, 68, 0.8)' : 'rgba(34, 197, 94, 0.8)' // Vermelho se subiu, verde se desceu
+                        ],
+                        borderRadius: 8,
+                        barThickness: 40
+                    }]
                 },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    plugins: { legend: { display: false } }, 
-                    cutout: '80%' 
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, display: false },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10, weight: 'bold' } } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => fmtMoney(context.raw)
+                            }
+                        }
+                    }
                 }
             });
         }

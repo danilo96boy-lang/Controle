@@ -119,7 +119,7 @@
         const COLORS = { 'Mercado': '#f59e0b', 'Contas': '#ef4444', 'Cartões': '#3b82f6', 'Apartamento': '#6366f1', 'Carro': '#0ea5e9', 'Lazer': '#ec4899', 'Delivery': '#d946ef', 'Posto': '#f97316', 'Farmácia': '#84cc16', 'Roupa': '#14b8a6', 'Escola': '#8b5cf6', 'Poupança Maria Luisa': '#10b981', 'Reserva': '#22c55e', 'Outros': '#64748b' };
         
         const GOAL = 3000;
-        let expenses = [], incomeData = {}, currentDate = new Date(), currentEditId = null, mainChart = null, compChart = null;
+        let expenses = [], currentDate = new Date(), currentEditId = null, mainChart = null, compChart = null;
 
         document.getElementById('login-form').onsubmit = async (e) => {
             e.preventDefault();
@@ -145,8 +145,6 @@
             try {
                 const snap = await db.collection('users').doc(userId).collection('expenses').get();
                 expenses = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                const incSnap = await db.collection('users').doc(userId).collection('income').get();
-                incomeData = {}; incSnap.forEach(d => incomeData[d.id] = d.data());
                 render();
             } catch(e) { console.error(e); }
             toggleLoader(false);
@@ -154,8 +152,6 @@
 
         function render(filter = '') {
             const monthKey = currentDate.toISOString().slice(0, 7);
-            
-            // Lógica para mês anterior
             const prevDate = new Date(currentDate);
             prevDate.setMonth(prevDate.getMonth() - 1);
             const prevMonthKey = prevDate.toISOString().slice(0, 7);
@@ -167,23 +163,17 @@
 
             if(filter) curExp = curExp.filter(e => e.description.toLowerCase().includes(filter.toLowerCase()) || e.category.toLowerCase().includes(filter.toLowerCase()));
 
-            const inc = incomeData[monthKey] || {s1:'', s2:''};
-
             const despesasReais = curExp.filter(item => item.category !== 'Reserva');
             const despesasAnteriores = prevExp.filter(item => item.category !== 'Reserva');
             const itensReserva = curExp.filter(item => item.category === 'Reserva');
 
-            const tInc = (parseFloat(inc.s1)||0) + (parseFloat(inc.s2)||0);
             const tExp = despesasReais.reduce((acc, item) => acc + item.value, 0);
             const tExpPrev = despesasAnteriores.reduce((acc, item) => acc + item.value, 0);
             const tRes = itensReserva.reduce((acc, item) => acc + item.value, 0);
             const progress = Math.min((tRes / GOAL) * 100, 100);
 
+            // Resumo sem o card de Entradas
             document.getElementById('summary-display').innerHTML = `
-                <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-emerald-500 bg-emerald-500/5 shadow-inner">
-                    <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Entradas</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tInc)}</p></div>
-                    <div class="text-emerald-500 bg-emerald-500/10 p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg></div>
-                </div>
                 <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-red-500 bg-red-500/5">
                     <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Saídas (Despesas)</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tExp)}</p></div>
                     <div class="text-red-500 bg-red-500/10 p-2 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg></div>
@@ -202,7 +192,7 @@
                         <div class="bg-amber-500 h-full transition-all duration-1000 ease-out" style="width: ${progress}%"></div>
                     </div>
                     <div class="flex justify-between items-center text-[10px] font-black font-mono">
-                        <span class="text-amber-500 uppercase tracking-tighter">Status</span>
+                        <span class="text-amber-500 uppercase tracking-tighter">Status Reserva</span>
                         <span class="text-white">${progress.toFixed(1)}%</span>
                     </div>
                 </div>
@@ -231,12 +221,9 @@
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             if(mainChart) mainChart.destroy();
-            
             const cats = {}; 
             data.forEach(d => cats[d.category] = (cats[d.category]||0) + d.value);
-            
             if (Object.keys(cats).length === 0) return;
-
             mainChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: { 
@@ -260,7 +247,6 @@
         function updateComparisonChart(currentTotal, prevTotal) {
             const ctx = document.getElementById('comparisonChart').getContext('2d');
             if(compChart) compChart.destroy();
-
             compChart = new Chart(ctx, {
                 type: 'bar',
                 data: {

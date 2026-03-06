@@ -24,7 +24,7 @@
 </head>
 <body class="antialiased">
     <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-6">
-        <div class="w-full max-w-sm text-center">
+        <div class="w-full max-sm text-center">
             <h2 class="text-2xl font-bold text-white mb-8 tracking-tighter">Financial Vault</h2>
             <form id="login-form" class="space-y-4 text-left">
                 <input type="text" id="user" placeholder="Usuário" class="w-full p-3 input-corp rounded-lg" autocapitalize="none">
@@ -45,7 +45,7 @@
                 <span id="current-month" class="font-mono text-sm font-bold uppercase min-w-[140px] text-center"></span>
                 <button id="next-month" class="px-2 hover:text-blue-400 transition">▶</button>
             </div>
-            <button id="logout-btn" class="text-slate-500 hover:text-red-400 text-sm">Sair</button>
+            <button id="logout-btn" class="text-slate-500 hover:text-red-400 text-sm font-bold">Sair</button>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -53,7 +53,17 @@
                 <div id="summary-display" class="space-y-4"></div>
 
                 <div class="card rounded-2xl p-6">
-                    <h4 class="text-[10px] font-bold text-slate-500 uppercase mb-6 text-center tracking-widest">Evolução por Categoria (vs Mês Anterior)</h4>
+                    <h4 class="text-[10px] font-bold text-slate-500 uppercase mb-4 text-center tracking-widest">Categorias (Mês Atual)</h4>
+                    <div class="relative h-64"><canvas id="expenseChart"></canvas></div>
+                </div>
+
+                <div class="card rounded-2xl p-6">
+                    <h4 class="text-[10px] font-bold text-slate-500 uppercase mb-4 text-center tracking-widest">Evolução de Gastos Totais</h4>
+                    <div class="relative h-48"><canvas id="monthlyEvolutionChart"></canvas></div>
+                </div>
+
+                <div class="card rounded-2xl p-6">
+                    <h4 class="text-[10px] font-bold text-slate-500 uppercase mb-4 text-center tracking-widest">Evolução por Categoria</h4>
                     <div class="relative h-72"><canvas id="categoryComparisonChart"></canvas></div>
                 </div>
 
@@ -63,7 +73,7 @@
                         <input type="number" id="income1" placeholder="Gabi" class="bg-slate-950 p-2 rounded-lg text-xs border border-slate-800">
                         <input type="number" id="income2" placeholder="Danilo" class="bg-slate-950 p-2 rounded-lg text-xs border border-slate-800">
                     </div>
-                    <button id="save-income" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold py-2 rounded-lg transition uppercase tracking-widest shadow-lg shadow-blue-900/20">Salvar</button>
+                    <button id="save-income" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold py-2 rounded-lg transition uppercase tracking-widest">Salvar</button>
                 </div>
             </div>
 
@@ -81,7 +91,7 @@
     </div>
 
     <div id="expense-modal" class="fixed inset-0 bg-black/90 hidden z-50 items-center justify-center p-4 backdrop-blur-md">
-        <div class="card w-full max-w-lg rounded-2xl p-6">
+        <div class="card w-full max-w-lg rounded-2xl p-6 border-slate-700 shadow-2xl">
             <h3 class="font-bold text-white mb-6 uppercase text-sm tracking-widest">Lançamento</h3>
             <form id="expense-form" class="space-y-4">
                 <div class="grid grid-cols-2 gap-4">
@@ -117,11 +127,13 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
         const userId = 'casal_principal';
+        
         const CATEGORIES = ['Mercado', 'Contas', 'Cartões', 'Apartamento', 'Carro', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Poupança Maria Luisa', 'Reserva', 'Outros'];
         const COLORS = { 'Mercado': '#f59e0b', 'Contas': '#ef4444', 'Cartões': '#3b82f6', 'Apartamento': '#6366f1', 'Carro': '#0ea5e9', 'Lazer': '#ec4899', 'Delivery': '#d946ef', 'Posto': '#f97316', 'Farmácia': '#84cc16', 'Roupa': '#14b8a6', 'Escola': '#8b5cf6', 'Poupança Maria Luisa': '#10b981', 'Reserva': '#22c55e', 'Outros': '#64748b' };
-        
         const GOAL = 3000;
-        let expenses = [], incomeData = {}, currentDate = new Date(), currentEditId = null, compChart = null;
+
+        let expenses = [], incomeData = {}, currentDate = new Date(), currentEditId = null;
+        let chartRosca = null, chartMensal = null, chartCat = null;
 
         document.getElementById('login-form').onsubmit = async (e) => {
             e.preventDefault();
@@ -169,24 +181,26 @@
             document.getElementById('income2').value = inc.s2;
 
             const despesasReais = curExp.filter(item => item.category !== 'Reserva');
-            const itensReserva = curExp.filter(item => item.category === 'Reserva');
-
+            const itensReservaTotal = expenses.filter(e => e.category === 'Reserva');
+            
             const tInc = (parseFloat(inc.s1)||0) + (parseFloat(inc.s2)||0);
             const tExp = despesasReais.reduce((acc, item) => acc + item.value, 0);
-            const tRes = itensReserva.reduce((acc, item) => acc + item.value, 0);
-            const progress = Math.min((tRes / GOAL) * 100, 100);
+            const tResAcumulado = itensReservaTotal.reduce((acc, item) => acc + item.value, 0);
+            const progress = Math.min((tResAcumulado / GOAL) * 100, 100);
 
-            // Interface Limpa: Sem Saldo Livre
+            // Totais para comparação mensal
+            const tExpPrev = expenses.filter(e => e.date.startsWith(prevMonthKey) && e.category !== 'Reserva').reduce((a,b) => a + b.value, 0);
+
             document.getElementById('summary-display').innerHTML = `
                 <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-emerald-500 bg-emerald-500/5">
                     <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Entradas</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tInc)}</p></div>
                 </div>
                 <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-red-500 bg-red-500/5">
-                    <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Saídas (Gasto Real)</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tExp)}</p></div>
+                    <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Saídas (Mês Atual)</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tExp)}</p></div>
                 </div>
                 <div class="card p-5 rounded-2xl flex flex-col border-l-4 border-amber-500 bg-amber-500/5 gap-4">
                     <div class="flex items-center justify-between">
-                        <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Reserva (Meta ${fmtMoney(GOAL)})</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tRes)}</p></div>
+                        <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Reserva (Meta ${fmtMoney(GOAL)})</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tResAcumulado)}</p></div>
                     </div>
                     <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden"><div class="bg-amber-500 h-full" style="width: ${progress}%"></div></div>
                     <div class="flex justify-between items-center text-[10px] font-black font-mono text-white"><span>Objetivo</span><span>${progress.toFixed(1)}%</span></div>
@@ -203,43 +217,46 @@
                 </div>
             `).join('') || '<p class="p-10 text-center text-slate-600 text-xs uppercase">Sem movimentações</p>';
             
-            updateComparisonChart(monthKey, prevMonthKey);
+            // ATUALIZAÇÃO DOS GRÁFICOS
+            updateRosca(despesasReais);
+            updateMensal(tExpPrev, tExp);
+            updateComparativoCategorias(monthKey, prevMonthKey);
         }
 
-        function updateComparisonChart(currentMonth, prevMonth) {
-            const ctx = document.getElementById('categoryComparisonChart').getContext('2d');
-            if(compChart) compChart.destroy();
-            
-            const catsToCompare = CATEGORIES.filter(c => c !== 'Reserva');
-            const dataCurrent = catsToCompare.map(c => expenses.filter(e => e.date.startsWith(currentMonth) && e.category === c).reduce((a,b) => a + b.value, 0));
-            const dataPrev = catsToCompare.map(c => expenses.filter(e => e.date.startsWith(prevMonth) && e.category === c).reduce((a,b) => a + b.value, 0));
-
-            // Filtra apenas categorias que tiveram gasto em um dos dois meses para não poluir o gráfico
-            const finalLabels = []; const finalCurrent = []; const finalPrev = [];
-            catsToCompare.forEach((c, i) => {
-                if (dataCurrent[i] > 0 || dataPrev[i] > 0) {
-                    finalLabels.push(c); finalCurrent.push(dataCurrent[i]); finalPrev.push(dataPrev[i]);
-                }
+        function updateRosca(data) {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            if(chartRosca) chartRosca.destroy();
+            const cats = {}; data.forEach(d => cats[d.category] = (cats[d.category]||0) + d.value);
+            chartRosca = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: Object.keys(cats).map(k=>COLORS[k]), borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '75%' }
             });
+        }
 
-            compChart = new Chart(ctx, {
+        function updateMensal(prev, curr) {
+            const ctx = document.getElementById('monthlyEvolutionChart').getContext('2d');
+            if(chartMensal) chartMensal.destroy();
+            chartMensal = new Chart(ctx, {
                 type: 'bar',
-                data: {
-                    labels: finalLabels,
-                    datasets: [
-                        { label: 'Mês Anterior', data: finalPrev, backgroundColor: 'rgba(148, 163, 184, 0.4)', borderRadius: 4 },
-                        { label: 'Mês Atual', data: finalCurrent, backgroundColor: '#3b82f6', borderRadius: 4 }
-                    ]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true, maintainAspectRatio: false,
-                    scales: {
-                        x: { display: false, grid: { display: false } },
-                        y: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10, weight: 'bold' } } }
-                    },
-                    plugins: { legend: { display: false } }
-                }
+                data: { labels: ['Anterior', 'Atual'], datasets: [{ data: [prev, curr], backgroundColor: ['rgba(148, 163, 184, 0.3)', curr > prev ? '#ef4444' : '#22c55e'], borderRadius: 5 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } } }, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function updateComparativoCategorias(currMonth, prevMonth) {
+            const ctx = document.getElementById('categoryComparisonChart').getContext('2d');
+            if(chartCat) chartCat.destroy();
+            const catsToCompare = CATEGORIES.filter(c => c !== 'Reserva');
+            const dataCurrent = catsToCompare.map(c => expenses.filter(e => e.date.startsWith(currMonth) && e.category === c).reduce((a,b) => a + b.value, 0));
+            const dataPrev = catsToCompare.map(c => expenses.filter(e => e.date.startsWith(prevMonth) && e.category === c).reduce((a,b) => a + b.value, 0));
+            const labels = []; const cData = []; const pData = [];
+            catsToCompare.forEach((c, i) => { if(dataCurrent[i] > 0 || dataPrev[i] > 0) { labels.push(c); cData.push(dataCurrent[i]); pData.push(dataPrev[i]); } });
+
+            chartCat = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'Ant.', data: pData, backgroundColor: 'rgba(148, 163, 184, 0.4)', borderRadius: 3 }, { label: 'Atu.', data: cData, backgroundColor: '#3b82f6', borderRadius: 3 }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { display: false }, y: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { display: false } } }, plugins: { legend: { display: false } } }
             });
         }
 
@@ -264,12 +281,11 @@
                 document.getElementById('expense-form').reset();
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
             }
-            document.getElementById('expense-modal').classList.remove('hidden');
-            document.getElementById('expense-modal').classList.add('flex');
+            document.getElementById('expense-modal').classList.remove('hidden').classList.add('flex');
         };
 
-        window.closeModal = (id) => { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); };
-        window.deleteItem = async () => { if(confirm("Excluir definitivamente?")) { await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete(); closeModal('expense-modal'); loadData(); } };
+        window.closeModal = (id) => { document.getElementById(id).classList.remove('flex').classList.add('hidden'); };
+        window.deleteItem = async () => { if(confirm("Excluir?")) { await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete(); closeModal('expense-modal'); loadData(); } };
         document.getElementById('expense-form').onsubmit = async (e) => {
             e.preventDefault();
             const data = { date: document.getElementById('form-date').value, description: document.getElementById('form-desc').value, category: document.getElementById('form-cat').value, value: parseFloat(document.getElementById('form-val').value) };

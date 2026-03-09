@@ -173,8 +173,7 @@
 
         window.openCatModal = () => {
             renderAdminCats();
-            document.getElementById('cat-modal').classList.remove('hidden');
-            document.getElementById('cat-modal').classList.add('flex');
+            document.getElementById('cat-modal').classList.remove('hidden').classList.add('flex');
         };
 
         function renderAdminCats() {
@@ -238,6 +237,7 @@
             const tRes = itensReserva.reduce((acc, item) => acc + item.value, 0);
             const progress = Math.min((tRes / GOAL) * 100, 100);
 
+            // ATUALIZADO: Adicionado a porcentagem ao lado do valor
             document.getElementById('summary-display').innerHTML = `
                 <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-red-500 bg-red-500/5">
                     <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Saídas (Despesas)</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tExp)}</p></div>
@@ -247,7 +247,10 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Reservado (Meta ${fmtMoney(GOAL)})</p>
-                            <p class="text-xl font-mono font-bold text-white">${fmtMoney(tRes)}</p>
+                            <div class="flex items-baseline gap-2">
+                                <p class="text-xl font-mono font-bold text-white">${fmtMoney(tRes)}</p>
+                                <span class="text-xs font-bold text-amber-500">${progress.toFixed(1)}%</span>
+                            </div>
                         </div>
                         <div class="text-amber-500 bg-amber-500/10 p-2 rounded-lg">
                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zM12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z" fill="currentColor"></svg>
@@ -353,11 +356,10 @@
                 document.getElementById('expense-form').reset();
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
             }
-            document.getElementById('expense-modal').classList.remove('hidden');
-            document.getElementById('expense-modal').classList.add('flex');
+            document.getElementById('expense-modal').classList.remove('hidden').classList.add('flex');
         };
 
-        window.closeModal = (id) => { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); };
+        window.closeModal = (id) => { document.getElementById(id).classList.add('hidden').classList.remove('flex'); };
 
         window.deleteItem = async () => {
             if(confirm("Excluir definitivamente?")) {

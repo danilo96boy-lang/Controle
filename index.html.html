@@ -101,19 +101,19 @@
             <h3 class="font-bold text-white mb-6 uppercase text-sm tracking-widest">Lançamento</h3>
             <form id="expense-form" class="space-y-4">
                 <div class="grid grid-cols-2 gap-4">
-                    <input type="date" id="form-date" class="p-3 input-corp rounded-xl text-sm w-full">
+                    <input type="date" id="form-date" required class="p-3 input-corp rounded-xl text-sm w-full">
                     <select id="form-cat" class="p-3 input-corp rounded-xl text-sm w-full"></select>
                 </div>
-                <input type="text" id="form-desc" placeholder="Descrição" class="w-full p-3 input-corp rounded-xl text-sm">
+                <input type="text" id="form-desc" required placeholder="Descrição" class="w-full p-3 input-corp rounded-xl text-sm">
                 <div class="relative">
                     <span class="absolute left-4 top-3 text-slate-500 font-mono text-sm">R$</span>
-                    <input type="number" step="0.01" id="form-val" placeholder="0.00" class="w-full p-3 pl-12 input-corp rounded-xl text-sm font-mono font-bold text-white">
+                    <input type="number" step="0.01" required id="form-val" placeholder="0.00" class="w-full p-3 pl-12 input-corp rounded-xl text-sm font-mono font-bold text-white">
                 </div>
                 <div class="flex justify-between pt-4">
                     <button type="button" id="delete-btn" onclick="deleteItem()" class="text-red-500 text-[10px] font-bold uppercase tracking-widest hidden">Excluir</button>
                     <div class="flex gap-2 ml-auto">
                         <button type="button" onclick="closeModal('expense-modal')" class="px-5 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                        <button type="submit" class="px-8 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest">Gravar</button>
+                        <button type="submit" id="save-btn" class="px-8 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest">Gravar</button>
                     </div>
                 </div>
             </form>
@@ -140,6 +140,7 @@
         const GOAL = 3000;
         let expenses = [], currentDate = new Date(), currentEditId = null, mainChart = null, compChart = null;
 
+        // Login
         document.getElementById('login-form').onsubmit = async (e) => {
             e.preventDefault();
             const u = document.getElementById('user').value.toLowerCase().trim();
@@ -156,7 +157,7 @@
 
         async function init() {
             await loadCategories();
-            loadData();
+            startListening(); // Inicia o listener em tempo real
         }
 
         async function loadCategories() {
@@ -171,6 +172,7 @@
             document.getElementById('form-cat').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
         }
 
+        // Categorias Admin
         window.openCatModal = () => {
             renderAdminCats();
             document.getElementById('cat-modal').classList.remove('hidden').classList.add('flex');
@@ -197,7 +199,7 @@
         };
 
         window.removeCategory = async (name) => {
-            if (confirm(`Remover "${name}"? Registros existentes com esta categoria não serão apagados.`)) {
+            if (confirm(`Remover "${name}"?`)) {
                 categories = categories.filter(c => c !== name);
                 await db.collection('users').doc(userId).set({ customCategories: categories }, { merge: true });
                 renderAdminCats();
@@ -205,14 +207,18 @@
             }
         };
 
-        async function loadData() {
+        // --- CORREÇÃO PRINCIPAL: LISTENER EM TEMPO REAL ---
+        function startListening() {
             toggleLoader(true);
-            try {
-                const snap = await db.collection('users').doc(userId).collection('expenses').get();
-                expenses = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                render();
-            } catch(e) { console.error(e); }
-            toggleLoader(false);
+            db.collection('users').doc(userId).collection('expenses')
+                .onSnapshot((snap) => {
+                    expenses = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                    render(document.getElementById('search-input').value);
+                    toggleLoader(false);
+                }, (error) => {
+                    console.error("Erro no listener:", error);
+                    toggleLoader(false);
+                });
         }
 
         function render(filter = '') {
@@ -226,7 +232,12 @@
             let curExp = expenses.filter(e => e.date.startsWith(monthKey)).sort((a,b) => new Date(b.date) - new Date(a.date));
             let prevExp = expenses.filter(e => e.date.startsWith(prevMonthKey));
 
-            if(filter) curExp = curExp.filter(e => e.description.toLowerCase().includes(filter.toLowerCase()) || e.category.toLowerCase().includes(filter.toLowerCase()));
+            if(filter) {
+                curExp = curExp.filter(e => 
+                    e.description.toLowerCase().includes(filter.toLowerCase()) || 
+                    e.category.toLowerCase().includes(filter.toLowerCase())
+                );
+            }
 
             const despesasReais = curExp.filter(item => item.category !== 'Reserva');
             const despesasAnteriores = prevExp.filter(item => item.category !== 'Reserva');
@@ -237,7 +248,7 @@
             const tRes = itensReserva.reduce((acc, item) => acc + item.value, 0);
             const progress = Math.min((tRes / GOAL) * 100, 100);
 
-            // ATUALIZADO: Adicionado a porcentagem ao lado do valor
+            // UI Summary
             document.getElementById('summary-display').innerHTML = `
                 <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-red-500 bg-red-500/5">
                     <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Saídas (Despesas)</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tExp)}</p></div>
@@ -262,6 +273,7 @@
                 </div>
             `;
 
+            // List
             document.getElementById('expense-list').innerHTML = curExp.map(item => `
                 <div onclick="openModal('${item.id}')" class="flex items-center justify-between px-6 py-4 hover:bg-slate-800/40 cursor-pointer transition group">
                     <div class="flex items-center gap-4">
@@ -286,9 +298,7 @@
         }
 
         function updateMainChart(data) {
-            const canvas = document.getElementById('expenseChart');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
+            const ctx = document.getElementById('expenseChart').getContext('2d');
             if(mainChart) mainChart.destroy();
             const cats = {}; 
             data.forEach(d => cats[d.category] = (cats[d.category]||0) + d.value);
@@ -364,21 +374,37 @@
         window.deleteItem = async () => {
             if(confirm("Excluir definitivamente?")) {
                 await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete();
-                closeModal('expense-modal'); loadData();
+                closeModal('expense-modal');
             }
         };
 
+        // --- CORREÇÃO DE FORMULÁRIO: PREVENT DUPLICATES ---
         document.getElementById('expense-form').onsubmit = async (e) => {
             e.preventDefault();
+            const btn = document.getElementById('save-btn');
+            btn.disabled = true;
+            btn.innerText = "GRAVANDO...";
+
             const data = {
                 date: document.getElementById('form-date').value,
                 description: document.getElementById('form-desc').value,
                 category: document.getElementById('form-cat').value,
                 value: parseFloat(document.getElementById('form-val').value)
             };
-            if(currentEditId) await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).update(data);
-            else await db.collection('users').doc(userId).collection('expenses').add(data);
-            closeModal('expense-modal'); loadData();
+
+            try {
+                if(currentEditId) {
+                    await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).update(data);
+                } else {
+                    await db.collection('users').doc(userId).collection('expenses').add(data);
+                }
+                closeModal('expense-modal');
+            } catch (err) {
+                alert("Erro ao salvar!");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "GRAVAR";
+            }
         };
 
         document.getElementById('prev-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()-1); render(); };

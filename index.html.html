@@ -22,12 +22,12 @@
 </head>
 <body class="antialiased">
     <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-6">
-        <div class="w-full max-w-sm text-center">
+        <div class="w-full max-sm text-center">
             <h2 class="text-2xl font-bold text-white mb-8 tracking-tighter">Financial Vault</h2>
             <form id="login-form" class="space-y-4 text-left">
                 <input type="text" id="user" placeholder="Usuário" class="w-full p-3 input-corp rounded-lg" required>
                 <input type="password" id="pass" placeholder="Senha" class="w-full p-3 input-corp rounded-lg" required>
-                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">Desbloquear</button>
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold">Desbloquear</button>
             </form>
             <p id="login-msg" class="text-red-400 mt-4 hidden text-xs">Credenciais inválidas.</p>
         </div>
@@ -132,7 +132,6 @@
         const GOAL = 3000;
         let expenses = [], currentDate = new Date(), currentEditId = null, mainChart = null, unsubscribe = null;
 
-        // Login
         document.getElementById('login-form').onsubmit = (e) => {
             e.preventDefault();
             const u = document.getElementById('user').value.toLowerCase().trim();
@@ -148,14 +147,10 @@
         };
 
         async function init() {
-            await loadCategories();
-            startListening();
-        }
-
-        async function loadCategories() {
             const doc = await db.collection('users').doc(userId).get();
             if (doc.exists && doc.data().customCategories) categories = doc.data().customCategories;
             updateCatDropdown();
+            startListening();
         }
 
         function updateCatDropdown() {
@@ -170,7 +165,7 @@
                     expenses = snap.docs.map(d => ({id: d.id, ...d.data()}));
                     render();
                     toggleLoader(false);
-                }, (err) => { console.error(err); toggleLoader(false); });
+                }, (err) => { toggleLoader(false); });
         }
 
         function render(filter = document.getElementById('search-input').value) {
@@ -183,11 +178,10 @@
             }
 
             const despesasReais = curExp.filter(i => i.category !== 'Reserva');
-            const totalSaidas = despesasReais.reduce((acc, i) => acc + i.value, 0);
-            const totalReserva = curExp.filter(i => i.category === 'Reserva').reduce((acc, i) => acc + i.value, 0);
+            const totalSaidas = despesasReais.reduce((acc, i) => acc + (i.value || 0), 0);
+            const totalReserva = curExp.filter(i => i.category === 'Reserva').reduce((acc, i) => acc + (i.value || 0), 0);
             const progress = Math.min((totalReserva / GOAL) * 100, 100);
 
-            // Resumo
             document.getElementById('summary-display').innerHTML = `
                 <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-red-500 bg-red-500/5">
                     <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Saídas</p><p class="text-xl font-mono font-bold">${fmtMoney(totalSaidas)}</p></div>
@@ -201,7 +195,6 @@
                 </div>
             `;
 
-            // Lista
             document.getElementById('expense-list').innerHTML = curExp.map(i => `
                 <div onclick="openModal('${i.id}')" class="flex items-center justify-between px-6 py-4 hover:bg-slate-800/40 cursor-pointer transition">
                     <div class="flex items-center gap-4">
@@ -233,13 +226,9 @@
             });
         }
 
-        // SALVAMENTO ROBUSTO (Ignora erros falsos de internet)
-        document.getElementById('expense-form').onsubmit = (e) => {
+        // SALVAMENTO OTIMISTA (Sem esperar OK do servidor para fechar)
+        document.getElementById('expense-form').onsubmit = function(e) {
             e.preventDefault();
-            const btn = document.getElementById('save-btn');
-            btn.disabled = true;
-            btn.innerText = "GRAVANDO...";
-
             const data = {
                 date: document.getElementById('form-date').value,
                 description: document.getElementById('form-desc').value,
@@ -249,29 +238,17 @@
 
             const col = db.collection('users').doc(userId).collection('expenses');
             
-            // Lógica: Manda pro Firebase e JÁ FECHA O MODAL. 
-            // O onSnapshot se encarrega de atualizar a lista segundos depois.
-            try {
-                if (currentEditId) {
-                    col.doc(currentEditId).set(data, { merge: true });
-                } else {
-                    col.add(data);
-                }
-                
-                // Sucesso imediato na UI
-                setTimeout(() => {
-                    closeModal('expense-modal');
-                    e.target.reset();
-                    btn.disabled = false;
-                    btn.innerText = "GRAVAR";
-                    currentEditId = null;
-                }, 100);
-
-            } catch (err) {
-                alert("Erro crítico ao enviar dados.");
-                btn.disabled = false;
-                btn.innerText = "GRAVAR";
+            // Enviamos para o Firebase mas NÃO usamos o "await" para travar a tela
+            if (currentEditId) {
+                col.doc(currentEditId).set(data, { merge: true }).catch(err => console.log("Sync delay:", err));
+            } else {
+                col.add(data).catch(err => console.log("Sync delay:", err));
             }
+
+            // Fechamos o modal imediatamente. O onSnapshot cuidará de mostrar o item novo na lista.
+            closeModal('expense-modal');
+            this.reset();
+            currentEditId = null;
         };
 
         window.openModal = (id = null) => {
@@ -292,9 +269,9 @@
 
         window.closeModal = (id) => { document.getElementById(id).classList.add('hidden').classList.remove('flex'); };
 
-        window.deleteItem = async () => {
+        window.deleteItem = () => {
             if(confirm("Excluir?")) {
-                await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete();
+                db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete();
                 closeModal('expense-modal');
             }
         };
@@ -334,7 +311,7 @@
         document.getElementById('logout-btn').onclick = () => { auth.signOut(); location.reload(); };
         document.getElementById('search-input').oninput = (e) => render(e.target.value);
         function toggleLoader(s) { document.getElementById('loading-overlay').style.display = s ? 'flex' : 'none'; }
-        function fmtMoney(v) { return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
+        function fmtMoney(v) { return (v || 0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
     </script>
 </body>
 </html>

@@ -53,7 +53,7 @@
         </header>
 
         <main class="max-w-5xl mx-auto px-4 space-y-4">
-            <div id="summary-display" class="grid grid-cols-2 gap-3"></div>
+            <div id="summary-display" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="card rounded-2xl p-4">
@@ -131,6 +131,7 @@
         let categories = ['Mercado', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Carro', 'Reserva', 'Outros'];
         const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
         
+        const EXPECTED_RESERVE = 3000; // Sua meta mensal de reserva
         let expenses = [], currentDate = new Date(), currentEditId = null, mainChart = null, compChart = null, unsubscribe = null;
 
         document.getElementById('login-form').onsubmit = (e) => {
@@ -189,22 +190,28 @@
             const totalComprasAnterior = prevExp.filter(i => i.category !== 'Reserva').reduce((acc, i) => acc + (i.value || 0), 0);
             const totalReservaMes = curExp.filter(i => i.category === 'Reserva').reduce((acc, i) => acc + (i.value || 0), 0);
 
-            // Cálculo de variação
+            // Cálculos
             const diff = totalCompras - totalComprasAnterior;
-            const percent = totalComprasAnterior > 0 ? (diff / totalComprasAnterior * 100).toFixed(0) : 0;
-            const diffColor = diff > 0 ? 'text-red-500' : 'text-emerald-500';
-            const diffIcon = diff > 0 ? '▲' : '▼';
+            const percentComp = totalComprasAnterior > 0 ? (diff / totalComprasAnterior * 100).toFixed(0) : 0;
+            const reserveProgress = Math.min((totalReservaMes / EXPECTED_RESERVE) * 100, 100).toFixed(1);
 
             document.getElementById('summary-display').innerHTML = `
-                <div class="card p-4 rounded-2xl border-l-4 border-red-500">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase">Compras</p>
-                    <p class="text-lg font-black">${fmtMoney(totalCompras)}</p>
-                    <p class="text-[9px] font-bold ${diffColor}">${diffIcon} ${Math.abs(percent)}% vs mês ant.</p>
-                </div>
-                <div class="card p-4 rounded-2xl border-l-4 border-amber-500">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase">Reserva (Mês)</p>
-                    <p class="text-lg font-black text-amber-500">${fmtMoney(totalReservaMes)}</p>
-                    <p class="text-[9px] font-bold text-slate-500 uppercase">Aporte atual</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="card p-4 rounded-2xl border-l-4 border-red-500">
+                        <p class="text-[9px] font-bold text-slate-500 uppercase">Compras</p>
+                        <p class="text-lg font-black">${fmtMoney(totalCompras)}</p>
+                        <p class="text-[8px] font-bold ${diff > 0 ? 'text-red-500' : 'text-emerald-500'}">${diff > 0 ? '▲' : '▼'} ${Math.abs(percentComp)}% vs ant.</p>
+                    </div>
+                    <div class="card p-4 rounded-2xl border-l-4 border-amber-500 relative overflow-hidden">
+                        <p class="text-[9px] font-bold text-slate-500 uppercase">Reserva (Mês)</p>
+                        <div class="flex items-baseline gap-1">
+                            <p class="text-lg font-black text-amber-500">${fmtMoney(totalReservaMes)}</p>
+                            <span class="text-[10px] font-bold text-slate-400">${reserveProgress}%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-1 absolute bottom-0 left-0">
+                            <div class="h-full ${reserveProgress >= 100 ? 'bg-emerald-500' : 'bg-amber-500'} transition-all duration-700" style="width: ${reserveProgress}%"></div>
+                        </div>
+                    </div>
                 </div>
             `;
 

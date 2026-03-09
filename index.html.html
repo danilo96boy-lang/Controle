@@ -3,117 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Gestão Financeira • Danilo</title>
+    <title>Financeiro • Danilo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-auth-compat.js"></script>
     <style>
-        :root { --bg-body: #0f172a; --card-bg: #1e293b; --border-color: #334155; --text-main: #f8fafc; }
-        body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; min-height: 100dvh; }
-        .card { background-color: var(--card-bg); border: 1px solid var(--border-color); }
-        .input-corp { background: #020617; border: 1px solid var(--border-color); color: white; outline: none; }
-        #loading-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 100; display: none; align-items: center; justify-content: center; }
-        .spinner { width: 40px; height: 40px; border: 3px solid rgba(59, 130, 246, 0.3); border-radius: 50%; border-top-color: #3b82f6; animation: spin 0.8s linear infinite; }
+        :root { --bg: #020617; --card: #0f172a; --border: #1e293b; }
+        body { background-color: var(--bg); color: #f8fafc; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .card { background-color: var(--card); border: 1px solid var(--border); }
+        .btn-value { @apply bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-xs font-bold active:bg-blue-600 active:text-white transition; }
+        input, select { background: #000 !important; border: 1px solid var(--border) !important; color: white !important; outline: none; }
+        #loading-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.9); z-index: 100; display: none; align-items: center; justify-content: center; }
+        .spinner { width: 30px; height: 30px; border: 3px solid #1e293b; border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        /* Ajuste para mobile: lista sem scroll interno chato */
+        @media (max-width: 768px) { #expense-list { min-height: auto !important; } }
     </style>
 </head>
 <body class="antialiased">
-    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-6">
+
+    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-black p-6">
         <div class="w-full max-w-sm text-center">
-            <h2 class="text-2xl font-bold text-white mb-8 tracking-tighter">Financial Vault</h2>
-            <form id="login-form" class="space-y-4 text-left">
-                <input type="text" id="user" placeholder="Usuário" class="w-full p-3 input-corp rounded-lg" required>
-                <input type="password" id="pass" placeholder="Senha" class="w-full p-3 input-corp rounded-lg" required>
-                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold">Desbloquear</button>
+            <h2 class="text-3xl font-black text-white mb-2 tracking-tighter">VAULT</h2>
+            <p class="text-slate-500 text-sm mb-8 italic">Gestão Danilo Inácio</p>
+            <form id="login-form" class="space-y-4">
+                <input type="text" id="user" placeholder="Usuário" class="w-full p-4 rounded-xl">
+                <input type="password" id="pass" placeholder="Senha" class="w-full p-4 rounded-xl">
+                <button type="submit" class="w-full bg-blue-600 py-4 rounded-xl font-black uppercase tracking-widest text-sm">Entrar</button>
             </form>
-            <p id="login-msg" class="text-red-400 mt-4 hidden text-xs">Credenciais inválidas.</p>
+            <p id="login-msg" class="text-red-500 mt-4 hidden text-xs font-bold">Acesso negado.</p>
         </div>
     </div>
 
     <div id="loading-overlay"><div class="spinner"></div></div>
 
-    <div id="app-container" class="max-w-7xl mx-auto w-full hidden p-4 lg:p-8">
-        <header class="flex justify-between items-center mb-8">
-            <div class="flex items-center gap-3">
-                <h1 class="text-xl font-bold">Painel Executivo • <span id="user-display" class="text-blue-400"></span></h1>
-                <button onclick="openCatModal()" class="text-slate-500 hover:text-white transition">⚙️</button>
+    <div id="app-container" class="hidden pb-24"> <header class="p-4 lg:p-8 flex flex-col gap-4 max-w-5xl mx-auto">
+            <div class="flex justify-between items-center">
+                <span class="text-xs font-black uppercase tracking-widest text-slate-500">Fluxo Mensal</span>
+                <button id="logout-btn" class="text-slate-600 text-xs uppercase font-bold">Sair</button>
             </div>
-            <div class="flex items-center gap-4 bg-slate-900 p-2 rounded-xl border border-slate-800 shadow-lg">
-                <button id="prev-month">◀</button>
-                <span id="current-month" class="font-mono text-sm font-bold uppercase min-w-[140px] text-center"></span>
-                <button id="next-month">▶</button>
+            
+            <div class="flex items-center justify-between bg-slate-900/50 p-2 rounded-2xl border border-slate-800">
+                <button id="prev-month" class="p-3 text-blue-500 font-bold">◀</button>
+                <span id="current-month" class="font-bold text-sm uppercase tracking-tighter"></span>
+                <button id="next-month" class="p-3 text-blue-500 font-bold">▶</button>
             </div>
-            <button id="logout-btn" class="text-slate-500 hover:text-red-400 text-sm">Sair</button>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div class="lg:col-span-4 space-y-6">
-                <div id="summary-display" class="space-y-4"></div>
-                
-                <div class="card rounded-2xl p-6">
-                    <h4 class="text-[10px] font-bold text-slate-500 uppercase mb-6 text-center tracking-widest">Distribuição</h4>
-                    <div class="relative h-64"><canvas id="expenseChart"></canvas></div>
-                </div>
+        <main class="max-w-5xl mx-auto px-4 space-y-4">
+            <div id="summary-display" class="grid grid-cols-2 gap-3"></div>
 
-                <div class="card rounded-2xl p-6">
-                    <h4 class="text-[10px] font-bold text-slate-500 uppercase mb-6 text-center tracking-widest">Comparativo Mês Anterior</h4>
-                    <div class="relative h-48"><canvas id="comparisonChart"></canvas></div>
-                </div>
+            <div class="card rounded-2xl p-4">
+                <div class="relative h-48"><canvas id="expenseChart"></canvas></div>
             </div>
 
-            <div class="lg:col-span-8 card rounded-2xl flex flex-col overflow-hidden shadow-2xl">
-                <div class="p-6 border-b border-slate-800 bg-slate-900/30 flex justify-between items-center">
-                    <h3 class="font-bold text-xl">Transações</h3>
-                    <button onclick="openModal()" class="bg-blue-600 text-white px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest">Novo Lançamento</button>
-                </div>
-                <div class="p-4 bg-slate-950/50 border-b border-slate-800">
-                    <input type="text" id="search-input" placeholder="Filtrar lançamentos..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:border-blue-500 transition outline-none">
-                </div>
-                <div id="expense-list" class="flex-1 overflow-y-auto min-h-[500px] divide-y divide-slate-800/50"></div>
-                <div id="total-items-count" class="p-4 bg-slate-900/50 text-[10px] font-bold text-slate-500 uppercase text-right tracking-widest">0 registros</div>
-            </div>
-        </div>
-    </div>
-
-    <div id="expense-modal" class="fixed inset-0 bg-black/90 hidden z-50 items-center justify-center p-4 backdrop-blur-md">
-        <div class="card w-full max-w-lg rounded-2xl p-6">
-            <h3 class="font-bold text-white mb-6 uppercase text-sm tracking-widest">Lançamento</h3>
-            <form id="expense-form" class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="date" id="form-date" required class="p-3 input-corp rounded-xl text-sm w-full">
-                    <select id="form-cat" class="p-3 input-corp rounded-xl text-sm w-full"></select>
-                </div>
-                <input type="text" id="form-desc" required placeholder="Descrição" class="w-full p-3 input-corp rounded-xl text-sm">
-                <div class="relative">
-                    <span class="absolute left-4 top-3 text-slate-500 font-mono text-sm">R$</span>
-                    <input type="number" step="0.01" required id="form-val" placeholder="0.00" class="w-full p-3 pl-12 input-corp rounded-xl text-sm font-mono font-bold text-white">
-                </div>
-                <div class="flex justify-between pt-4">
-                    <button type="button" id="delete-btn" onclick="deleteItem()" class="text-red-500 text-[10px] font-bold uppercase tracking-widest hidden">Excluir</button>
-                    <div class="flex gap-2 ml-auto">
-                        <button type="button" onclick="closeModal('expense-modal')" class="px-5 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
-                        <button type="submit" id="save-btn" class="px-8 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest">Gravar</button>
+            <div class="card rounded-3xl overflow-hidden flex flex-col">
+                <div class="p-5 border-b border-slate-800 flex justify-between items-center">
+                    <h3 class="font-black text-xs uppercase tracking-widest text-slate-400">Extrato Local</h3>
+                    <div class="flex gap-2">
+                         <button onclick="setFastFilter('gastos')" class="w-8 h-8 flex items-center justify-center bg-red-900/20 text-red-500 rounded-full text-xs">🛒</button>
+                         <button onclick="setFastFilter('Reserva')" class="w-8 h-8 flex items-center justify-center bg-amber-900/20 text-amber-500 rounded-full text-xs">💰</button>
+                         <button onclick="setFastFilter('all')" class="w-8 h-8 flex items-center justify-center bg-slate-800 text-slate-400 rounded-full text-xs">✕</button>
                     </div>
                 </div>
+                <div id="expense-list" class="divide-y divide-slate-800/50"></div>
+            </div>
+        </main>
+
+        <button onclick="openModal()" class="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 rounded-full shadow-2xl flex items-center justify-center text-3xl z-40 active:scale-95 transition-transform">
+            +
+        </button>
+    </div>
+
+    <div id="expense-modal" class="fixed inset-0 bg-black/95 hidden z-50 items-end lg:items-center justify-center p-4 backdrop-blur-sm">
+        <div class="card w-full max-w-lg rounded-t-3xl lg:rounded-3xl p-6 mb-[-1rem] lg:mb-0">
+            <div class="w-12 h-1.5 bg-slate-800 rounded-full mx-auto mb-6 lg:hidden"></div>
+            <form id="expense-form" class="space-y-5">
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="date" id="form-date" required class="p-4 rounded-xl text-sm w-full">
+                    <select id="form-cat" class="p-4 rounded-xl text-sm w-full"></select>
+                </div>
+                <input type="text" id="form-desc" required placeholder="O que você comprou?" class="w-full p-4 rounded-xl text-sm">
+                
+                <div class="space-y-3">
+                    <div class="relative">
+                        <span class="absolute left-4 top-4 text-slate-500 font-bold">R$</span>
+                        <input type="number" step="0.01" required id="form-val" placeholder="0,00" class="w-full p-4 pl-12 rounded-xl text-2xl font-black">
+                    </div>
+                    <div class="flex gap-2 overflow-x-auto pb-2">
+                        <button type="button" onclick="addVal(50)" class="btn-value">R$ 50</button>
+                        <button type="button" onclick="addVal(100)" class="btn-value">R$ 100</button>
+                        <button type="button" onclick="addVal(200)" class="btn-value">R$ 200</button>
+                        <button type="button" onclick="document.getElementById('form-val').value=''" class="btn-value text-red-400">Limpar</button>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeModal('expense-modal')" class="flex-1 py-4 text-slate-500 font-bold">Cancelar</button>
+                    <button type="submit" id="save-btn" class="flex-[2] bg-blue-600 py-4 rounded-xl font-black uppercase tracking-widest text-sm">Gravar</button>
+                </div>
+                <button type="button" id="delete-btn" onclick="deleteItem()" class="w-full text-red-900 text-[10px] font-black uppercase tracking-widest hidden">Excluir Registro</button>
             </form>
         </div>
     </div>
 
-    <div id="cat-modal" class="fixed inset-0 bg-black/95 hidden z-[60] items-center justify-center p-4">
-        <div class="card w-full max-w-md rounded-2xl p-6">
+    <div id="cat-modal" class="fixed inset-0 bg-black/95 hidden z-[60] items-center justify-center p-6">
+        <div class="card w-full max-w-md rounded-3xl p-6">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="font-bold text-white uppercase text-sm tracking-widest">Configurações</h3>
-                <button onclick="closeModal('cat-modal')" class="text-slate-400">✕</button>
+                <h3 class="font-black text-xs uppercase tracking-widest">Categorias</h3>
+                <button onclick="closeModal('cat-modal')" class="text-slate-400 p-2">✕</button>
             </div>
             <div class="space-y-4">
                 <div class="flex gap-2">
-                    <input type="text" id="new-cat-name" placeholder="Nova Categoria" class="flex-1 p-2.5 input-corp rounded-lg text-sm">
-                    <button onclick="addNewCategory()" class="bg-emerald-600 px-4 rounded-lg text-xs font-bold uppercase">Add</button>
+                    <input type="text" id="new-cat-name" placeholder="Nome..." class="flex-1 p-3 rounded-xl text-sm">
+                    <button onclick="addNewCategory()" class="bg-blue-600 px-4 rounded-xl font-bold text-xs">ADD</button>
                 </div>
-                <div id="cat-list-admin" class="max-h-60 overflow-y-auto space-y-2 pr-2"></div>
+                <div id="cat-list-admin" class="max-h-60 overflow-y-auto space-y-2"></div>
             </div>
         </div>
     </div>
@@ -132,12 +140,12 @@
         const auth = firebase.auth();
         const userId = 'casal_principal';
 
-        let categories = ['Mercado', 'Contas', 'Cartões', 'Apartamento', 'Carro', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Poupança Maria Luisa', 'Reserva', 'Outros'];
-        const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1', '#14b8a6', '#d946ef', '#fb7185', '#64748b'];
+        let categories = ['Mercado', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Carro', 'Reserva', 'Outros'];
+        const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
         
-        const GOAL = 3000;
-        let expenses = [], currentDate = new Date(), currentEditId = null, mainChart = null, compChart = null, unsubscribe = null;
+        let expenses = [], currentDate = new Date(), currentEditId = null, mainChart = null, unsubscribe = null;
 
+        // Login simplified
         document.getElementById('login-form').onsubmit = (e) => {
             e.preventDefault();
             const u = document.getElementById('user').value.toLowerCase().trim();
@@ -146,7 +154,6 @@
                 auth.signInAnonymously().then(() => {
                     document.getElementById('login-screen').classList.add('hidden');
                     document.getElementById('app-container').classList.remove('hidden');
-                    document.getElementById('user-display').innerText = u;
                     init();
                 });
             } else { document.getElementById('login-msg').classList.remove('hidden'); }
@@ -174,96 +181,79 @@
                 }, () => { toggleLoader(false); });
         }
 
-        function render(filter = document.getElementById('search-input').value) {
+        function render(filter = "") {
             const monthKey = currentDate.toISOString().slice(0, 7);
-            const prevDate = new Date(currentDate);
-            prevDate.setMonth(prevDate.getMonth() - 1);
-            const prevMonthKey = prevDate.toISOString().slice(0, 7);
-
             document.getElementById('current-month').innerText = currentDate.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
             
             let curExp = expenses.filter(e => e.date?.startsWith(monthKey)).sort((a,b) => new Date(b.date) - new Date(a.date));
-            let prevExp = expenses.filter(e => e.date?.startsWith(prevMonthKey));
-
-            if(filter) {
-                curExp = curExp.filter(e => (e.description?.toLowerCase().includes(filter.toLowerCase())) || (e.category?.toLowerCase().includes(filter.toLowerCase())));
+            
+            if(filter && filter !== 'all' && filter !== 'gastos') {
+                curExp = curExp.filter(e => e.category === filter);
+            } else if (filter === 'gastos') {
+                curExp = curExp.filter(e => e.category !== 'Reserva');
             }
 
-            const despesasReais = curExp.filter(i => i.category !== 'Reserva');
-            const despesasAnterioresReais = prevExp.filter(i => i.category !== 'Reserva');
-
-            const tExp = despesasReais.reduce((acc, i) => acc + (i.value || 0), 0);
-            const tExpPrev = despesasAnterioresReais.reduce((acc, i) => acc + (i.value || 0), 0);
-            const tRes = curExp.filter(i => i.category === 'Reserva').reduce((acc, i) => acc + (i.value || 0), 0);
-            const progress = Math.min((tRes / GOAL) * 100, 100);
+            const totalCompras = curExp.filter(i => i.category !== 'Reserva').reduce((acc, i) => acc + (i.value || 0), 0);
+            const totalReservaMes = curExp.filter(i => i.category === 'Reserva').reduce((acc, i) => acc + (i.value || 0), 0);
 
             document.getElementById('summary-display').innerHTML = `
-                <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-red-500 bg-red-500/5">
-                    <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Saídas</p><p class="text-xl font-mono font-bold">${fmtMoney(tExp)}</p></div>
+                <div class="card p-4 rounded-2xl border-l-4 border-red-500">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase">Compras</p>
+                    <p class="text-lg font-black">${fmtMoney(totalCompras)}</p>
                 </div>
-                <div class="card p-5 rounded-2xl border-l-4 border-amber-500 bg-amber-500/5">
-                    <div class="flex justify-between items-end mb-2">
-                        <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Reserva (${progress.toFixed(1)}%)</p><p class="text-xl font-mono font-bold">${fmtMoney(tRes)}</p></div>
-                        <p class="text-[10px] text-slate-400 font-bold">Meta: ${fmtMoney(GOAL)}</p>
-                    </div>
-                    <div class="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden"><div class="bg-amber-500 h-full transition-all duration-1000" style="width:${progress}%"></div></div>
+                <div class="card p-4 rounded-2xl border-l-4 border-amber-500">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase">Reserva (Mês)</p>
+                    <p class="text-lg font-black text-amber-500">${fmtMoney(totalReservaMes)}</p>
                 </div>
             `;
 
             document.getElementById('expense-list').innerHTML = curExp.map(i => `
-                <div onclick="openModal('${i.id}')" class="flex items-center justify-between px-6 py-4 hover:bg-slate-800/40 cursor-pointer transition">
+                <div onclick="openModal('${i.id}')" class="flex items-center justify-between p-5 active:bg-slate-800 transition">
                     <div class="flex items-center gap-4">
-                        <div class="w-2 h-2 rounded-full" style="background:${getCatColor(i.category)}"></div>
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg ${i.category === 'Reserva' ? 'bg-amber-900/20' : 'bg-slate-800'}">
+                            ${i.category === 'Reserva' ? '💰' : '🛒'}
+                        </div>
                         <div>
-                            <p class="text-sm font-semibold text-slate-200">${i.description}</p>
-                            <p class="text-[10px] text-slate-500 font-bold uppercase">${i.category} • ${i.date?.split('-').reverse().join('/')}</p>
+                            <p class="text-sm font-bold text-slate-200">${i.description}</p>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase">${i.category} • ${i.date.split('-').reverse().slice(0,2).join('/')}</p>
                         </div>
                     </div>
-                    <p class="font-mono text-sm font-bold">${fmtMoney(i.value)}</p>
+                    <p class="font-black text-sm ${i.category === 'Reserva' ? 'text-amber-500' : 'text-slate-100'}">${fmtMoney(i.value)}</p>
                 </div>
-            `).join('') || '<p class="p-10 text-center text-slate-600 text-xs">Nenhum registro</p>';
+            `).join('') || '<p class="p-10 text-center text-slate-600 text-xs uppercase font-bold tracking-widest">Vazio</p>';
             
-            document.getElementById('total-items-count').innerText = `${curExp.length} registros`;
-            updateMainChart(despesasReais);
-            updateComparisonChart(tExp, tExpPrev);
+            updateChart(curExp.filter(i => i.category !== 'Reserva'));
         }
 
-        function getCatColor(cat) { return COLORS[categories.indexOf(cat) % COLORS.length]; }
+        window.addVal = (v) => {
+            const input = document.getElementById('form-val');
+            let current = parseFloat(input.value) || 0;
+            input.value = current + v;
+        };
 
-        function updateMainChart(data) {
+        window.setFastFilter = (f) => render(f);
+
+        function updateChart(data) {
             const ctx = document.getElementById('expenseChart').getContext('2d');
             if(mainChart) mainChart.destroy();
             const cats = {}; data.forEach(d => cats[d.category] = (cats[d.category]||0) + d.value);
             if (Object.keys(cats).length === 0) return;
             mainChart = new Chart(ctx, {
                 type: 'doughnut',
-                data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: Object.keys(cats).map(k=>getCatColor(k)), borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '85%' }
-            });
-        }
-
-        function updateComparisonChart(current, prev) {
-            const ctx = document.getElementById('comparisonChart').getContext('2d');
-            if(compChart) compChart.destroy();
-            compChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Mês Anterior', 'Mês Atual'],
-                    datasets: [{
-                        data: [prev, current],
-                        backgroundColor: ['#334155', '#3b82f6'],
-                        borderRadius: 8,
-                        barThickness: 40
-                    }]
+                data: { 
+                    labels: Object.keys(cats), 
+                    datasets: [{ 
+                        data: Object.values(cats), 
+                        backgroundColor: COLORS, 
+                        borderWidth: 0,
+                        hoverOffset: 0 
+                    }] 
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { 
-                        y: { display: false }, 
-                        x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10, weight: 'bold' } } } 
-                    }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: true, position: 'right', labels: { color: '#94a3b8', font: { size: 10 }, usePointStyle: true } } }, 
+                    cutout: '70%' 
                 }
             });
         }
@@ -303,7 +293,7 @@
         window.closeModal = (id) => { document.getElementById(id).classList.add('hidden').classList.remove('flex'); };
 
         window.deleteItem = () => {
-            if(confirm("Excluir?")) {
+            if(confirm("Apagar registro?")) {
                 db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete();
                 closeModal('expense-modal');
             }
@@ -316,9 +306,9 @@
 
         function renderAdminCats() {
             document.getElementById('cat-list-admin').innerHTML = categories.map(c => `
-                <div class="flex justify-between items-center bg-slate-950 p-2 rounded-lg border border-slate-800">
-                    <span class="text-sm">${c}</span>
-                    <button onclick="removeCategory('${c}')" class="text-red-500 text-xs">✕</button>
+                <div class="flex justify-between items-center bg-black p-4 rounded-2xl border border-slate-800">
+                    <span class="text-sm font-bold">${c}</span>
+                    <button onclick="removeCategory('${c}')" class="text-red-500">✕</button>
                 </div>
             `).join('');
         }
@@ -342,7 +332,6 @@
         document.getElementById('prev-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()-1); render(); };
         document.getElementById('next-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()+1); render(); };
         document.getElementById('logout-btn').onclick = () => { auth.signOut(); location.reload(); };
-        document.getElementById('search-input').oninput = (e) => render(e.target.value);
         function toggleLoader(s) { document.getElementById('loading-overlay').style.display = s ? 'flex' : 'none'; }
         function fmtMoney(v) { return (v || 0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
     </script>

@@ -25,9 +25,9 @@
         <div class="w-full max-w-sm text-center">
             <h2 class="text-2xl font-bold text-white mb-8 tracking-tighter">Financial Vault</h2>
             <form id="login-form" class="space-y-4 text-left">
-                <input type="text" id="user" placeholder="Usuário" class="w-full p-3 input-corp rounded-lg">
-                <input type="password" id="pass" placeholder="Senha" class="w-full p-3 input-corp rounded-lg">
-                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold">Desbloquear</button>
+                <input type="text" id="user" placeholder="Usuário" class="w-full p-3 input-corp rounded-lg" required>
+                <input type="password" id="pass" placeholder="Senha" class="w-full p-3 input-corp rounded-lg" required>
+                <button type="submit" id="login-btn" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold">Desbloquear</button>
             </form>
             <p id="login-msg" class="text-red-400 mt-4 hidden text-xs">Credenciais inválidas.</p>
         </div>
@@ -138,9 +138,8 @@
         const COLORS_PALETTE = ['#f59e0b', '#ef4444', '#3b82f6', '#6366f1', '#0ea5e9', '#ec4899', '#d946ef', '#f97316', '#84cc16', '#14b8a6', '#8b5cf6', '#10b981', '#22c55e', '#64748b', '#94a3b8', '#fb7185', '#38bdf8', '#c084fc'];
         
         const GOAL = 3000;
-        let expenses = [], currentDate = new Date(), currentEditId = null, mainChart = null, compChart = null;
+        let expenses = [], currentDate = new Date(), currentEditId = null, mainChart = null, compChart = null, unsubscribe = null;
 
-        // Login
         document.getElementById('login-form').onsubmit = async (e) => {
             e.preventDefault();
             const u = document.getElementById('user').value.toLowerCase().trim();
@@ -157,7 +156,7 @@
 
         async function init() {
             await loadCategories();
-            startListening(); // Inicia o listener em tempo real
+            startListening();
         }
 
         async function loadCategories() {
@@ -172,7 +171,6 @@
             document.getElementById('form-cat').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
         }
 
-        // Categorias Admin
         window.openCatModal = () => {
             renderAdminCats();
             document.getElementById('cat-modal').classList.remove('hidden').classList.add('flex');
@@ -207,16 +205,17 @@
             }
         };
 
-        // --- CORREÇÃO PRINCIPAL: LISTENER EM TEMPO REAL ---
         function startListening() {
             toggleLoader(true);
-            db.collection('users').doc(userId).collection('expenses')
+            if(unsubscribe) unsubscribe();
+            
+            unsubscribe = db.collection('users').doc(userId).collection('expenses')
                 .onSnapshot((snap) => {
                     expenses = snap.docs.map(d => ({id: d.id, ...d.data()}));
                     render(document.getElementById('search-input').value);
                     toggleLoader(false);
                 }, (error) => {
-                    console.error("Erro no listener:", error);
+                    console.error("Erro no Real-time Listener:", error);
                     toggleLoader(false);
                 });
         }
@@ -229,13 +228,13 @@
 
             document.getElementById('current-month').innerText = currentDate.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
             
-            let curExp = expenses.filter(e => e.date.startsWith(monthKey)).sort((a,b) => new Date(b.date) - new Date(a.date));
-            let prevExp = expenses.filter(e => e.date.startsWith(prevMonthKey));
+            let curExp = expenses.filter(e => e.date && e.date.startsWith(monthKey)).sort((a,b) => new Date(b.date) - new Date(a.date));
+            let prevExp = expenses.filter(e => e.date && e.date.startsWith(prevMonthKey));
 
             if(filter) {
                 curExp = curExp.filter(e => 
-                    e.description.toLowerCase().includes(filter.toLowerCase()) || 
-                    e.category.toLowerCase().includes(filter.toLowerCase())
+                    (e.description && e.description.toLowerCase().includes(filter.toLowerCase())) || 
+                    (e.category && e.category.toLowerCase().includes(filter.toLowerCase()))
                 );
             }
 
@@ -243,12 +242,11 @@
             const despesasAnteriores = prevExp.filter(item => item.category !== 'Reserva');
             const itensReserva = curExp.filter(item => item.category === 'Reserva');
 
-            const tExp = despesasReais.reduce((acc, item) => acc + item.value, 0);
-            const tExpPrev = despesasAnteriores.reduce((acc, item) => acc + item.value, 0);
-            const tRes = itensReserva.reduce((acc, item) => acc + item.value, 0);
+            const tExp = despesasReais.reduce((acc, item) => acc + (item.value || 0), 0);
+            const tExpPrev = despesasAnteriores.reduce((acc, item) => acc + (item.value || 0), 0);
+            const tRes = itensReserva.reduce((acc, item) => acc + (item.value || 0), 0);
             const progress = Math.min((tRes / GOAL) * 100, 100);
 
-            // UI Summary
             document.getElementById('summary-display').innerHTML = `
                 <div class="card p-5 rounded-2xl flex items-center justify-between border-l-4 border-red-500 bg-red-500/5">
                     <div><p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Saídas (Despesas)</p><p class="text-xl font-mono font-bold text-white">${fmtMoney(tExp)}</p></div>
@@ -273,7 +271,6 @@
                 </div>
             `;
 
-            // List
             document.getElementById('expense-list').innerHTML = curExp.map(item => `
                 <div onclick="openModal('${item.id}')" class="flex items-center justify-between px-6 py-4 hover:bg-slate-800/40 cursor-pointer transition group">
                     <div class="flex items-center gap-4">
@@ -373,15 +370,18 @@
 
         window.deleteItem = async () => {
             if(confirm("Excluir definitivamente?")) {
-                await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete();
-                closeModal('expense-modal');
+                try {
+                    await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete();
+                    closeModal('expense-modal');
+                } catch(e) { alert("Erro ao excluir."); }
             }
         };
 
-        // --- CORREÇÃO DE FORMULÁRIO: PREVENT DUPLICATES ---
         document.getElementById('expense-form').onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('save-btn');
+            const originalText = btn.innerText;
+            
             btn.disabled = true;
             btn.innerText = "GRAVANDO...";
 
@@ -394,25 +394,29 @@
 
             try {
                 if(currentEditId) {
-                    await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).update(data);
+                    await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).set(data, { merge: true });
                 } else {
                     await db.collection('users').doc(userId).collection('expenses').add(data);
                 }
+                
+                currentEditId = null;
+                e.target.reset();
                 closeModal('expense-modal');
             } catch (err) {
-                alert("Erro ao salvar!");
+                console.error(err);
+                alert("Erro ao gravar dados no Firebase.");
             } finally {
                 btn.disabled = false;
-                btn.innerText = "GRAVAR";
+                btn.innerText = originalText;
             }
         };
 
         document.getElementById('prev-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()-1); render(); };
         document.getElementById('next-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()+1); render(); };
-        document.getElementById('logout-btn').onclick = () => { auth.signOut(); location.reload(); };
+        document.getElementById('logout-btn').onclick = () => { if(unsubscribe) unsubscribe(); auth.signOut(); location.reload(); };
         document.getElementById('search-input').oninput = (e) => render(e.target.value);
         function toggleLoader(s) { document.getElementById('loading-overlay').style.display = s ? 'flex' : 'none'; }
-        function fmtMoney(v) { return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
+        function fmtMoney(v) { return (v || 0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
     </script>
 </body>
 </html>

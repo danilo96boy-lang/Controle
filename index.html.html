@@ -42,7 +42,10 @@
         <header class="p-4 lg:p-8 flex flex-col gap-4 max-w-5xl mx-auto">
             <div class="flex justify-between items-center">
                 <span class="text-xs font-black uppercase tracking-widest text-slate-500">Fluxo Mensal</span>
-                <button id="logout-btn" class="text-slate-600 text-xs uppercase font-bold">Sair</button>
+                <div class="flex gap-4">
+                    <button onclick="openConfig()" class="text-slate-400 text-xs uppercase font-bold">⚙️ Categorias</button>
+                    <button id="logout-btn" class="text-slate-600 text-xs uppercase font-bold">Sair</button>
+                </div>
             </div>
             
             <div class="flex items-center justify-between bg-slate-900/50 p-2 rounded-2xl border border-slate-800">
@@ -114,6 +117,22 @@
         </div>
     </div>
 
+    <div id="config-modal" class="fixed inset-0 bg-black/95 hidden z-50 items-center justify-center p-4 backdrop-blur-sm">
+        <div class="card w-full max-w-sm rounded-3xl p-6">
+            <h3 class="font-black text-sm uppercase tracking-widest text-slate-400 mb-6">Gerenciar Categorias</h3>
+            
+            <div class="space-y-2 mb-6 max-h-60 overflow-y-auto pr-2" id="categories-manager-list">
+                </div>
+
+            <div class="flex gap-2">
+                <input type="text" id="new-cat-name" placeholder="Nova categoria..." class="flex-1 p-3 rounded-xl text-sm">
+                <button onclick="addNewCategory()" class="bg-blue-600 px-4 rounded-xl font-bold text-xl">+</button>
+            </div>
+
+            <button onclick="closeModal('config-modal')" class="w-full mt-6 py-4 text-slate-500 font-bold text-xs uppercase tracking-widest">Fechar</button>
+        </div>
+    </div>
+
     <script type="module">
         const firebaseConfig = {
             apiKey: "AIzaSyBf1nzx6mH1lWckWQyXDnWZKLlh-5cfcv0",
@@ -129,9 +148,9 @@
         const userId = 'casal_principal';
 
         let categories = ['Mercado', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Carro', 'Reserva', 'Outros'];
-        const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
+        const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#a855f7', '#14b8a6', '#f43f5e'];
         
-        const EXPECTED_RESERVE = 3000; // Sua meta mensal de reserva
+        const EXPECTED_RESERVE = 3000;
         let expenses = [], currentDate = new Date(), currentEditId = null, mainChart = null, compChart = null, unsubscribe = null;
 
         document.getElementById('login-form').onsubmit = (e) => {
@@ -149,14 +168,57 @@
 
         async function init() {
             const doc = await db.collection('users').doc(userId).get();
-            if (doc.exists && doc.data().customCategories) categories = doc.data().customCategories;
+            if (doc.exists && doc.data().customCategories) {
+                categories = doc.data().customCategories;
+            }
             updateCatDropdown();
             startListening();
         }
 
+        // --- GESTÃO DE CATEGORIAS ---
+        window.openConfig = () => {
+            renderCategoriesManager();
+            document.getElementById('config-modal').classList.remove('hidden');
+            document.getElementById('config-modal').classList.add('flex');
+        };
+
+        function renderCategoriesManager() {
+            const container = document.getElementById('categories-manager-list');
+            container.innerHTML = categories.map(cat => `
+                <div class="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-800">
+                    <span class="text-sm font-bold text-slate-300">${cat}</span>
+                    ${cat !== 'Reserva' && cat !== 'Outros' ? `
+                        <button onclick="removeCategory('${cat}')" class="text-red-500 text-xs font-black p-1">REMOVER</button>
+                    ` : '<span class="text-[9px] text-slate-600 font-bold uppercase">Fixo</span>'}
+                </div>
+            `).join('');
+        }
+
+        window.addNewCategory = async () => {
+            const input = document.getElementById('new-cat-name');
+            const name = input.value.trim();
+            if (name && !categories.includes(name)) {
+                categories.push(name);
+                await db.collection('users').doc(userId).set({ customCategories: categories }, { merge: true });
+                updateCatDropdown();
+                renderCategoriesManager();
+                input.value = '';
+            }
+        };
+
+        window.removeCategory = async (cat) => {
+            if (confirm(`Remover a categoria "${cat}"? Isso não apaga os gastos já lançados nela.`)) {
+                categories = categories.filter(c => c !== cat);
+                await db.collection('users').doc(userId).set({ customCategories: categories }, { merge: true });
+                updateCatDropdown();
+                renderCategoriesManager();
+            }
+        };
+
         function updateCatDropdown() {
             document.getElementById('form-cat').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
         }
+        // ----------------------------
 
         function startListening() {
             toggleLoader(true);
@@ -190,7 +252,6 @@
             const totalComprasAnterior = prevExp.filter(i => i.category !== 'Reserva').reduce((acc, i) => acc + (i.value || 0), 0);
             const totalReservaMes = curExp.filter(i => i.category === 'Reserva').reduce((acc, i) => acc + (i.value || 0), 0);
 
-            // Cálculos
             const diff = totalCompras - totalComprasAnterior;
             const percentComp = totalComprasAnterior > 0 ? (diff / totalComprasAnterior * 100).toFixed(0) : 0;
             const reserveProgress = Math.min((totalReservaMes / EXPECTED_RESERVE) * 100, 100).toFixed(1);
@@ -306,10 +367,14 @@
                 document.getElementById('expense-form').reset();
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
             }
-            document.getElementById('expense-modal').classList.remove('hidden').classList.add('flex');
+            document.getElementById('expense-modal').classList.remove('hidden');
+            document.getElementById('expense-modal').classList.add('flex');
         };
 
-        window.closeModal = (id) => { document.getElementById(id).classList.add('hidden').classList.remove('flex'); };
+        window.closeModal = (id) => { 
+            document.getElementById(id).classList.add('hidden');
+            document.getElementById(id).classList.remove('flex');
+        };
 
         window.deleteItem = () => {
             if(confirm("Apagar registro?")) {

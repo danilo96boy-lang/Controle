@@ -20,7 +20,6 @@
         .spinner { width: 30px; height: 30px; border: 3px solid #1e293b; border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        /* Estilo customizado para os seletores de cartão */
         .card-selector input:checked + label {
             @apply bg-blue-600 border-blue-500 text-white font-black;
         }
@@ -63,14 +62,13 @@
         <main class="max-w-5xl mx-auto px-4 space-y-4">
             <div id="summary-display" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
 
-            <!-- Grid de gráficos modificado para 3 colunas -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="card rounded-2xl p-4">
                     <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Distribuição Compras</p>
                     <div class="relative h-48"><canvas id="expenseChart"></canvas></div>
                 </div>
-                <div class="card rounded-2xl p-4">
-                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Uso dos Cartões</p>
+                <div class="card rounded-2xl p-4 cursor-pointer" title="Clique em uma fatia para filtrar o extrato">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Uso dos Cartões (Filtrável)</p>
                     <div class="relative h-48"><canvas id="cardChart"></canvas></div>
                 </div>
                 <div class="card rounded-2xl p-4">
@@ -81,7 +79,10 @@
 
             <div class="card rounded-3xl overflow-hidden flex flex-col">
                 <div class="p-5 border-b border-slate-800 flex justify-between items-center">
-                    <h3 class="font-black text-xs uppercase tracking-widest text-slate-400">Extrato</h3>
+                    <div class="flex flex-col">
+                        <h3 class="font-black text-xs uppercase tracking-widest text-slate-400">Extrato</h3>
+                        <span id="active-filter-indicator" class="text-[9px] text-blue-400 font-bold uppercase mt-0.5 hidden"></span>
+                    </div>
                     <div class="flex gap-2">
                          <button onclick="setFastFilter('gastos')" class="w-8 h-8 flex items-center justify-center bg-red-900/20 text-red-500 rounded-full text-xs">🛒</button>
                          <button onclick="setFastFilter('Reserva')" class="w-8 h-8 flex items-center justify-center bg-amber-900/20 text-amber-500 rounded-full text-xs">💰</button>
@@ -105,7 +106,6 @@
                 </div>
                 <input type="text" id="form-desc" required placeholder="O que você comprou?" class="w-full p-4 rounded-xl text-sm">
                 
-                <!-- Seletor visual de cartões -->
                 <div class="space-y-2">
                     <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Forma de Pagamento</label>
                     <div class="grid grid-cols-3 gap-2 card-selector">
@@ -144,7 +144,7 @@
 
                 <div class="flex gap-3 pt-4">
                     <button type="button" onclick="closeModal('expense-modal')" class="flex-1 py-4 text-slate-500 font-bold">Cancelar</button>
-                    <button type="submit" id="save-btn" class="flex-[2] bg-blue-600 py-4 rounded-xl font-black uppercase tracking-widest text-sm">Gravar</button>
+                    <button type="submit" id="save-btn" class="flex-[2] bg-blue-600 py-4 rounded-xl font-black uppercase tracking-widest text-sm disabled:bg-slate-700 disabled:text-slate-400">Gravar</button>
                 </div>
                 <button type="button" id="delete-btn" onclick="deleteItem()" class="w-full text-red-900 text-[10px] font-black uppercase tracking-widest hidden">Excluir Registro</button>
             </form>
@@ -182,11 +182,13 @@
 
         let categories = ['Mercado', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Carro', 'Reserva', 'Outros'];
         const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#a855f7', '#14b8a6', '#f43f5e'];
-        const CARD_COLORS = ['#ff7a00', '#cc0000', '#475569']; // Inter (Laranja), Santander (Vermelho), Outros (Cinza)
+        const CARD_COLORS = ['#ff7a00', '#cc0000', '#475569'];
         
         const EXPECTED_RESERVE = 3000;
         let expenses = [], currentDate = new Date(), currentEditId = null, mainChart = null, compChart = null, cardChart = null, unsubscribe = null;
+        let currentFilterState = "all"; // Guarda o estado interno de filtragem
 
+        // LOGIN ORIGINAL DO USUÁRIO RESTAURADO EXATAMENTE COMO NO SEU CODIGO
         document.getElementById('login-form').onsubmit = (e) => {
             e.preventDefault();
             const u = document.getElementById('user').value.toLowerCase().trim();
@@ -258,12 +260,13 @@
             unsubscribe = db.collection('users').doc(userId).collection('expenses')
                 .onSnapshot((snap) => {
                     expenses = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                    render();
+                    render(currentFilterState);
                     toggleLoader(false);
                 }, () => { toggleLoader(false); });
         }
 
         function render(filter = "") {
+            currentFilterState = filter;
             const monthKey = currentDate.toISOString().slice(0, 7);
             const prevDate = new Date(currentDate);
             prevDate.setMonth(prevDate.getMonth() - 1);
@@ -274,15 +277,34 @@
             let curExp = expenses.filter(e => e.date?.startsWith(monthKey)).sort((a,b) => new Date(b.date) - new Date(a.date));
             let prevExp = expenses.filter(e => e.date?.startsWith(prevMonthKey));
 
-            if(filter && filter !== 'all' && filter !== 'gastos') {
-                curExp = curExp.filter(e => e.category === filter);
+            // Elemento indicador de filtro na UI
+            const indicator = document.getElementById('active-filter-indicator');
+            if (filter && filter !== 'all' && filter !== 'gastos' && filter !== 'Reserva') {
+                if(filter.startsWith('card:')) {
+                    const cardName = filter.split(':')[1];
+                    curExp = curExp.filter(e => (e.paymentMethod || 'Outros') === cardName && e.category !== 'Reserva');
+                    indicator.innerText = `Filtrado por: Cartão ${cardName}`;
+                    indicator.classList.remove('hidden');
+                } else {
+                    curExp = curExp.filter(e => e.category === filter);
+                    indicator.innerText = `Filtrado por: ${filter}`;
+                    indicator.classList.remove('hidden');
+                }
             } else if (filter === 'gastos') {
                 curExp = curExp.filter(e => e.category !== 'Reserva');
+                indicator.innerText = "Filtrado por: Compras Gerais";
+                indicator.classList.remove('hidden');
+            } else if (filter === 'Reserva') {
+                curExp = curExp.filter(e => e.category === 'Reserva');
+                indicator.innerText = "Filtrado por: Reserva";
+                indicator.classList.remove('hidden');
+            } else {
+                indicator.classList.add('hidden');
             }
 
-            const totalCompras = curExp.filter(i => i.category !== 'Reserva').reduce((acc, i) => acc + (i.value || 0), 0);
+            const totalCompras = expenses.filter(e => e.date?.startsWith(monthKey) && e.category !== 'Reserva').reduce((acc, i) => acc + (i.value || 0), 0);
             const totalComprasAnterior = prevExp.filter(i => i.category !== 'Reserva').reduce((acc, i) => acc + (i.value || 0), 0);
-            const totalReservaMes = curExp.filter(i => i.category === 'Reserva').reduce((acc, i) => acc + (i.value || 0), 0);
+            const totalReservaMes = expenses.filter(e => e.date?.startsWith(monthKey) && e.category === 'Reserva').reduce((acc, i) => acc + (i.value || 0), 0);
 
             const diff = totalCompras - totalComprasAnterior;
             const percentComp = totalComprasAnterior > 0 ? (diff / totalComprasAnterior * 100).toFixed(0) : 0;
@@ -317,7 +339,7 @@
                         <div>
                             <p class="text-sm font-bold text-slate-200">${i.description}</p>
                             <p class="text-[10px] text-slate-500 font-bold uppercase">
-                                ${i.category} ${i.paymentMethod ? `• [${i.paymentMethod}]` : ''} • ${i.date.split('-').reverse().slice(0,2).join('/')}
+                                ${i.category} ${i.paymentMethod && i.category !== 'Reserva' ? `• [${i.paymentMethod}]` : ''} • ${i.date.split('-').reverse().slice(0,2).join('/')}
                             </p>
                         </div>
                     </div>
@@ -325,7 +347,7 @@
                 </div>
             `).join('') || '<p class="p-10 text-center text-slate-600 text-xs uppercase font-bold tracking-widest">Vazio</p>';
             
-            const validExpenses = curExp.filter(i => i.category !== 'Reserva');
+            const validExpenses = expenses.filter(e => e.date?.startsWith(monthKey) && e.category !== 'Reserva');
             updateChart(validExpenses);
             updateCardChart(validExpenses);
             updateComparisonChart(totalCompras, totalComprasAnterior);
@@ -351,7 +373,6 @@
             });
         }
 
-        // Gráfico de acompanhamento dos Cartões
         function updateCardChart(data) {
             const ctx = document.getElementById('cardChart').getContext('2d');
             if(cardChart) cardChart.destroy();
@@ -370,7 +391,20 @@
                     labels: Object.keys(cards), 
                     datasets: [{ data: Object.values(cards), backgroundColor: CARD_COLORS, borderWidth: 0 }] 
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'right', labels: { color: '#94a3b8', font: { size: 9 }, usePointStyle: true, boxWidth: 6 } } }, cutout: '75%' }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: true, position: 'right', labels: { color: '#94a3b8', font: { size: 9 }, usePointStyle: true, boxWidth: 6 } } }, 
+                    cutout: '75%',
+                    // INTERATIVIDADE: Filtra o extrato ao clicar na fatia do gráfico de cartão
+                    onClick: (e, elements) => {
+                        if (elements && elements.length > 0) {
+                            const index = elements[0].index;
+                            const label = cardChart.data.labels[index];
+                            render(`card:${label}`);
+                        }
+                    }
+                }
             });
         }
 
@@ -397,7 +431,6 @@
             });
         }
 
-        // Lógica de Gravação corrigida (finally)
         document.getElementById('expense-form').onsubmit = async function(e) {
             e.preventDefault();
             
@@ -411,6 +444,10 @@
             const installmentValue = totalValue / installments;
             const col = db.collection('users').doc(userId).collection('expenses');
 
+            // BLOQUEIO ANTI-DUPLICAÇÃO DE CLIQUE
+            const saveBtn = document.getElementById('save-btn');
+            saveBtn.disabled = true;
+            saveBtn.innerText = "GRAVANDO...";
             toggleLoader(true);
 
             try {
@@ -445,6 +482,9 @@
                 console.error(error);
                 alert("Erro ao gravar dados.");
             } finally {
+                // RESTAURA O BOTÃO APÓS CONCLUSÃO
+                saveBtn.disabled = false;
+                saveBtn.innerText = "GRAVAR";
                 toggleLoader(false);
             }
         };
@@ -485,8 +525,8 @@
             }
         };
 
-        document.getElementById('prev-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()-1); render(); };
-        document.getElementById('next-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()+1); render(); };
+        document.getElementById('prev-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()-1); render(currentFilterState); };
+        document.getElementById('next-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()+1); render(currentFilterState); };
         document.getElementById('logout-btn').onclick = () => { auth.signOut(); location.reload(); };
         function toggleLoader(s) { document.getElementById('loading-overlay').style.display = s ? 'flex' : 'none'; }
         function fmtMoney(v) { return (v || 0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }

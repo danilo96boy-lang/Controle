@@ -19,6 +19,11 @@
         #loading-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.9); z-index: 100; display: none; align-items: center; justify-content: center; }
         .spinner { width: 30px; height: 30px; border: 3px solid #1e293b; border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* Custom radio buttons para os cartões */
+        .card-selector input:checked + label {
+            @apply bg-blue-600 border-blue-500 text-white font-black;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -58,12 +63,16 @@
         <main class="max-w-5xl mx-auto px-4 space-y-4">
             <div id="summary-display" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="card rounded-2xl p-4">
                     <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Distribuição Compras</p>
                     <div class="relative h-48"><canvas id="expenseChart"></canvas></div>
                 </div>
                 <div class="card rounded-2xl p-4">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Uso dos Cartões</p>
+                    <div class="relative h-48"><canvas id="cardChart"></canvas></div>
+                </div>
+                <div class="card rounded-2xl p-4 md:col-span-1 col-span-1">
                     <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Comparativo Anterior</p>
                     <div class="relative h-48"><canvas id="comparisonChart"></canvas></div>
                 </div>
@@ -95,6 +104,24 @@
                 </div>
                 <input type="text" id="form-desc" required placeholder="O que você comprou?" class="w-full p-4 rounded-xl text-sm">
                 
+                <div class="space-y-2">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Forma de Pagamento</label>
+                    <div class="grid grid-cols-3 gap-2 card-selector">
+                        <div class="relative">
+                            <input type="radio" name="form-payment" id="pay-inter" value="Inter" checked class="sr-only">
+                            <label for="pay-inter" class="block text-center p-3 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Inter</label>
+                        </div>
+                        <div class="relative">
+                            <input type="radio" name="form-payment" id="pay-santander" value="Santander" class="sr-only">
+                            <label for="pay-santander" class="block text-center p-3 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Santander</label>
+                        </div>
+                        <div class="relative">
+                            <input type="radio" name="form-payment" id="pay-outros" value="Outros" class="sr-only">
+                            <label for="pay-outros" class="block text-center p-3 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Outros</label>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="space-y-3">
                     <div class="relative">
                         <span class="absolute left-4 top-4 text-slate-500 font-bold">R$</span>
@@ -153,9 +180,10 @@
 
         let categories = ['Mercado', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Carro', 'Reserva', 'Outros'];
         const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#a855f7', '#14b8a6', '#f43f5e'];
+        const CARD_COLORS = ['#ff7a00', '#cc0000', '#475569']; // Inter (Laranja), Santander (Vermelho), Outros (Cinza)
         
         const EXPECTED_RESERVE = 3000;
-        let expenses = [], currentDate = new Date(), currentEditId = null, mainChart = null, compChart = null, unsubscribe = null;
+        let expenses = [], currentDate = new Date(), currentEditId = null, mainChart = null, compChart = null, cardChart = null, unsubscribe = null;
 
         document.getElementById('login-form').onsubmit = (e) => {
             e.preventDefault();
@@ -286,14 +314,18 @@
                         </div>
                         <div>
                             <p class="text-sm font-bold text-slate-200">${i.description}</p>
-                            <p class="text-[10px] text-slate-500 font-bold uppercase">${i.category} • ${i.date.split('-').reverse().slice(0,2).join('/')}</p>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase">
+                                ${i.category} ${i.paymentMethod ? `• [${i.paymentMethod}]` : ''} • ${i.date.split('-').reverse().slice(0,2).join('/')}
+                            </p>
                         </div>
                     </div>
                     <p class="font-black text-sm ${i.category === 'Reserva' ? 'text-amber-500' : 'text-slate-100'}">${fmtMoney(i.value)}</p>
                 </div>
             `).join('') || '<p class="p-10 text-center text-slate-600 text-xs uppercase font-bold tracking-widest">Vazio</p>';
             
-            updateChart(curExp.filter(i => i.category !== 'Reserva'));
+            const validExpenses = curExp.filter(i => i.category !== 'Reserva');
+            updateChart(validExpenses);
+            updateCardChart(validExpenses);
             updateComparisonChart(totalCompras, totalComprasAnterior);
         }
 
@@ -313,6 +345,29 @@
             mainChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: COLORS, borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'right', labels: { color: '#94a3b8', font: { size: 9 }, usePointStyle: true, boxWidth: 6 } } }, cutout: '75%' }
+            });
+        }
+
+        // NOVO GRAFICO: CONSUMO DE CARTÕES
+        function updateCardChart(data) {
+            const ctx = document.getElementById('cardChart').getContext('2d');
+            if(cardChart) cardChart.destroy();
+            
+            const cards = { 'Inter': 0, 'Santander': 0, 'Outros': 0 };
+            data.forEach(d => {
+                const method = d.paymentMethod || 'Outros';
+                cards[method] = (cards[method] || 0) + d.value;
+            });
+
+            if (Object.values(cards).reduce((a, b) => a + b, 0) === 0) return;
+
+            cardChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: { 
+                    labels: Object.keys(cards), 
+                    datasets: [{ data: Object.values(cards), backgroundColor: CARD_COLORS, borderWidth: 0 }] 
+                },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'right', labels: { color: '#94a3b8', font: { size: 9 }, usePointStyle: true, boxWidth: 6 } } }, cutout: '75%' }
             });
         }
@@ -340,7 +395,7 @@
             });
         }
 
-        // LÓGICA DE GRAVAÇÃO ATUALIZADA PARA PARCELAMENTO
+        // LÓGICA DE GRAVAÇÃO ATUALIZADA COM PAYMENT METHOD
         document.getElementById('expense-form').onsubmit = async function(e) {
             e.preventDefault();
             
@@ -349,6 +404,9 @@
             const category = document.getElementById('form-cat').value;
             const totalValue = parseFloat(document.getElementById('form-val').value);
             const installments = parseInt(document.getElementById('form-installments').value) || 1;
+            
+            // Pega o valor selecionado no radio button do cartão
+            const paymentMethod = document.querySelector('input[name="form-payment"]:checked').value;
             
             const installmentValue = totalValue / installments;
             const col = db.collection('users').doc(userId).collection('expenses');
@@ -361,7 +419,8 @@
                         date: document.getElementById('form-date').value,
                         description: description,
                         category: category,
-                        value: totalValue
+                        value: totalValue,
+                        paymentMethod: paymentMethod
                     }, { merge: true });
                 } else {
                     for (let i = 0; i < installments; i++) {
@@ -373,6 +432,7 @@
                             description: installments > 1 ? `${description} (${i + 1}/${installments})` : description,
                             category: category,
                             value: installmentValue,
+                            paymentMethod: paymentMethod,
                             createdAt: new Date()
                         });
                     }
@@ -384,7 +444,7 @@
             } catch (error) {
                 console.error(error);
                 alert("Erro ao gravar dados.");
-            } finally {
+            } finaly {
                 toggleLoader(false);
             }
         };
@@ -392,7 +452,6 @@
         window.openModal = (id = null) => {
             currentEditId = id;
             document.getElementById('delete-btn').classList.toggle('hidden', !id);
-            // Esconde o campo de parcelas se for edição (para evitar bagunça em lançamentos já feitos)
             document.getElementById('form-installments').parentElement.classList.toggle('hidden', !!id);
             
             if(id) {
@@ -401,9 +460,15 @@
                 document.getElementById('form-desc').value = i.description;
                 document.getElementById('form-cat').value = i.category;
                 document.getElementById('form-val').value = i.value;
+                
+                // Trata a seleção do radio na edição
+                const targetRadio = document.querySelector(`input[name="form-payment"][value="${i.paymentMethod || 'Outros'}"]`);
+                if(targetRadio) targetRadio.checked = true;
+                
             } else {
                 document.getElementById('expense-form').reset();
                 document.getElementById('form-installments').value = "1";
+                document.getElementById('pay-inter').checked = true; // Default Inter
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
             }
             document.getElementById('expense-modal').classList.remove('hidden');

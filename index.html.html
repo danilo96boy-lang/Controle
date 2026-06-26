@@ -20,7 +20,7 @@
         .spinner { width: 30px; height: 30px; border: 3px solid #1e293b; border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        /* Custom radio buttons para os cartões */
+        /* Estilo customizado para os seletores de cartão */
         .card-selector input:checked + label {
             @apply bg-blue-600 border-blue-500 text-white font-black;
         }
@@ -63,6 +63,7 @@
         <main class="max-w-5xl mx-auto px-4 space-y-4">
             <div id="summary-display" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
 
+            <!-- Grid de gráficos modificado para 3 colunas -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="card rounded-2xl p-4">
                     <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Distribuição Compras</p>
@@ -72,7 +73,7 @@
                     <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Uso dos Cartões</p>
                     <div class="relative h-48"><canvas id="cardChart"></canvas></div>
                 </div>
-                <div class="card rounded-2xl p-4 md:col-span-1 col-span-1">
+                <div class="card rounded-2xl p-4">
                     <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Comparativo Anterior</p>
                     <div class="relative h-48"><canvas id="comparisonChart"></canvas></div>
                 </div>
@@ -104,6 +105,7 @@
                 </div>
                 <input type="text" id="form-desc" required placeholder="O que você comprou?" class="w-full p-4 rounded-xl text-sm">
                 
+                <!-- Seletor visual de cartões -->
                 <div class="space-y-2">
                     <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Forma de Pagamento</label>
                     <div class="grid grid-cols-3 gap-2 card-selector">
@@ -349,7 +351,7 @@
             });
         }
 
-        // NOVO GRAFICO: CONSUMO DE CARTÕES
+        // Gráfico de acompanhamento dos Cartões
         function updateCardChart(data) {
             const ctx = document.getElementById('cardChart').getContext('2d');
             if(cardChart) cardChart.destroy();
@@ -395,7 +397,7 @@
             });
         }
 
-        // LÓGICA DE GRAVAÇÃO ATUALIZADA COM PAYMENT METHOD
+        // Lógica de Gravação corrigida (finally)
         document.getElementById('expense-form').onsubmit = async function(e) {
             e.preventDefault();
             
@@ -404,8 +406,6 @@
             const category = document.getElementById('form-cat').value;
             const totalValue = parseFloat(document.getElementById('form-val').value);
             const installments = parseInt(document.getElementById('form-installments').value) || 1;
-            
-            // Pega o valor selecionado no radio button do cartão
             const paymentMethod = document.querySelector('input[name="form-payment"]:checked').value;
             
             const installmentValue = totalValue / installments;
@@ -444,7 +444,7 @@
             } catch (error) {
                 console.error(error);
                 alert("Erro ao gravar dados.");
-            } finaly {
+            } finally {
                 toggleLoader(false);
             }
         };
@@ -461,14 +461,12 @@
                 document.getElementById('form-cat').value = i.category;
                 document.getElementById('form-val').value = i.value;
                 
-                // Trata a seleção do radio na edição
                 const targetRadio = document.querySelector(`input[name="form-payment"][value="${i.paymentMethod || 'Outros'}"]`);
                 if(targetRadio) targetRadio.checked = true;
-                
             } else {
                 document.getElementById('expense-form').reset();
                 document.getElementById('form-installments').value = "1";
-                document.getElementById('pay-inter').checked = true; // Default Inter
+                document.getElementById('pay-inter').checked = true;
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
             }
             document.getElementById('expense-modal').classList.remove('hidden');

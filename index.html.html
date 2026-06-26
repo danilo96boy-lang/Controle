@@ -63,11 +63,11 @@
             <div id="summary-display" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="card rounded-2xl p-4">
-                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Distribuição Compras</p>
+                <div class="card rounded-2xl p-4 cursor-pointer" title="Clique em uma fatia para filtrar as categorias">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Distribuição Compras (Filtrável)</p>
                     <div class="relative h-48"><canvas id="expenseChart"></canvas></div>
                 </div>
-                <div class="card rounded-2xl p-4 cursor-pointer" title="Clique em uma fatia para filtrar o extrato">
+                <div class="card rounded-2xl p-4 cursor-pointer" title="Clique em uma fatia para filtrar os cartões">
                     <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Uso dos Cartões (Filtrável)</p>
                     <div class="relative h-48"><canvas id="cardChart"></canvas></div>
                 </div>
@@ -186,9 +186,8 @@
         
         const EXPECTED_RESERVE = 3000;
         let expenses = [], currentDate = new Date(), currentEditId = null, mainChart = null, compChart = null, cardChart = null, unsubscribe = null;
-        let currentFilterState = "all"; // Guarda o estado interno de filtragem
+        let currentFilterState = "all";
 
-        // LOGIN ORIGINAL DO USUÁRIO RESTAURADO EXATAMENTE COMO NO SEU CODIGO
         document.getElementById('login-form').onsubmit = (e) => {
             e.preventDefault();
             const u = document.getElementById('user').value.toLowerCase().trim();
@@ -277,7 +276,6 @@
             let curExp = expenses.filter(e => e.date?.startsWith(monthKey)).sort((a,b) => new Date(b.date) - new Date(a.date));
             let prevExp = expenses.filter(e => e.date?.startsWith(prevMonthKey));
 
-            // Elemento indicador de filtro na UI
             const indicator = document.getElementById('active-filter-indicator');
             if (filter && filter !== 'all' && filter !== 'gastos' && filter !== 'Reserva') {
                 if(filter.startsWith('card:')) {
@@ -287,7 +285,7 @@
                     indicator.classList.remove('hidden');
                 } else {
                     curExp = curExp.filter(e => e.category === filter);
-                    indicator.innerText = `Filtrado por: ${filter}`;
+                    indicator.innerText = `Filtrado por: Categoria ${filter}`;
                     indicator.classList.remove('hidden');
                 }
             } else if (filter === 'gastos') {
@@ -361,6 +359,7 @@
 
         window.setFastFilter = (f) => render(f);
 
+        // GRAFICO DE CATEGORIAS COMPRAS (AGORA INTERATIVO E FILTRÁVEL)
         function updateChart(data) {
             const ctx = document.getElementById('expenseChart').getContext('2d');
             if(mainChart) mainChart.destroy();
@@ -369,7 +368,20 @@
             mainChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: COLORS, borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'right', labels: { color: '#94a3b8', font: { size: 9 }, usePointStyle: true, boxWidth: 6 } } }, cutout: '75%' }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: true, position: 'right', labels: { color: '#94a3b8', font: { size: 9 }, usePointStyle: true, boxWidth: 6 } } }, 
+                    cutout: '75%',
+                    // INTERATIVIDADE CLIQUE DA CATEGORIA: Filtra o extrato pela categoria clicada
+                    onClick: (e, elements) => {
+                        if (elements && elements.length > 0) {
+                            const index = elements[0].index;
+                            const label = mainChart.data.labels[index];
+                            render(label);
+                        }
+                    }
+                }
             });
         }
 
@@ -396,7 +408,6 @@
                     maintainAspectRatio: false, 
                     plugins: { legend: { display: true, position: 'right', labels: { color: '#94a3b8', font: { size: 9 }, usePointStyle: true, boxWidth: 6 } } }, 
                     cutout: '75%',
-                    // INTERATIVIDADE: Filtra o extrato ao clicar na fatia do gráfico de cartão
                     onClick: (e, elements) => {
                         if (elements && elements.length > 0) {
                             const index = elements[0].index;
@@ -444,7 +455,6 @@
             const installmentValue = totalValue / installments;
             const col = db.collection('users').doc(userId).collection('expenses');
 
-            // BLOQUEIO ANTI-DUPLICAÇÃO DE CLIQUE
             const saveBtn = document.getElementById('save-btn');
             saveBtn.disabled = true;
             saveBtn.innerText = "GRAVANDO...";
@@ -482,7 +492,6 @@
                 console.error(error);
                 alert("Erro ao gravar dados.");
             } finally {
-                // RESTAURA O BOTÃO APÓS CONCLUSÃO
                 saveBtn.disabled = false;
                 saveBtn.innerText = "GRAVAR";
                 toggleLoader(false);

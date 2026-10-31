@@ -31,11 +31,39 @@
         .spinner { width: 34px; height: 34px; border: 3px solid #1e293b; border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        .card-selector input:checked + label {
+        /* Seletores Visuais (Cartão e Responsável) */
+        .visual-selector input:checked + label {
             background-color: #2563eb;
             border-color: #3b82f6;
             color: #ffffff;
             font-weight: 900;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .owner-selector input[value="Sandra"]:checked + label {
+            background-color: #9333ea;
+            border-color: #a855f7;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(147, 51, 234, 0.35);
+        }
+
+        .owner-selector input[value="Márcia"]:checked + label {
+            background-color: #db2777;
+            border-color: #ec4899;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(219, 39, 119, 0.35);
+        }
+
+        /* Botões Visuais de Categoria */
+        .cat-chip {
+            transition: all 0.15s ease;
+        }
+        .cat-chip.selected {
+            background-color: #2563eb;
+            border-color: #60a5fa;
+            color: #ffffff;
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
         }
 
         .tab-btn {
@@ -60,7 +88,7 @@
     <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-black p-6">
         <div class="w-full max-w-sm text-center">
             <h2 class="text-3xl font-black text-white mb-2 tracking-tighter">VAULT <span class="text-blue-500 text-lg">BI</span></h2>
-            <p class="text-slate-500 text-sm mb-8 italic">Gestão Danilo Inácio</p>
+            <p class="text-slate-500 text-sm mb-8 italic">Gestão Danilo & Gabi</p>
             <form id="login-form" class="space-y-4">
                 <input type="text" id="user" placeholder="Usuário" class="w-full p-4 rounded-xl">
                 <input type="password" id="pass" placeholder="Senha" class="w-full p-4 rounded-xl">
@@ -86,18 +114,15 @@
                     <span class="text-xs font-black uppercase tracking-widest text-slate-300">Vault Analytics</span>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
-                    <!-- Botão Temporário de Limpeza: Santander Dezembro -->
-                    <button onclick="cleanSantanderDecemberTest()" class="bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/40 px-3 py-1.5 rounded-xl text-[11px] uppercase font-black tracking-wider flex items-center gap-1.5 transition active:scale-95">
-                        🗑️ Limpar Teste Santander Dezembro
-                    </button>
-
                     <!-- Input oculto + Botão de Importação PDF -->
                     <input type="file" id="pdf-upload" accept="application/pdf" class="hidden" onchange="handlePdfUpload(event)">
                     <button onclick="document.getElementById('pdf-upload').click()" class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded-xl text-[11px] uppercase font-black tracking-wider flex items-center gap-1.5 transition active:scale-95">
                         📄 Importar Fatura (PDF)
                     </button>
 
-                    <button onclick="openConfig()" class="text-slate-400 hover:text-white text-xs uppercase font-bold px-2 py-1 transition">⚙️ Categorias</button>
+                    <button onclick="openConfig()" class="bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 px-3 py-1.5 rounded-xl text-[11px] uppercase font-bold transition">
+                        ⚙️ Configurações
+                    </button>
                     <button id="logout-btn" class="text-slate-600 hover:text-red-400 text-xs uppercase font-bold px-2 py-1 transition">Sair</button>
                 </div>
             </div>
@@ -109,13 +134,13 @@
                 <button id="next-month" class="p-3 text-blue-500 hover:bg-slate-800/60 rounded-xl font-bold transition">▶</button>
             </div>
 
-            <!-- Navegação por Abas (Tabs) -->
+            <!-- 5. Navegação por Abas (Visão Geral vs Extrato Detalhado) -->
             <div class="grid grid-cols-2 gap-2 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
                 <button id="tab-btn-dashboard" onclick="switchTab('dashboard')" class="tab-btn active py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 text-slate-400">
-                    <span>📊 Dashboard BI</span>
+                    <span>📊 Visão Geral</span>
                 </button>
                 <button id="tab-btn-extrato" onclick="switchTab('extrato')" class="tab-btn py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 text-slate-400">
-                    <span>📑 Extrato</span>
+                    <span>📑 Extrato Detalhado</span>
                     <span id="extrato-count-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">0</span>
                 </button>
             </div>
@@ -123,11 +148,11 @@
 
         <main class="max-w-5xl mx-auto px-4 space-y-5">
             
-            <!-- ==================== ABA 1: DASHBOARD BI ==================== -->
+            <!-- ==================== ABA 1: VISÃO GERAL (DASHBOARD BI) ==================== -->
             <div id="tab-dashboard" class="space-y-5">
                 
-                <!-- KPIs: Compras, Gasto Médio Diário, Reserva -->
-                <div id="summary-display" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
+                <!-- 2. Resumo Inteligente (Total Faturas, Nosso Gasto Real, A Receber Terceiros, Reserva) -->
+                <div id="summary-display" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
 
                 <!-- Painel de Alertas Inteligentes (Insights do Mês) -->
                 <div class="card rounded-2xl p-4 lg:p-5">
@@ -135,7 +160,7 @@
                         <h3 class="font-black text-xs uppercase tracking-widest text-slate-400 flex items-center gap-2">
                             <span>⚡ Alertas & Insights do Mês</span>
                         </h3>
-                        <span class="text-[10px] font-bold text-slate-500 uppercase">Análise Automática</span>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase">Base: Nosso Gasto Real</span>
                     </div>
                     <div id="insights-container" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
                 </div>
@@ -143,47 +168,54 @@
                 <!-- Gráficos Principais -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="card rounded-2xl p-4 cursor-pointer hover:border-slate-700 transition" title="Clique em uma fatia para filtrar no Extrato">
-                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Distribuição Compras (Clique p/ Filtrar)</p>
+                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Nossas Categorias (Casal)</p>
                         <div class="relative h-48"><canvas id="expenseChart"></canvas></div>
                     </div>
                     <div class="card rounded-2xl p-4 cursor-pointer hover:border-slate-700 transition" title="Clique em uma fatia para filtrar no Extrato">
-                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Uso dos Cartões (Clique p/ Filtrar)</p>
+                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Total nos Cartões (Geral)</p>
                         <div class="relative h-48"><canvas id="cardChart"></canvas></div>
                     </div>
                     <div class="card rounded-2xl p-4">
-                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Comparativo Mês Anterior</p>
+                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Nosso Gasto: Ant. vs Atual</p>
                         <div class="relative h-48"><canvas id="comparisonChart"></canvas></div>
                     </div>
                 </div>
 
-                <!-- Ranking: Top 5 Maiores Despesas do Mês -->
+                <!-- Ranking: Top 5 Maiores Despesas do Casal -->
                 <div class="card rounded-2xl p-5">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h3 class="font-black text-xs uppercase tracking-widest text-slate-400">🏆 Top 5 Maiores Despesas do Mês</h3>
-                            <p class="text-[10px] text-slate-500 mt-0.5">Lançamentos individuais de maior impacto no orçamento (excluindo Reserva)</p>
+                            <h3 class="font-black text-xs uppercase tracking-widest text-slate-400">🏆 Top 5 Maiores Despesas (Casal)</h3>
+                            <p class="text-[10px] text-slate-500 mt-0.5">Maiores gastos reais do casal neste mês (ignora compras da Sandra, Márcia e Reserva)</p>
                         </div>
                     </div>
                     <div id="top-expenses-list" class="space-y-3"></div>
                 </div>
             </div>
 
-            <!-- ==================== ABA 2: EXTRATO ==================== -->
+            <!-- ==================== ABA 2: EXTRATO DETALHADO ==================== -->
             <div id="tab-extrato" class="hidden space-y-4">
                 <div class="card rounded-3xl overflow-hidden flex flex-col">
-                    <div class="p-5 border-b border-slate-800 flex flex-wrap justify-between items-center gap-3">
+                    <div class="p-5 border-b border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
                         <div class="flex flex-col">
-                            <h3 class="font-black text-xs uppercase tracking-widest text-slate-400">Extrato de Lançamentos</h3>
+                            <h3 class="font-black text-xs uppercase tracking-widest text-slate-400">Extrato Detalhado</h3>
                             <span id="active-filter-indicator" class="text-[10px] text-blue-400 font-bold uppercase mt-1 hidden"></span>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="setFastFilter('gastos')" title="Apenas Compras" class="px-3 h-8 flex items-center gap-1.5 bg-red-900/20 hover:bg-red-900/30 text-red-400 rounded-full text-xs font-bold transition">
-                                🛒 <span class="hidden sm:inline">Compras</span>
+                        <!-- Botões de Filtro Rápido (Incluindo filtro por Responsável) -->
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <button onclick="setFastFilter('owner:Casal')" class="px-3 h-8 flex items-center gap-1.5 bg-blue-900/20 hover:bg-blue-900/40 text-blue-400 border border-blue-500/20 rounded-full text-[11px] font-bold transition">
+                                👫 Nosso (Casal)
                             </button>
-                            <button onclick="setFastFilter('Reserva')" title="Apenas Reserva" class="px-3 h-8 flex items-center gap-1.5 bg-amber-900/20 hover:bg-amber-900/30 text-amber-400 rounded-full text-xs font-bold transition">
-                                💰 <span class="hidden sm:inline">Reserva</span>
+                            <button onclick="setFastFilter('owner:Sandra')" class="px-3 h-8 flex items-center gap-1.5 bg-purple-900/20 hover:bg-purple-900/40 text-purple-300 border border-purple-500/20 rounded-full text-[11px] font-bold transition">
+                                👩 Mãe Sandra
                             </button>
-                            <button onclick="setFastFilter('all')" title="Limpar Filtro" class="px-3 h-8 flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-full text-xs font-bold transition">
+                            <button onclick="setFastFilter('owner:Márcia')" class="px-3 h-8 flex items-center gap-1.5 bg-pink-900/20 hover:bg-pink-900/40 text-pink-300 border border-pink-500/20 rounded-full text-[11px] font-bold transition">
+                                👵 Sogra Márcia
+                            </button>
+                            <button onclick="setFastFilter('Reserva')" class="px-3 h-8 flex items-center gap-1.5 bg-amber-900/20 hover:bg-amber-900/40 text-amber-400 border border-amber-500/20 rounded-full text-[11px] font-bold transition">
+                                💰 Reserva
+                            </button>
+                            <button onclick="setFastFilter('all')" class="px-3 h-8 flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-full text-[11px] font-bold transition">
                                 ✕ Todos
                             </button>
                         </div>
@@ -198,65 +230,123 @@
         <button onclick="openModal()" class="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 hover:bg-blue-500 rounded-full shadow-2xl flex items-center justify-center text-3xl z-40 active:scale-95 transition-transform">+</button>
     </div>
 
-    <!-- Modal de Inserção/Edição Manual -->
-    <div id="expense-modal" class="fixed inset-0 bg-black/95 hidden z-50 items-end lg:items-center justify-center p-4 backdrop-blur-sm">
-        <div class="card w-full max-w-lg rounded-t-3xl lg:rounded-3xl p-6 mb-[-1rem] lg:mb-0">
-            <div class="w-12 h-1.5 bg-slate-800 rounded-full mx-auto mb-6 lg:hidden"></div>
-            <form id="expense-form" class="space-y-5">
-                <div class="grid grid-cols-2 gap-3">
-                    <input type="date" id="form-date" required class="p-4 rounded-xl text-sm w-full">
-                    <select id="form-cat" class="p-4 rounded-xl text-sm w-full"></select>
+    <!-- Modal de Inserção/Edição Manual (Reformulado p/ Usabilidade e Consistência) -->
+    <div id="expense-modal" class="fixed inset-0 bg-black/95 hidden z-50 items-end lg:items-center justify-center p-2 lg:p-4 backdrop-blur-sm overflow-y-auto">
+        <div class="card w-full max-w-lg rounded-t-3xl lg:rounded-3xl p-5 lg:p-6 my-auto max-h-[94vh] overflow-y-auto">
+            <div class="w-12 h-1.5 bg-slate-800 rounded-full mx-auto mb-4 lg:hidden"></div>
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modal-title" class="font-black text-sm uppercase tracking-widest text-slate-300">Novo Lançamento</h3>
+                <button type="button" onclick="closeModal('expense-modal')" class="text-slate-500 hover:text-white text-sm font-bold">✕</button>
+            </div>
+
+            <form id="expense-form" class="space-y-4" novalidate>
+                <!-- 1. Responsável pela Compra (Radio Buttons Visuais Obrigatórios) -->
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">1. Responsável pela Compra *</label>
+                    <div class="grid grid-cols-3 gap-2 visual-selector owner-selector">
+                        <div class="relative">
+                            <input type="radio" name="form-owner" id="owner-casal" value="Casal" checked class="sr-only">
+                            <label for="owner-casal" class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/60 text-xs font-bold text-slate-400 cursor-pointer transition-all">
+                                <span class="text-base mb-0.5">👫</span>
+                                <span>Nosso (Casal)</span>
+                            </label>
+                        </div>
+                        <div class="relative">
+                            <input type="radio" name="form-owner" id="owner-sandra" value="Sandra" class="sr-only">
+                            <label for="owner-sandra" class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/60 text-xs font-bold text-slate-400 cursor-pointer transition-all">
+                                <span class="text-base mb-0.5">👩</span>
+                                <span>Mãe Sandra</span>
+                            </label>
+                        </div>
+                        <div class="relative">
+                            <input type="radio" name="form-owner" id="owner-marcia" value="Márcia" class="sr-only">
+                            <label for="owner-marcia" class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/60 text-xs font-bold text-slate-400 cursor-pointer transition-all">
+                                <span class="text-base mb-0.5">👵</span>
+                                <span>Sogra Márcia</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
-                <input type="text" id="form-desc" required placeholder="O que você comprou?" class="w-full p-4 rounded-xl text-sm">
+
+                <!-- 2. Valor e Data -->
+                <div class="grid grid-cols-5 gap-2.5">
+                    <div class="col-span-3 relative">
+                        <span class="absolute left-3.5 top-3.5 text-slate-500 font-bold text-sm">R$</span>
+                        <input type="number" step="0.01" required id="form-val" placeholder="0,00" class="w-full p-3 pl-10 rounded-xl text-xl font-black">
+                    </div>
+                    <div class="col-span-2">
+                        <input type="date" id="form-date" required class="p-3.5 rounded-xl text-xs font-bold w-full h-full">
+                    </div>
+                </div>
+
+                <!-- Atalhos de Valor -->
+                <div class="flex gap-2 overflow-x-auto pb-1">
+                    <button type="button" onclick="addVal(20)" class="btn-value">+20</button>
+                    <button type="button" onclick="addVal(50)" class="btn-value">+50</button>
+                    <button type="button" onclick="addVal(100)" class="btn-value">+100</button>
+                    <button type="button" onclick="addVal(200)" class="btn-value">+200</button>
+                    <button type="button" onclick="document.getElementById('form-val').value=''" class="btn-value text-red-400 ml-auto">Limpar</button>
+                </div>
+
+                <!-- 3. Descrição -->
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">2. O que foi comprado? *</label>
+                    <input type="text" id="form-desc" required placeholder="Ex: Pão de Açúcar, iFood, Farmácia..." class="w-full p-3.5 rounded-xl text-sm font-semibold">
+                </div>
+
+                <!-- 4. Categoria com Botões/Ícones Grandes Visuais -->
+                <div class="space-y-1.5">
+                    <div class="flex justify-between items-center">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider">3. Selecione a Categoria *</label>
+                        <span id="selected-cat-label" class="text-[10px] font-black uppercase text-blue-400"></span>
+                    </div>
+                    <input type="hidden" id="form-cat" required>
+                    <div id="visual-categories-grid" class="grid grid-cols-3 sm:grid-cols-5 gap-2 max-h-44 overflow-y-auto pr-1"></div>
+                </div>
                 
-                <div class="space-y-2">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Forma de Pagamento</label>
-                    <div class="grid grid-cols-3 gap-2 card-selector">
-                        <div class="relative">
-                            <input type="radio" name="form-payment" id="pay-inter" value="Inter" checked class="sr-only">
-                            <label for="pay-inter" class="block text-center p-3 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Inter</label>
+                <!-- 5. Forma de Pagamento e Parcelas -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                    <div class="sm:col-span-2 space-y-1.5">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">4. Cartão / Pagamento *</label>
+                        <div class="grid grid-cols-3 gap-2 visual-selector">
+                            <div class="relative">
+                                <input type="radio" name="form-payment" id="pay-inter" value="Inter" checked class="sr-only">
+                                <label for="pay-inter" class="block text-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Inter</label>
+                            </div>
+                            <div class="relative">
+                                <input type="radio" name="form-payment" id="pay-santander" value="Santander" class="sr-only">
+                                <label for="pay-santander" class="block text-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Santander</label>
+                            </div>
+                            <div class="relative">
+                                <input type="radio" name="form-payment" id="pay-outros" value="Outros" class="sr-only">
+                                <label for="pay-outros" class="block text-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Outros</label>
+                            </div>
                         </div>
+                    </div>
+
+                    <div id="installments-wrapper" class="space-y-1.5">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Parcelas</label>
                         <div class="relative">
-                            <input type="radio" name="form-payment" id="pay-santander" value="Santander" class="sr-only">
-                            <label for="pay-santander" class="block text-center p-3 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Santander</label>
-                        </div>
-                        <div class="relative">
-                            <input type="radio" name="form-payment" id="pay-outros" value="Outros" class="sr-only">
-                            <label for="pay-outros" class="block text-center p-3 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Outros</label>
+                            <span class="absolute left-3 top-2.5 text-slate-500 text-xs">📦</span>
+                            <input type="number" id="form-installments" min="1" max="48" class="w-full p-2.5 pl-8 rounded-xl text-xs font-bold" value="1">
                         </div>
                     </div>
                 </div>
 
-                <div class="space-y-3">
-                    <div class="relative">
-                        <span class="absolute left-4 top-4 text-slate-500 font-bold">R$</span>
-                        <input type="number" step="0.01" required id="form-val" placeholder="Valor Total" class="w-full p-4 pl-12 rounded-xl text-2xl font-black">
-                    </div>
-                    <div class="flex gap-2 overflow-x-auto pb-2">
-                        <button type="button" onclick="addVal(50)" class="btn-value">R$ 50</button>
-                        <button type="button" onclick="addVal(100)" class="btn-value">R$ 100</button>
-                        <button type="button" onclick="addVal(200)" class="btn-value">R$ 200</button>
-                        <button type="button" onclick="document.getElementById('form-val').value=''" class="btn-value text-red-400">Limpar</button>
-                    </div>
-                </div>
+                <p id="form-error-msg" class="text-red-400 text-xs font-bold text-center hidden bg-red-950/40 border border-red-500/30 p-2.5 rounded-xl"></p>
 
-                <div class="relative">
-                    <span class="absolute left-4 top-4 text-slate-500 font-bold">📦</span>
-                    <input type="number" id="form-installments" min="1" placeholder="Nº de parcelas" class="w-full p-4 pl-12 rounded-xl text-sm" value="1">
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeModal('expense-modal')" class="flex-1 py-3.5 text-slate-400 font-bold text-xs uppercase">Cancelar</button>
+                    <button type="submit" id="save-btn" class="flex-[2] bg-blue-600 hover:bg-blue-500 py-3.5 rounded-xl font-black uppercase tracking-widest text-xs text-white shadow-lg shadow-blue-600/30 transition">Gravar Despesa</button>
                 </div>
-
-                <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="closeModal('expense-modal')" class="flex-1 py-4 text-slate-500 font-bold">Cancelar</button>
-                    <button type="submit" id="save-btn" class="flex-[2] bg-blue-600 py-4 rounded-xl font-black uppercase tracking-widest text-sm disabled:bg-slate-700 disabled:text-slate-400">Gravar</button>
-                </div>
-                <button type="button" id="delete-btn" onclick="deleteItem()" class="w-full text-red-500 hover:text-red-400 text-[10px] font-black uppercase tracking-widest hidden">Excluir Registro</button>
+                <button type="button" id="delete-btn" onclick="deleteItem()" class="w-full text-red-500 hover:text-red-400 text-[10px] font-black uppercase tracking-widest pt-1 hidden">🗑️ Excluir Este Registro</button>
             </form>
         </div>
     </div>
 
     <!-- Modal de Revisão e Conciliação de PDF -->
     <div id="pdf-review-modal" class="fixed inset-0 bg-black/95 hidden z-50 items-center justify-center p-2 lg:p-6 backdrop-blur-sm">
-        <div class="card w-full max-w-5xl rounded-3xl p-4 lg:p-6 flex flex-col max-h-[92vh]">
+        <div class="card w-full max-w-6xl rounded-3xl p-4 lg:p-6 flex flex-col max-h-[92vh]">
             <!-- Header do Modal -->
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-800">
                 <div>
@@ -264,7 +354,7 @@
                         <h3 class="font-black text-sm lg:text-base uppercase tracking-widest text-white">Conciliação de Fatura PDF</h3>
                         <span id="pdf-detected-bank" class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-600/20 text-blue-400 border border-blue-500/30">Auto</span>
                     </div>
-                    <p class="text-xs text-slate-400 mt-1">Revise os lançamentos identificados, ajuste as categorias e confirme a importação em lote.</p>
+                    <p class="text-xs text-slate-400 mt-1">Defina quem é o responsável por cada compra (Casal, Sandra ou Márcia) antes de gravar.</p>
                 </div>
 
                 <!-- Controles Globais do Lote -->
@@ -277,7 +367,7 @@
                             <option value="Outros">Outros</option>
                         </select>
                     </div>
-                    <button type="button" onclick="normalizeDatesToCurrentMonth()" title="Força todas as datas para o mês selecionado no painel (ideal para parcelas de meses anteriores)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold uppercase px-3 py-2.5 rounded-xl border border-slate-700 transition">
+                    <button type="button" onclick="normalizeDatesToCurrentMonth()" title="Força todas as datas para o mês selecionado no painel" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold uppercase px-3 py-2.5 rounded-xl border border-slate-700 transition">
                         📅 Fixar Mês Atual
                     </button>
                 </div>
@@ -291,10 +381,11 @@
                             <th class="py-2 px-2 w-8 text-center">
                                 <input type="checkbox" id="select-all-pdf" checked onchange="toggleSelectAllPdf(this.checked)">
                             </th>
-                            <th class="py-2 px-2 w-32">Data</th>
+                            <th class="py-2 px-2 w-28">Data</th>
                             <th class="py-2 px-2">Estabelecimento / Descrição</th>
-                            <th class="py-2 px-2 w-40">Categoria (IA/Auto)</th>
-                            <th class="py-2 px-2 w-28">Pagamento</th>
+                            <th class="py-2 px-2 w-36">Responsável</th>
+                            <th class="py-2 px-2 w-36">Categoria</th>
+                            <th class="py-2 px-2 w-28">Cartão</th>
                             <th class="py-2 px-2 w-28 text-right">Valor (R$)</th>
                         </tr>
                     </thead>
@@ -328,19 +419,36 @@
         </div>
     </div>
 
-    <!-- Modal de Configuração de Categorias -->
+    <!-- Modal de Configurações e Zona de Perigo -->
     <div id="config-modal" class="fixed inset-0 bg-black/95 hidden z-50 items-center justify-center p-4 backdrop-blur-sm">
-        <div class="card w-full max-w-sm rounded-3xl p-6">
-            <h3 class="font-black text-sm uppercase tracking-widest text-slate-400 mb-6">Gerenciar Categorias</h3>
+        <div class="card w-full max-w-md rounded-3xl p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="font-black text-sm uppercase tracking-widest text-slate-300">⚙️ Configurações do Sistema</h3>
+                <button onclick="closeModal('config-modal')" class="text-slate-500 hover:text-white font-bold text-sm">✕</button>
+            </div>
             
-            <div class="space-y-2 mb-6 max-h-60 overflow-y-auto pr-2" id="categories-manager-list"></div>
+            <p class="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Categorias Cadastradas</p>
+            <div class="space-y-2 mb-4 max-h-52 overflow-y-auto pr-1" id="categories-manager-list"></div>
 
-            <div class="flex gap-2">
+            <div class="flex gap-2 mb-6">
                 <input type="text" id="new-cat-name" placeholder="Nova categoria..." class="flex-1 p-3 rounded-xl text-sm">
-                <button onclick="addNewCategory()" class="bg-blue-600 px-4 rounded-xl font-bold text-xl">+</button>
+                <button onclick="addNewCategory()" class="bg-blue-600 hover:bg-blue-500 px-4 rounded-xl font-bold text-xl">+</button>
             </div>
 
-            <button onclick="closeModal('config-modal')" class="w-full mt-6 py-4 text-slate-500 font-bold text-xs uppercase tracking-widest">Fechar</button>
+            <!-- 4. Botão de Limpeza do Mês (Perigo) com Confirmação Dupla -->
+            <div class="pt-5 border-t border-slate-800/80 space-y-3">
+                <p class="text-[10px] font-black uppercase tracking-widest text-red-500/80">⚠️ Zona de Perigo</p>
+                <div class="p-3.5 rounded-2xl bg-red-950/20 border border-red-500/20 flex flex-col gap-2">
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                        Apaga permanentemente todos os lançamentos do mês selecionado atualmente na tela (<strong id="danger-month-name" class="text-slate-200"></strong>).
+                    </p>
+                    <button type="button" onclick="clearCurrentMonthData()" class="w-full py-2.5 px-4 rounded-xl bg-red-950/60 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/30 text-[11px] font-black uppercase tracking-wider transition">
+                        🗑️ Limpar Dados Deste Mês
+                    </button>
+                </div>
+            </div>
+
+            <button onclick="closeModal('config-modal')" class="w-full mt-5 py-3.5 bg-slate-900 rounded-xl text-slate-400 hover:text-white font-bold text-xs uppercase tracking-widest">Fechar</button>
         </div>
     </div>
 
@@ -359,6 +467,21 @@
         const userId = 'casal_principal';
 
         let categories = ['Mercado', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Carro', 'Reserva', 'Outros'];
+        
+        // Ícones visuais para facilitar o preenchimento rápido por botões
+        const CATEGORY_ICONS = {
+            'Mercado': '🛒',
+            'Lazer': '🎉',
+            'Delivery': '🍔',
+            'Posto': '⛽',
+            'Farmácia': '💊',
+            'Roupa': '👗',
+            'Escola': '📚',
+            'Carro': '🚗',
+            'Reserva': '💰',
+            'Outros': '📦'
+        };
+
         const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#a855f7', '#14b8a6', '#f43f5e'];
         const CARD_COLORS = ['#ff7a00', '#cc0000', '#475569'];
         
@@ -368,7 +491,6 @@
         let activeTab = "dashboard";
         let extractedPdfItems = [];
 
-        // Dicionário de Categorização Inteligente
         const CATEGORY_KEYWORDS = {
             'Delivery': ['IFOOD', 'IFD*', 'RAPPI', 'ZE DELIVERY', 'ZEDELIVERY', 'AIQFOME', 'BURGER KING', 'MCDONALDS', 'ARCOS DOURADOS', 'PIZZA', 'SUSHI', 'LANCHE', 'PADARIA', 'CONFEITARIA', 'ACAITERIA', 'SORVETERIA'],
             'Carro': ['UBER', '99APP', '99 *', '99 POP', 'SEM PARAR', 'CONECTCAR', 'VELOE', 'ESTACIONAMENTO', 'PARK', 'PEDAGIO', 'CCR ', 'AUTOBAN', 'ECOVIAS', 'MECANICA', 'AUTO PECAS', 'AUTOPECAS', 'PNEU', 'LAVA RAPIDO', 'IPVA', 'DETRAN', 'SEGURO AUTO', 'PORTO SEGURO', 'AZUL SEGUROS'],
@@ -393,6 +515,21 @@
             'RESUMO DA FATURA', 'VENCIMENTO', 'VALOR MINIMO', 'CREDITO EM FATURA'
         ];
 
+        function getCatIcon(cat) {
+            return CATEGORY_ICONS[cat] || '🏷️';
+        }
+
+        function getOwnerBadge(owner) {
+            const normalized = owner || 'Casal';
+            if (normalized === 'Sandra') {
+                return `<span class="px-2 py-0.5 rounded-md bg-purple-950/80 text-purple-300 border border-purple-500/30 text-[9px] font-black uppercase">👩 Mãe Sandra</span>`;
+            }
+            if (normalized === 'Márcia') {
+                return `<span class="px-2 py-0.5 rounded-md bg-pink-950/80 text-pink-300 border border-pink-500/30 text-[9px] font-black uppercase">👵 Sogra Márcia</span>`;
+            }
+            return `<span class="px-2 py-0.5 rounded-md bg-blue-950/60 text-blue-300 border border-blue-500/20 text-[9px] font-bold uppercase">👫 Casal</span>`;
+        }
+
         document.getElementById('login-form').onsubmit = (e) => {
             e.preventDefault();
             const u = document.getElementById('user').value.toLowerCase().trim();
@@ -411,56 +548,84 @@
             if (doc.exists && doc.data().customCategories) {
                 categories = doc.data().customCategories;
             }
-            updateCatDropdown();
+            renderVisualCategoryButtons();
             startListening();
         }
 
-        // ==================== 1. SCRIPT DE LIMPEZA (SANTANDER DEZEMBRO) ====================
+        // ==================== SELEÇÃO VISUAL DE CATEGORIAS ====================
 
-        window.cleanSantanderDecemberTest = async () => {
-            toggleLoader(true, "Buscando registros Santander de Dezembro...");
+        function renderVisualCategoryButtons(selectedCat = '') {
+            const grid = document.getElementById('visual-categories-grid');
+            const hiddenInput = document.getElementById('form-cat');
+            const labelIndicator = document.getElementById('selected-cat-label');
+
+            hiddenInput.value = selectedCat;
+            labelIndicator.innerText = selectedCat ? `${getCatIcon(selectedCat)} ${selectedCat}` : 'Nenhuma selecionada';
+
+            grid.innerHTML = categories.map(cat => {
+                const isSelected = cat === selectedCat;
+                return `
+                    <button type="button" onclick="selectVisualCategory('${cat}')" class="cat-chip flex flex-col items-center justify-center p-2.5 rounded-xl border ${isSelected ? 'selected' : 'border-slate-800 bg-slate-900/60 text-slate-300 hover:bg-slate-800/70'}">
+                        <span class="text-lg leading-none mb-1">${getCatIcon(cat)}</span>
+                        <span class="text-[10px] font-bold truncate w-full text-center">${cat}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        window.selectVisualCategory = (cat) => {
+            document.getElementById('form-error-msg').classList.add('hidden');
+            renderVisualCategoryButtons(cat);
+        };
+
+        // ==================== 4. BOTÃO DE LIMPEZA DO MÊS (CONFIRMAÇÃO DUPLA) ====================
+
+        window.clearCurrentMonthData = async () => {
+            const monthKey = currentDate.toISOString().slice(0, 7);
+            const monthLabel = currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase();
+            const monthDocs = expenses.filter(e => e.date?.startsWith(monthKey));
+
+            if (monthDocs.length === 0) {
+                alert(`Não há lançamentos registrados em ${monthLabel} para apagar.`);
+                return;
+            }
+
+            const totalMonthVal = monthDocs.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
+
+            // Confirmação 1
+            const firstConfirm = confirm(
+                `⚠️ ATENÇÃO: Você está prestes a excluir ${monthDocs.length} lançamentos de ${monthLabel} (Soma: ${fmtMoney(totalMonthVal)}).\n\nDeseja prosseguir para a confirmação final?`
+            );
+            if (!firstConfirm) return;
+
+            // Confirmação 2 (Digitar APAGAR)
+            const typed = prompt(`Tem certeza absoluta?\nDigite APAGAR (em maiúsculas) para confirmar a exclusão de todos os dados de ${monthLabel}:`);
+            if (typed !== 'APAGAR') {
+                alert("Operação cancelada. Nenhum dado foi apagado.");
+                return;
+            }
+
+            toggleLoader(true, `Apagando ${monthDocs.length} lançamentos de ${monthLabel}...`);
             try {
                 const colRef = db.collection('users').doc(userId).collection('expenses');
-                const snapshot = await colRef.where('paymentMethod', '==', 'Santander').get();
-
-                // Filtra qualquer ano cujo mês na string YYYY-MM-DD seja "12" (ex: 2025-12, 2026-12)
-                const docsToDelete = snapshot.docs.filter(doc => {
-                    const data = doc.data();
-                    return data.date && /^\d{4}-12/.test(data.date);
-                });
-
-                toggleLoader(false);
-
-                if (docsToDelete.length === 0) {
-                    alert("Nenhum lançamento do cartão Santander foi encontrado para o mês de Dezembro.");
-                    return;
-                }
-
-                const totalVal = docsToDelete.reduce((acc, d) => acc + (Number(d.data().value) || 0), 0);
-                const confirmMsg = `Foram encontrados ${docsToDelete.length} lançamentos do Santander em Dezembro (Total: ${fmtMoney(totalVal)}).\n\nDeseja excluir TODOS esses registros permanentemente?`;
-
-                if (!confirm(confirmMsg)) return;
-
-                toggleLoader(true, `Excluindo ${docsToDelete.length} registros...`);
-
                 const chunkSize = 450;
-                for (let i = 0; i < docsToDelete.length; i += chunkSize) {
-                    const chunk = docsToDelete.slice(i, i + chunkSize);
+                for (let i = 0; i < monthDocs.length; i += chunkSize) {
+                    const chunk = monthDocs.slice(i, i + chunkSize);
                     const batch = db.batch();
-                    chunk.forEach(doc => batch.delete(doc.ref));
+                    chunk.forEach(item => batch.delete(colRef.doc(item.id)));
                     await batch.commit();
                 }
-
-                alert(`Limpeza concluída! ${docsToDelete.length} registros de teste foram removidos.`);
-            } catch (error) {
-                console.error("Erro ao limpar registros de teste:", error);
-                alert("Erro ao executar script de limpeza. Verifique o console.");
+                closeModal('config-modal');
+                alert(`Todos os ${monthDocs.length} lançamentos de ${monthLabel} foram removidos.`);
+            } catch (err) {
+                console.error("Erro ao limpar mês:", err);
+                alert("Erro ao excluir os lançamentos do mês.");
             } finally {
                 toggleLoader(false);
             }
         };
 
-        // ==================== 2. NAVEGAÇÃO POR ABAS (TABS) ====================
+        // ==================== 5. NAVEGAÇÃO POR ABAS ====================
 
         window.switchTab = (tabName) => {
             activeTab = tabName;
@@ -474,7 +639,6 @@
                 extEl.classList.add('hidden');
                 btnDash.classList.add('active');
                 btnExt.classList.remove('active');
-                // Redesenha gráficos para garantir responsividade ao exibir a aba
                 render(currentFilterState);
             } else {
                 dashEl.classList.add('hidden');
@@ -484,7 +648,7 @@
             }
         };
 
-        // ==================== LÓGICA DE IMPORTAÇÃO DE PDF ====================
+        // ==================== IMPORTAÇÃO DE FATURA PDF ====================
 
         window.handlePdfUpload = async (event) => {
             const file = event.target.files[0];
@@ -564,17 +728,17 @@
                 if (/\+\s*R\$\s*\d/.test(line) || /-\s*R\$\s*\d/.test(line)) return;
 
                 let match = line.match(regexSlashDate);
-                let day, month, year, desc, rawVal;
+                let day, month, deskYear, desc, rawVal;
 
                 if (match) {
-                    [, day, month, year, desc, rawVal] = match;
+                    [, day, month, deskYear, desc, rawVal] = match;
                 } else {
                     const matchInter = line.match(regexInterExtenso);
                     if (matchInter) {
                         const [, d, mStr, y, description, val] = matchInter;
                         day = d;
                         month = PT_MONTHS[mStr.toLowerCase()] || refMonth;
-                        year = y;
+                        deskYear = y;
                         desc = description;
                         rawVal = val;
                     } else {
@@ -612,6 +776,7 @@
                         date: formattedDate,
                         originalDateHint: `${day}/${month}`,
                         description: cleanDesc,
+                        owner: 'Casal',
                         category: guessedCategory,
                         paymentMethod: defaultBank,
                         value: value
@@ -653,7 +818,7 @@
             if (extractedPdfItems.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="py-10 text-center text-slate-500 font-bold uppercase text-xs">
+                        <td colspan="7" class="py-10 text-center text-slate-500 font-bold uppercase text-xs">
                             Nenhuma linha carregada. Clique em "+ Adicionar linha manualmente ao lote" abaixo se desejar.
                         </td>
                     </tr>
@@ -663,8 +828,14 @@
             }
 
             const catOptions = (selectedCat) => categories.map(c => 
-                `<option value="${c}" ${c === selectedCat ? 'selected' : ''}>${c}</option>`
+                `<option value="${c}" ${c === selectedCat ? 'selected' : ''}>${getCatIcon(c)} ${c}</option>`
             ).join('');
+
+            const ownerOptions = (selectedOwner) => [
+                { val: 'Casal', label: '👫 Nosso (Casal)' },
+                { val: 'Sandra', label: '👩 Mãe Sandra' },
+                { val: 'Márcia', label: '👵 Sogra Márcia' }
+            ].map(o => `<option value="${o.val}" ${o.val === (selectedOwner || 'Casal') ? 'selected' : ''}>${o.label}</option>`).join('');
 
             const payOptions = (selectedPay) => ['Inter', 'Santander', 'Outros'].map(p => 
                 `<option value="${p}" ${p === selectedPay ? 'selected' : ''}>${p}</option>`
@@ -681,6 +852,11 @@
                     </td>
                     <td class="py-2.5 px-2">
                         <input type="text" value="${item.description.replace(/"/g, '&quot;')}" onchange="updatePdfItem(${idx}, 'description', this.value)" class="p-1.5 rounded-lg text-xs w-full font-semibold">
+                    </td>
+                    <td class="py-2.5 px-2">
+                        <select onchange="updatePdfItem(${idx}, 'owner', this.value)" class="p-1.5 rounded-lg text-xs w-full font-bold">
+                            ${ownerOptions(item.owner)}
+                        </select>
                     </td>
                     <td class="py-2.5 px-2">
                         <select onchange="updatePdfItem(${idx}, 'category', this.value)" class="p-1.5 rounded-lg text-xs w-full font-semibold">
@@ -740,6 +916,7 @@
                 date: todayIso,
                 originalDateHint: 'Manual',
                 description: 'Novo Lançamento',
+                owner: 'Casal',
                 category: 'Outros',
                 paymentMethod: defaultPay,
                 value: 0
@@ -778,6 +955,7 @@
                         batch.set(newDocRef, {
                             date: item.date,
                             description: item.description.trim(),
+                            owner: item.owner || 'Casal',
                             category: item.category,
                             value: Number(item.value),
                             paymentMethod: item.paymentMethod,
@@ -805,6 +983,7 @@
 
         window.openConfig = () => {
             renderCategoriesManager();
+            document.getElementById('danger-month-name').innerText = currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
             document.getElementById('config-modal').classList.remove('hidden');
             document.getElementById('config-modal').classList.add('flex');
         };
@@ -813,7 +992,7 @@
             const container = document.getElementById('categories-manager-list');
             container.innerHTML = categories.map(cat => `
                 <div class="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-800">
-                    <span class="text-sm font-bold text-slate-300">${cat}</span>
+                    <span class="text-sm font-bold text-slate-300">${getCatIcon(cat)} ${cat}</span>
                     ${cat !== 'Reserva' && cat !== 'Outros' ? `
                         <button onclick="removeCategory('${cat}')" class="text-red-500 text-xs font-black p-1">REMOVER</button>
                     ` : '<span class="text-[9px] text-slate-600 font-bold uppercase">Fixo</span>'}
@@ -827,7 +1006,7 @@
             if (name && !categories.includes(name)) {
                 categories.push(name);
                 await db.collection('users').doc(userId).set({ customCategories: categories }, { merge: true });
-                updateCatDropdown();
+                renderVisualCategoryButtons(document.getElementById('form-cat').value);
                 renderCategoriesManager();
                 input.value = '';
             }
@@ -837,14 +1016,10 @@
             if (confirm(`Remover a categoria "${cat}"? Isso não apaga os gastos já lançados nela.`)) {
                 categories = categories.filter(c => c !== cat);
                 await db.collection('users').doc(userId).set({ customCategories: categories }, { merge: true });
-                updateCatDropdown();
+                renderVisualCategoryButtons('');
                 renderCategoriesManager();
             }
         };
-
-        function updateCatDropdown() {
-            document.getElementById('form-cat').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
-        }
 
         function startListening() {
             toggleLoader(true);
@@ -857,7 +1032,7 @@
                 }, () => { toggleLoader(false); });
         }
 
-        function render(filter = "") {
+        function render(filter = "all") {
             currentFilterState = filter;
             const monthKey = currentDate.toISOString().slice(0, 7);
             const prevDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 15);
@@ -869,74 +1044,105 @@
             let curExp = [...allMonthExpenses];
             const prevExp = expenses.filter(e => e.date?.startsWith(prevMonthKey));
 
-            // Atualiza badge de contagem na aba Extrato
             document.getElementById('extrato-count-badge').innerText = allMonthExpenses.length;
 
+            // Aplicação de Filtros no Extrato
             const indicator = document.getElementById('active-filter-indicator');
-            if (filter && filter !== 'all' && filter !== 'gastos' && filter !== 'Reserva') {
-                if(filter.startsWith('card:')) {
+            if (filter && filter !== 'all') {
+                if (filter.startsWith('card:')) {
                     const cardName = filter.split(':')[1];
                     curExp = curExp.filter(e => (e.paymentMethod || 'Outros') === cardName && e.category !== 'Reserva');
-                    indicator.innerText = `Filtrado por: Cartão ${cardName} (${curExp.length} itens)`;
+                    indicator.innerText = `Filtro: Cartão ${cardName} (${curExp.length} lançamentos)`;
+                    indicator.classList.remove('hidden');
+                } else if (filter.startsWith('owner:')) {
+                    const ownerName = filter.split(':')[1];
+                    curExp = curExp.filter(e => (e.owner || 'Casal') === ownerName && e.category !== 'Reserva');
+                    indicator.innerText = `Filtro: Responsável ${ownerName} (${curExp.length} lançamentos)`;
+                    indicator.classList.remove('hidden');
+                } else if (filter === 'Reserva') {
+                    curExp = curExp.filter(e => e.category === 'Reserva');
+                    indicator.innerText = `Filtro: Reserva (${curExp.length} lançamentos)`;
                     indicator.classList.remove('hidden');
                 } else {
-                    curExp = curExp.filter(e => e.category === filter);
-                    indicator.innerText = `Filtrado por: Categoria ${filter} (${curExp.length} itens)`;
+                    curExp = curExp.filter(e => e.category === filter && (e.owner || 'Casal') === 'Casal');
+                    indicator.innerText = `Filtro: Categoria ${filter} (${curExp.length} lançamentos)`;
                     indicator.classList.remove('hidden');
                 }
-            } else if (filter === 'gastos') {
-                curExp = curExp.filter(e => e.category !== 'Reserva');
-                indicator.innerText = `Filtrado por: Compras Gerais (${curExp.length} itens)`;
-                indicator.classList.remove('hidden');
-            } else if (filter === 'Reserva') {
-                curExp = curExp.filter(e => e.category === 'Reserva');
-                indicator.innerText = `Filtrado por: Reserva (${curExp.length} itens)`;
-                indicator.classList.remove('hidden');
             } else {
                 indicator.classList.add('hidden');
             }
 
-            const validExpenses = allMonthExpenses.filter(e => e.category !== 'Reserva');
-            const prevValidExpenses = prevExp.filter(i => i.category !== 'Reserva');
+            // Separação Inteligente: Geral vs Nosso Gasto Real (Casal) vs Terceiros (Sandra e Márcia)
+            const allPurchases = allMonthExpenses.filter(e => e.category !== 'Reserva');
+            const couplePurchases = allPurchases.filter(e => (e.owner || 'Casal') === 'Casal');
+            const sandraPurchases = allPurchases.filter(e => e.owner === 'Sandra');
+            const marciaPurchases = allPurchases.filter(e => e.owner === 'Márcia');
 
-            const totalCompras = validExpenses.reduce((acc, i) => acc + (i.value || 0), 0);
-            const totalComprasAnterior = prevValidExpenses.reduce((acc, i) => acc + (i.value || 0), 0);
-            const totalReservaMes = allMonthExpenses.filter(e => e.category === 'Reserva').reduce((acc, i) => acc + (i.value || 0), 0);
+            const prevCouplePurchases = prevExp.filter(e => e.category !== 'Reserva' && (e.owner || 'Casal') === 'Casal');
 
-            const diff = totalCompras - totalComprasAnterior;
-            const percentComp = totalComprasAnterior > 0 ? (diff / totalComprasAnterior * 100).toFixed(0) : 0;
+            const totalFaturasGeral = allPurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
+            const totalNossoGasto = couplePurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
+            const totalSandra = sandraPurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
+            const totalMarcia = marciaPurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
+            const totalTerceiros = totalSandra + totalMarcia;
+
+            const totalNossoAnterior = prevCouplePurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
+            const totalReservaMes = allMonthExpenses.filter(e => e.category === 'Reserva').reduce((acc, i) => acc + (Number(i.value) || 0), 0);
+
+            const diffCouple = totalNossoGasto - totalNossoAnterior;
+            const percentComp = totalNossoAnterior > 0 ? (diffCouple / totalNossoAnterior * 100).toFixed(0) : 0;
             const reserveProgress = Math.min((totalReservaMes / EXPECTED_RESERVE) * 100, 100).toFixed(1);
 
-            // Cálculo do Gasto Médio Diário e Projeção
+            // Totais por cartão para o subtítulo do Card Geral
+            const totalInter = allPurchases.filter(e => (e.paymentMethod || 'Outros') === 'Inter').reduce((a, b) => a + (Number(b.value) || 0), 0);
+            const totalSantander = allPurchases.filter(e => e.paymentMethod === 'Santander').reduce((a, b) => a + (Number(b.value) || 0), 0);
+
+            // Gasto Médio Diário do Casal
             const now = new Date();
             const isCurrentRealMonth = (now.getFullYear() === currentDate.getFullYear() && now.getMonth() === currentDate.getMonth());
             const totalDaysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
             const elapsedDays = isCurrentRealMonth ? Math.max(1, now.getDate()) : totalDaysInMonth;
-            const dailyAverage = totalCompras / elapsedDays;
-            const projectedMonthTotal = dailyAverage * totalDaysInMonth;
+            const dailyAverageCouple = totalNossoGasto / elapsedDays;
 
-            // Renderiza os 3 Cards de KPI no topo do Dashboard BI
+            // 2. Renderiza os 4 Cards Superiores (BI)
             document.getElementById('summary-display').innerHTML = `
-                <div class="card p-4 rounded-2xl border-l-4 border-red-500">
-                    <p class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Compras do Mês</p>
-                    <p class="text-xl font-black mt-0.5">${fmtMoney(totalCompras)}</p>
-                    <p class="text-[10px] font-bold mt-1 ${diff > 0 ? 'text-red-400' : 'text-emerald-400'}">
-                        ${diff > 0 ? '▲' : '▼'} ${Math.abs(percentComp)}% vs mês anterior (${fmtMoney(totalComprasAnterior)})
+                <!-- Card 1: Total das Faturas (Geral) -->
+                <div class="card p-4 rounded-2xl border-l-4 border-slate-400">
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Total das Faturas (Geral)</p>
+                    <p class="text-xl font-black text-white mt-0.5">${fmtMoney(totalFaturasGeral)}</p>
+                    <p class="text-[10px] font-semibold text-slate-400 mt-1 truncate">
+                        Inter: ${fmtMoney(totalInter)} • Sant: ${fmtMoney(totalSantander)}
                     </p>
                 </div>
 
-                <div class="card p-4 rounded-2xl border-l-4 border-blue-500">
-                    <p class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Gasto Médio Diário (${elapsedDays}d)</p>
-                    <p class="text-xl font-black text-blue-400 mt-0.5">${fmtMoney(dailyAverage)}<span class="text-xs text-slate-500 font-bold">/dia</span></p>
-                    <p class="text-[10px] font-bold text-slate-400 mt-1">
-                        ${isCurrentRealMonth ? `Projeção ${totalDaysInMonth}d: ${fmtMoney(projectedMonthTotal)}` : `Mês encerrado (${totalDaysInMonth} dias)`}
+                <!-- Card 2: Nosso Gasto Real (Casal) -->
+                <div onclick="setFastFilter('owner:Casal')" class="card p-4 rounded-2xl border-l-4 border-blue-500 cursor-pointer hover:border-blue-400 transition">
+                    <div class="flex justify-between items-center">
+                        <p class="text-[9px] font-black text-blue-400 uppercase tracking-wider">👫 Nosso Gasto Real</p>
+                        <span class="text-[9px] font-bold text-slate-500">${fmtMoney(dailyAverageCouple)}/dia</span>
+                    </div>
+                    <p class="text-xl font-black text-white mt-0.5">${fmtMoney(totalNossoGasto)}</p>
+                    <p class="text-[10px] font-bold mt-1 ${diffCouple > 0 ? 'text-red-400' : 'text-emerald-400'}">
+                        ${diffCouple > 0 ? '▲' : '▼'} ${Math.abs(percentComp)}% vs mês ant. (${fmtMoney(totalNossoAnterior)})
                     </p>
                 </div>
 
-                <div class="card p-4 rounded-2xl border-l-4 border-amber-500 relative overflow-hidden">
-                    <p class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Reserva (Meta ${fmtMoney(EXPECTED_RESERVE)})</p>
+                <!-- Card 3: A Receber (Terceiros: Sandra + Márcia) -->
+                <div class="card p-4 rounded-2xl border-l-4 border-purple-500">
+                    <p class="text-[9px] font-black text-purple-400 uppercase tracking-wider">🤝 A Receber (Terceiros)</p>
+                    <p class="text-xl font-black text-purple-300 mt-0.5">${fmtMoney(totalTerceiros)}</p>
+                    <div class="flex items-center gap-2 mt-1 text-[10px] font-bold">
+                        <button onclick="setFastFilter('owner:Sandra')" class="text-purple-300 hover:underline">Sandra: ${fmtMoney(totalSandra)}</button>
+                        <span class="text-slate-600">•</span>
+                        <button onclick="setFastFilter('owner:Márcia')" class="text-pink-300 hover:underline">Márcia: ${fmtMoney(totalMarcia)}</button>
+                    </div>
+                </div>
+
+                <!-- Card 4: Reserva do Mês -->
+                <div onclick="setFastFilter('Reserva')" class="card p-4 rounded-2xl border-l-4 border-amber-500 relative overflow-hidden cursor-pointer">
+                    <p class="text-[9px] font-black text-amber-500 uppercase tracking-wider">💰 Reserva (Meta ${fmtMoney(EXPECTED_RESERVE)})</p>
                     <div class="flex items-baseline gap-2 mt-0.5">
-                        <p class="text-xl font-black text-amber-500">${fmtMoney(totalReservaMes)}</p>
+                        <p class="text-xl font-black text-amber-400">${fmtMoney(totalReservaMes)}</p>
                         <span class="text-xs font-black text-slate-400">${reserveProgress}%</span>
                     </div>
                     <p class="text-[10px] font-bold text-slate-400 mt-1">
@@ -948,42 +1154,46 @@
                 </div>
             `;
 
-            // Renderiza Alertas Inteligentes (Insights) e Top 5 Despesas
-            renderSmartInsights(validExpenses, prevValidExpenses, totalCompras, totalComprasAnterior, totalReservaMes);
-            renderTopExpenses(validExpenses, totalCompras);
+            // Renderiza Insights e Top 5 baseados no Gasto Real do Casal
+            renderSmartInsights(couplePurchases, prevCouplePurchases, totalNossoGasto, totalNossoAnterior, totalTerceiros, totalSandra, totalMarcia, totalReservaMes);
+            renderTopExpenses(couplePurchases, totalNossoGasto);
 
-            // Renderiza Lista do Extrato (Aba 2)
+            // Renderiza Lista do Extrato Detalhado (Aba 2)
             document.getElementById('expense-list').innerHTML = curExp.map(i => `
                 <div onclick="openModal('${i.id}')" class="flex items-center justify-between p-4 lg:p-5 active:bg-slate-800 cursor-pointer hover:bg-slate-900/40 transition">
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg ${i.category === 'Reserva' ? 'bg-amber-900/20' : 'bg-slate-800'}">
-                            ${i.category === 'Reserva' ? '💰' : '🛒'}
+                    <div class="flex items-center gap-3.5 min-w-0">
+                        <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-lg shrink-0 ${i.category === 'Reserva' ? 'bg-amber-900/20' : 'bg-slate-800/90'}">
+                            ${getCatIcon(i.category)}
                         </div>
-                        <div>
-                            <p class="text-sm font-bold text-slate-200">${i.description}</p>
-                            <p class="text-[10px] text-slate-500 font-bold uppercase">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="text-sm font-bold text-slate-100 truncate">${i.description}</p>
+                                ${i.category !== 'Reserva' ? getOwnerBadge(i.owner) : ''}
+                            </div>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase mt-0.5">
                                 ${i.category} ${i.paymentMethod && i.category !== 'Reserva' ? `• [${i.paymentMethod}]` : ''} • ${i.date.split('-').reverse().slice(0,2).join('/')}
                             </p>
                         </div>
                     </div>
-                    <p class="font-black text-sm ${i.category === 'Reserva' ? 'text-amber-500' : 'text-slate-100'}">${fmtMoney(i.value)}</p>
+                    <p class="font-black text-sm shrink-0 ml-3 ${i.category === 'Reserva' ? 'text-amber-400' : ((i.owner && i.owner !== 'Casal') ? 'text-purple-300' : 'text-slate-100')}">
+                        ${fmtMoney(i.value)}
+                    </p>
                 </div>
-            `).join('') || '<p class="p-10 text-center text-slate-600 text-xs uppercase font-bold tracking-widest">Nenhum lançamento encontrado</p>';
+            `).join('') || '<p class="p-10 text-center text-slate-600 text-xs uppercase font-bold tracking-widest">Nenhum lançamento encontrado para este filtro</p>';
             
-            // Atualiza Gráficos (apenas se a aba dashboard estiver visível)
             if (activeTab === 'dashboard') {
-                updateChart(validExpenses);
-                updateCardChart(validExpenses);
-                updateComparisonChart(totalCompras, totalComprasAnterior);
+                updateChart(couplePurchases);
+                updateCardChart(allPurchases);
+                updateComparisonChart(totalNossoGasto, totalNossoAnterior);
             }
         }
 
-        // ==================== 3. PAINEL DE ALERTAS INTELIGENTES (INSIGHTS) ====================
+        // ==================== ALERTAS INTELIGENTES ====================
 
-        function renderSmartInsights(curValid, prevValid, totalCur, totalPrev, totalReserva) {
+        function renderSmartInsights(coupleCur, couplePrev, totalCur, totalPrev, totalTerceiros, totalSandra, totalMarcia, totalReserva) {
             const alerts = [];
 
-            // 1. Alerta de Gastos Totais vs Mês Passado
+            // 1. Alerta sobre Compras de Terceiros ou Comparativo Mensal do Casal
             if (totalPrev > 0) {
                 if (totalCur > totalPrev) {
                     const diffVal = totalCur - totalPrev;
@@ -991,67 +1201,54 @@
                     alerts.push({
                         icon: '🚨',
                         color: 'border-red-500/40 bg-red-950/20 text-red-300',
-                        title: 'Gastos Acima do Mês Anterior',
-                        desc: `Suas compras superaram o mês passado em <b>+${pct}%</b> (${fmtMoney(diffVal)} a mais).`
+                        title: 'Nosso Gasto Subiu',
+                        desc: `Os gastos reais do casal superaram o mês passado em <b>+${pct}%</b> (+${fmtMoney(diffVal)}).`
                     });
-                } else if (totalCur > 0) {
+                } else {
                     const savedVal = totalPrev - totalCur;
                     const pct = ((savedVal / totalPrev) * 100).toFixed(1);
                     alerts.push({
                         icon: '📉',
                         color: 'border-emerald-500/40 bg-emerald-950/20 text-emerald-300',
-                        title: 'Ritmo de Economia',
-                        desc: `Você gastou <b>${pct}% a menos</b> (${fmtMoney(savedVal)}) em relação ao mês anterior.`
+                        title: 'Economia Real do Casal',
+                        desc: `Vocês gastaram <b>${pct}% a menos</b> (${fmtMoney(savedVal)}) comparando apenas os gastos do casal.`
                     });
                 }
-            } else if (totalCur > 0) {
+            } else {
                 alerts.push({
-                    icon: '📊',
+                    icon: '👫',
                     color: 'border-blue-500/40 bg-blue-950/20 text-blue-300',
-                    title: 'Sem Base Anterior',
-                    desc: `Total acumulado de <b>${fmtMoney(totalCur)}</b> sem histórico no mês anterior para comparação.`
+                    title: 'Orçamento do Casal Isolado',
+                    desc: `O gasto real de vocês está em <b>${fmtMoney(totalCur)}</b>, livre das compras de terceiros.`
                 });
             }
 
-            // 2. Alerta de Categoria que Mais Cresceu Percentualmente
-            const curCats = {};
-            const prevCats = {};
-            curValid.forEach(e => curCats[e.category] = (curCats[e.category] || 0) + (e.value || 0));
-            prevValid.forEach(e => prevCats[e.category] = (prevCats[e.category] || 0) + (e.value || 0));
-
-            let fastestCat = null;
-            let maxGrowthPct = 0;
-            let fastestDiffVal = 0;
-
-            Object.keys(curCats).forEach(cat => {
-                const curV = curCats[cat];
-                const prevV = prevCats[cat] || 0;
-                if (prevV > 0 && curV > prevV) {
-                    const pct = ((curV - prevV) / prevV) * 100;
-                    if (pct > maxGrowthPct) {
-                        maxGrowthPct = pct;
-                        fastestCat = cat;
-                        fastestDiffVal = curV - prevV;
-                    }
-                }
-            });
-
-            if (fastestCat) {
+            // 2. Alerta de Reembolso de Terceiros (Sandra e Márcia) ou Categoria Vilã
+            if (totalTerceiros > 0) {
+                const shareFatura = (totalCur + totalTerceiros) > 0 ? ((totalTerceiros / (totalCur + totalTerceiros)) * 100).toFixed(0) : 0;
                 alerts.push({
-                    icon: '📈',
-                    color: 'border-amber-500/40 bg-amber-950/20 text-amber-300',
-                    title: `Alta em ${fastestCat}`,
-                    desc: `Foi a categoria que mais cresceu: <b>+${maxGrowthPct.toFixed(0)}%</b> (+${fmtMoney(fastestDiffVal)} vs mês ant.).`
+                    icon: '🤝',
+                    color: 'border-purple-500/40 bg-purple-950/20 text-purple-300',
+                    title: `Terceiros: ${shareFatura}% da Fatura`,
+                    desc: `Sandra (<b>${fmtMoney(totalSandra)}</b>) e Márcia (<b>${fmtMoney(totalMarcia)}</b>) somam <b>${fmtMoney(totalTerceiros)}</b> a receber.`
                 });
-            } else if (Object.keys(curCats).length > 0) {
-                // Caso não haja crescimento percentual (ex: mês anterior zerado), destaca a maior categoria atual
+            } else if (coupleCur.length > 0) {
+                const curCats = {};
+                coupleCur.forEach(e => curCats[e.category] = (curCats[e.category] || 0) + (e.value || 0));
                 const topCat = Object.entries(curCats).sort((a,b) => b[1] - a[1])[0];
                 const share = totalCur > 0 ? ((topCat[1] / totalCur) * 100).toFixed(0) : 0;
                 alerts.push({
                     icon: '🎯',
-                    color: 'border-blue-500/40 bg-blue-950/20 text-blue-300',
-                    title: `Maior Foco: ${topCat[0]}`,
-                    desc: `Concentra <b>${share}%</b> das despesas do mês com <b>${fmtMoney(topCat[1])}</b>.`
+                    color: 'border-amber-500/40 bg-amber-950/20 text-amber-300',
+                    title: `Maior Categoria: ${topCat[0]}`,
+                    desc: `Representa <b>${share}%</b> dos gastos do casal neste mês (${fmtMoney(topCat[1])}).`
+                });
+            } else {
+                alerts.push({
+                    icon: '✨',
+                    color: 'border-slate-700 bg-slate-900/40 text-slate-300',
+                    title: 'Sem Compras de Terceiros',
+                    desc: `Nenhum lançamento registrado para Mãe Sandra ou Sogra Márcia neste mês.`
                 });
             }
 
@@ -1062,7 +1259,7 @@
                     icon: '✅',
                     color: 'border-emerald-500/40 bg-emerald-950/20 text-emerald-300',
                     title: 'Meta de Reserva Batida!',
-                    desc: `Você aportou <b>${fmtMoney(totalReserva)}</b>, atingindo 100% da meta mensal de ${fmtMoney(EXPECTED_RESERVE)}.`
+                    desc: `Vocês aportaram <b>${fmtMoney(totalReserva)}</b>, atingindo 100% da meta de ${fmtMoney(EXPECTED_RESERVE)}.`
                 });
             } else {
                 const pctDone = ((totalReserva / EXPECTED_RESERVE) * 100).toFixed(0);
@@ -1070,7 +1267,7 @@
                     icon: '💰',
                     color: 'border-amber-500/40 bg-amber-950/20 text-amber-300',
                     title: 'Meta da Reserva Mensal',
-                    desc: `Faltam <b>${fmtMoney(missingReserve)}</b> para atingir a meta de ${fmtMoney(EXPECTED_RESERVE)} (${pctDone}% concluído).`
+                    desc: `Faltam <b>${fmtMoney(missingReserve)}</b> para atingir os ${fmtMoney(EXPECTED_RESERVE)} (${pctDone}% concluído).`
                 });
             }
 
@@ -1085,19 +1282,17 @@
             `).join('');
         }
 
-        // ==================== 4. RANKING: TOP 5 MAIORES DESPESAS ====================
-
-        function renderTopExpenses(validExpenses, totalCompras) {
+        function renderTopExpenses(coupleExpenses, totalNossoGasto) {
             const container = document.getElementById('top-expenses-list');
-            const top5 = [...validExpenses].sort((a, b) => (b.value || 0) - (a.value || 0)).slice(0, 5);
+            const top5 = [...coupleExpenses].sort((a, b) => (b.value || 0) - (a.value || 0)).slice(0, 5);
 
             if (top5.length === 0) {
-                container.innerHTML = `<p class="text-center text-slate-600 text-xs uppercase font-bold py-6">Nenhuma despesa registrada neste mês</p>`;
+                container.innerHTML = `<p class="text-center text-slate-600 text-xs uppercase font-bold py-6">Nenhuma despesa do casal registrada neste mês</p>`;
                 return;
             }
 
             container.innerHTML = top5.map((item, idx) => {
-                const pctOfTotal = totalCompras > 0 ? Math.min(((item.value / totalCompras) * 100), 100).toFixed(1) : 0;
+                const pctOfTotal = totalNossoGasto > 0 ? Math.min(((item.value / totalNossoGasto) * 100), 100).toFixed(1) : 0;
                 return `
                     <div onclick="openModal('${item.id}')" class="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 cursor-pointer transition">
                         <div class="flex items-center justify-between gap-2 mb-1.5">
@@ -1106,7 +1301,7 @@
                                     #${idx + 1}
                                 </span>
                                 <div class="truncate">
-                                    <p class="text-xs font-bold text-slate-200 truncate">${item.description}</p>
+                                    <p class="text-xs font-bold text-slate-200 truncate">${getCatIcon(item.category)} ${item.description}</p>
                                     <p class="text-[10px] text-slate-500 font-bold uppercase">
                                         ${item.category} • ${item.paymentMethod || 'Outros'} • ${item.date.split('-').reverse().slice(0,2).join('/')}
                                     </p>
@@ -1114,7 +1309,7 @@
                             </div>
                             <div class="text-right shrink-0">
                                 <p class="text-sm font-black text-white">${fmtMoney(item.value)}</p>
-                                <p class="text-[9px] font-bold text-slate-400">${pctOfTotal}% do mês</p>
+                                <p class="text-[9px] font-bold text-slate-400">${pctOfTotal}% do nosso gasto</p>
                             </div>
                         </div>
                         <div class="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
@@ -1128,7 +1323,7 @@
         window.addVal = (v) => {
             const input = document.getElementById('form-val');
             let current = parseFloat(input.value) || 0;
-            input.value = current + v;
+            input.value = (current + v).toFixed(2);
         };
 
         window.setFastFilter = (f) => {
@@ -1202,7 +1397,7 @@
             compChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['Anterior', 'Atual'],
+                    labels: ['Mês Ant.', 'Atual'],
                     datasets: [{
                         data: [prev, current],
                         backgroundColor: ['#1e293b', '#3b82f6'],
@@ -1219,15 +1414,37 @@
             });
         }
 
+        // ==================== 3. VALIDAÇÃO FORTE E GRAVAÇÃO DO FORMULÁRIO ====================
+
+        function showFormError(msg) {
+            const errEl = document.getElementById('form-error-msg');
+            errEl.innerText = `⚠️ ${msg}`;
+            errEl.classList.remove('hidden');
+        }
+
         document.getElementById('expense-form').onsubmit = async function(e) {
             e.preventDefault();
+            document.getElementById('form-error-msg').classList.add('hidden');
             
-            const baseDate = new Date(document.getElementById('form-date').value + "T12:00:00");
-            const description = document.getElementById('form-desc').value;
-            const category = document.getElementById('form-cat').value;
+            const rawDate = document.getElementById('form-date').value;
+            const description = document.getElementById('form-desc').value.trim();
+            const category = document.getElementById('form-cat').value.trim();
             const totalValue = parseFloat(document.getElementById('form-val').value);
             const installments = parseInt(document.getElementById('form-installments').value) || 1;
-            const paymentMethod = document.querySelector('input[name="form-payment"]:checked').value;
+            const paymentRadio = document.querySelector('input[name="form-payment"]:checked');
+            const ownerRadio = document.querySelector('input[name="form-owner"]:checked');
+
+            // Validações explícitas para garantir consistência de dados
+            if (!ownerRadio) return showFormError("Selecione quem é o Responsável pela compra.");
+            if (!rawDate) return showFormError("Informe a data da compra.");
+            if (isNaN(totalValue) || totalValue <= 0) return showFormError("Informe um valor válido maior que R$ 0,00.");
+            if (description.length < 2) return showFormError("Preencha a descrição do que foi comprado.");
+            if (!category) return showFormError("Toque em um dos botões de Categoria para classificar o gasto.");
+            if (!paymentRadio) return showFormError("Selecione a Forma de Pagamento.");
+
+            const paymentMethod = paymentRadio.value;
+            const owner = ownerRadio.value;
+            const baseDate = new Date(rawDate + "T12:00:00");
             
             const installmentValue = totalValue / installments;
             const col = db.collection('users').doc(userId).collection('expenses');
@@ -1240,11 +1457,12 @@
             try {
                 if (currentEditId) {
                     await col.doc(currentEditId).set({
-                        date: document.getElementById('form-date').value,
+                        date: rawDate,
                         description: description,
                         category: category,
                         value: totalValue,
-                        paymentMethod: paymentMethod
+                        paymentMethod: paymentMethod,
+                        owner: owner
                     }, { merge: true });
                 } else {
                     for (let i = 0; i < installments; i++) {
@@ -1257,6 +1475,7 @@
                             category: category,
                             value: installmentValue,
                             paymentMethod: paymentMethod,
+                            owner: owner,
                             createdAt: new Date()
                         });
                     }
@@ -1270,30 +1489,38 @@
                 alert("Erro ao gravar dados.");
             } finally {
                 saveBtn.disabled = false;
-                saveBtn.innerText = "GRAVAR";
+                saveBtn.innerText = "GRAVAR DESPESA";
                 toggleLoader(false);
             }
         };
 
         window.openModal = (id = null) => {
             currentEditId = id;
+            document.getElementById('form-error-msg').classList.add('hidden');
             document.getElementById('delete-btn').classList.toggle('hidden', !id);
-            document.getElementById('form-installments').parentElement.classList.toggle('hidden', !!id);
+            document.getElementById('installments-wrapper').classList.toggle('hidden', !!id);
+            document.getElementById('modal-title').innerText = id ? 'Editar Lançamento' : 'Novo Lançamento';
             
-            if(id) {
+            if (id) {
                 const i = expenses.find(e => e.id === id);
                 document.getElementById('form-date').value = i.date;
                 document.getElementById('form-desc').value = i.description;
-                document.getElementById('form-cat').value = i.category;
                 document.getElementById('form-val').value = i.value;
+                renderVisualCategoryButtons(i.category || '');
                 
-                const targetRadio = document.querySelector(`input[name="form-payment"][value="${i.paymentMethod || 'Outros'}"]`);
-                if(targetRadio) targetRadio.checked = true;
+                const targetPay = document.querySelector(`input[name="form-payment"][value="${i.paymentMethod || 'Outros'}"]`);
+                if (targetPay) targetPay.checked = true;
+
+                const targetOwner = document.querySelector(`input[name="form-owner"][value="${i.owner || 'Casal'}"]`);
+                if (targetOwner) targetOwner.checked = true;
             } else {
                 document.getElementById('expense-form').reset();
                 document.getElementById('form-installments').value = "1";
                 document.getElementById('pay-inter').checked = true;
+                document.getElementById('owner-casal').checked = true;
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
+                // Exige que a categoria seja clicada conscientemente (ou pré-seleciona nenhuma para forçar atenção)
+                renderVisualCategoryButtons('');
             }
             document.getElementById('expense-modal').classList.remove('hidden');
             document.getElementById('expense-modal').classList.add('flex');
@@ -1305,7 +1532,7 @@
         };
 
         window.deleteItem = () => {
-            if(confirm("Apagar registro?")) {
+            if(confirm("Apagar este registro permanentemente?")) {
                 db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete();
                 closeModal('expense-modal');
             }

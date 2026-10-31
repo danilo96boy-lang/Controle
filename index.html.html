@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Financeiro • Vault</title>
+    <title>Financeiro • Vault BI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
@@ -38,6 +38,15 @@
             font-weight: 900;
         }
 
+        .tab-btn {
+            transition: all 0.2s ease;
+        }
+        .tab-btn.active {
+            background-color: #2563eb;
+            color: #ffffff;
+            box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.35);
+        }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #020617; }
@@ -50,7 +59,7 @@
     <!-- Login Screen -->
     <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-black p-6">
         <div class="w-full max-w-sm text-center">
-            <h2 class="text-3xl font-black text-white mb-2 tracking-tighter">VAULT</h2>
+            <h2 class="text-3xl font-black text-white mb-2 tracking-tighter">VAULT <span class="text-blue-500 text-lg">BI</span></h2>
             <p class="text-slate-500 text-sm mb-8 italic">Gestão Danilo Inácio</p>
             <form id="login-form" class="space-y-4">
                 <input type="text" id="user" placeholder="Usuário" class="w-full p-4 rounded-xl">
@@ -70,61 +79,123 @@
     <!-- Main Application -->
     <div id="app-container" class="hidden pb-24">
         <header class="p-4 lg:p-8 flex flex-col gap-4 max-w-5xl mx-auto">
-            <div class="flex flex-wrap justify-between items-center gap-2">
-                <span class="text-xs font-black uppercase tracking-widest text-slate-500">Fluxo Mensal</span>
-                <div class="flex items-center gap-3">
+            <!-- Top Bar: Brand & Action Buttons -->
+            <div class="flex flex-wrap justify-between items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
+                    <span class="text-xs font-black uppercase tracking-widest text-slate-300">Vault Analytics</span>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- Botão Temporário de Limpeza: Santander Dezembro -->
+                    <button onclick="cleanSantanderDecemberTest()" class="bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/40 px-3 py-1.5 rounded-xl text-[11px] uppercase font-black tracking-wider flex items-center gap-1.5 transition active:scale-95">
+                        🗑️ Limpar Teste Santander Dezembro
+                    </button>
+
                     <!-- Input oculto + Botão de Importação PDF -->
                     <input type="file" id="pdf-upload" accept="application/pdf" class="hidden" onchange="handlePdfUpload(event)">
-                    <button onclick="document.getElementById('pdf-upload').click()" class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded-xl text-xs uppercase font-black tracking-wider flex items-center gap-1.5 transition active:scale-95">
+                    <button onclick="document.getElementById('pdf-upload').click()" class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded-xl text-[11px] uppercase font-black tracking-wider flex items-center gap-1.5 transition active:scale-95">
                         📄 Importar Fatura (PDF)
                     </button>
-                    <button onclick="openConfig()" class="text-slate-400 hover:text-white text-xs uppercase font-bold transition">⚙️ Categorias</button>
-                    <button id="logout-btn" class="text-slate-600 hover:text-red-400 text-xs uppercase font-bold transition">Sair</button>
+
+                    <button onclick="openConfig()" class="text-slate-400 hover:text-white text-xs uppercase font-bold px-2 py-1 transition">⚙️ Categorias</button>
+                    <button id="logout-btn" class="text-slate-600 hover:text-red-400 text-xs uppercase font-bold px-2 py-1 transition">Sair</button>
                 </div>
             </div>
             
-            <div class="flex items-center justify-between bg-slate-900/50 p-2 rounded-2xl border border-slate-800">
-                <button id="prev-month" class="p-3 text-blue-500 font-bold">◀</button>
-                <span id="current-month" class="font-bold text-sm uppercase tracking-tighter"></span>
-                <button id="next-month" class="p-3 text-blue-500 font-bold">▶</button>
+            <!-- Seletor de Mês -->
+            <div class="flex items-center justify-between bg-slate-900/60 p-2 rounded-2xl border border-slate-800">
+                <button id="prev-month" class="p-3 text-blue-500 hover:bg-slate-800/60 rounded-xl font-bold transition">◀</button>
+                <span id="current-month" class="font-black text-sm uppercase tracking-wider text-slate-100"></span>
+                <button id="next-month" class="p-3 text-blue-500 hover:bg-slate-800/60 rounded-xl font-bold transition">▶</button>
+            </div>
+
+            <!-- Navegação por Abas (Tabs) -->
+            <div class="grid grid-cols-2 gap-2 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
+                <button id="tab-btn-dashboard" onclick="switchTab('dashboard')" class="tab-btn active py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 text-slate-400">
+                    <span>📊 Dashboard BI</span>
+                </button>
+                <button id="tab-btn-extrato" onclick="switchTab('extrato')" class="tab-btn py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 text-slate-400">
+                    <span>📑 Extrato</span>
+                    <span id="extrato-count-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">0</span>
+                </button>
             </div>
         </header>
 
-        <main class="max-w-5xl mx-auto px-4 space-y-4">
-            <div id="summary-display" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+        <main class="max-w-5xl mx-auto px-4 space-y-5">
+            
+            <!-- ==================== ABA 1: DASHBOARD BI ==================== -->
+            <div id="tab-dashboard" class="space-y-5">
+                
+                <!-- KPIs: Compras, Gasto Médio Diário, Reserva -->
+                <div id="summary-display" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="card rounded-2xl p-4 cursor-pointer" title="Clique em uma fatia para filtrar as categorias">
-                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Distribuição Compras (Filtrável)</p>
-                    <div class="relative h-48"><canvas id="expenseChart"></canvas></div>
+                <!-- Painel de Alertas Inteligentes (Insights do Mês) -->
+                <div class="card rounded-2xl p-4 lg:p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-black text-xs uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                            <span>⚡ Alertas & Insights do Mês</span>
+                        </h3>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase">Análise Automática</span>
+                    </div>
+                    <div id="insights-container" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
                 </div>
-                <div class="card rounded-2xl p-4 cursor-pointer" title="Clique em uma fatia para filtrar os cartões">
-                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Uso dos Cartões (Filtrável)</p>
-                    <div class="relative h-48"><canvas id="cardChart"></canvas></div>
+
+                <!-- Gráficos Principais -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="card rounded-2xl p-4 cursor-pointer hover:border-slate-700 transition" title="Clique em uma fatia para filtrar no Extrato">
+                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Distribuição Compras (Clique p/ Filtrar)</p>
+                        <div class="relative h-48"><canvas id="expenseChart"></canvas></div>
+                    </div>
+                    <div class="card rounded-2xl p-4 cursor-pointer hover:border-slate-700 transition" title="Clique em uma fatia para filtrar no Extrato">
+                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Uso dos Cartões (Clique p/ Filtrar)</p>
+                        <div class="relative h-48"><canvas id="cardChart"></canvas></div>
+                    </div>
+                    <div class="card rounded-2xl p-4">
+                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Comparativo Mês Anterior</p>
+                        <div class="relative h-48"><canvas id="comparisonChart"></canvas></div>
+                    </div>
                 </div>
-                <div class="card rounded-2xl p-4">
-                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Comparativo Anterior</p>
-                    <div class="relative h-48"><canvas id="comparisonChart"></canvas></div>
+
+                <!-- Ranking: Top 5 Maiores Despesas do Mês -->
+                <div class="card rounded-2xl p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="font-black text-xs uppercase tracking-widest text-slate-400">🏆 Top 5 Maiores Despesas do Mês</h3>
+                            <p class="text-[10px] text-slate-500 mt-0.5">Lançamentos individuais de maior impacto no orçamento (excluindo Reserva)</p>
+                        </div>
+                    </div>
+                    <div id="top-expenses-list" class="space-y-3"></div>
                 </div>
             </div>
 
-            <div class="card rounded-3xl overflow-hidden flex flex-col">
-                <div class="p-5 border-b border-slate-800 flex justify-between items-center">
-                    <div class="flex flex-col">
-                        <h3 class="font-black text-xs uppercase tracking-widest text-slate-400">Extrato</h3>
-                        <span id="active-filter-indicator" class="text-[9px] text-blue-400 font-bold uppercase mt-0.5 hidden"></span>
+            <!-- ==================== ABA 2: EXTRATO ==================== -->
+            <div id="tab-extrato" class="hidden space-y-4">
+                <div class="card rounded-3xl overflow-hidden flex flex-col">
+                    <div class="p-5 border-b border-slate-800 flex flex-wrap justify-between items-center gap-3">
+                        <div class="flex flex-col">
+                            <h3 class="font-black text-xs uppercase tracking-widest text-slate-400">Extrato de Lançamentos</h3>
+                            <span id="active-filter-indicator" class="text-[10px] text-blue-400 font-bold uppercase mt-1 hidden"></span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="setFastFilter('gastos')" title="Apenas Compras" class="px-3 h-8 flex items-center gap-1.5 bg-red-900/20 hover:bg-red-900/30 text-red-400 rounded-full text-xs font-bold transition">
+                                🛒 <span class="hidden sm:inline">Compras</span>
+                            </button>
+                            <button onclick="setFastFilter('Reserva')" title="Apenas Reserva" class="px-3 h-8 flex items-center gap-1.5 bg-amber-900/20 hover:bg-amber-900/30 text-amber-400 rounded-full text-xs font-bold transition">
+                                💰 <span class="hidden sm:inline">Reserva</span>
+                            </button>
+                            <button onclick="setFastFilter('all')" title="Limpar Filtro" class="px-3 h-8 flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-full text-xs font-bold transition">
+                                ✕ Todos
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="setFastFilter('gastos')" class="w-8 h-8 flex items-center justify-center bg-red-900/20 text-red-500 rounded-full text-xs">🛒</button>
-                        <button onclick="setFastFilter('Reserva')" class="w-8 h-8 flex items-center justify-center bg-amber-900/20 text-amber-500 rounded-full text-xs">💰</button>
-                        <button onclick="setFastFilter('all')" class="w-8 h-8 flex items-center justify-center bg-slate-800 text-slate-400 rounded-full text-xs">✕</button>
-                    </div>
+                    <div id="expense-list" class="divide-y divide-slate-800/50"></div>
                 </div>
-                <div id="expense-list" class="divide-y divide-slate-800/50"></div>
             </div>
+
         </main>
 
-        <button onclick="openModal()" class="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 rounded-full shadow-2xl flex items-center justify-center text-3xl z-40 active:scale-95 transition-transform">+</button>
+        <!-- Botão Flutuante de Novo Gasto -->
+        <button onclick="openModal()" class="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 hover:bg-blue-500 rounded-full shadow-2xl flex items-center justify-center text-3xl z-40 active:scale-95 transition-transform">+</button>
     </div>
 
     <!-- Modal de Inserção/Edição Manual -->
@@ -178,7 +249,7 @@
                     <button type="button" onclick="closeModal('expense-modal')" class="flex-1 py-4 text-slate-500 font-bold">Cancelar</button>
                     <button type="submit" id="save-btn" class="flex-[2] bg-blue-600 py-4 rounded-xl font-black uppercase tracking-widest text-sm disabled:bg-slate-700 disabled:text-slate-400">Gravar</button>
                 </div>
-                <button type="button" id="delete-btn" onclick="deleteItem()" class="w-full text-red-900 text-[10px] font-black uppercase tracking-widest hidden">Excluir Registro</button>
+                <button type="button" id="delete-btn" onclick="deleteItem()" class="w-full text-red-500 hover:text-red-400 text-[10px] font-black uppercase tracking-widest hidden">Excluir Registro</button>
             </form>
         </div>
     </div>
@@ -231,7 +302,7 @@
                 </table>
             </div>
 
-            <!-- Adicionar Linha Manual na Revisão (caso algum item do PDF precise de ajuste extra) -->
+            <!-- Adicionar Linha Manual na Revisão -->
             <div class="pb-3 border-b border-slate-800 flex justify-between items-center">
                 <button type="button" onclick="addBlankPdfRow()" class="text-[11px] font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1">
                     + Adicionar linha manualmente ao lote
@@ -294,28 +365,27 @@
         const EXPECTED_RESERVE = 3000;
         let expenses = [], currentDate = new Date(), currentEditId = null, mainChart = null, compChart = null, cardChart = null, unsubscribe = null;
         let currentFilterState = "all";
+        let activeTab = "dashboard";
         let extractedPdfItems = [];
 
-        // Dicionário de Categorização Inteligente (Baseado em palavras-chave comuns em faturas)
+        // Dicionário de Categorização Inteligente
         const CATEGORY_KEYWORDS = {
             'Delivery': ['IFOOD', 'IFD*', 'RAPPI', 'ZE DELIVERY', 'ZEDELIVERY', 'AIQFOME', 'BURGER KING', 'MCDONALDS', 'ARCOS DOURADOS', 'PIZZA', 'SUSHI', 'LANCHE', 'PADARIA', 'CONFEITARIA', 'ACAITERIA', 'SORVETERIA'],
             'Carro': ['UBER', '99APP', '99 *', '99 POP', 'SEM PARAR', 'CONECTCAR', 'VELOE', 'ESTACIONAMENTO', 'PARK', 'PEDAGIO', 'CCR ', 'AUTOBAN', 'ECOVIAS', 'MECANICA', 'AUTO PECAS', 'AUTOPECAS', 'PNEU', 'LAVA RAPIDO', 'IPVA', 'DETRAN', 'SEGURO AUTO', 'PORTO SEGURO', 'AZUL SEGUROS'],
             'Posto': ['POSTO', 'AUTO POSTO', 'SHELL', 'IPIRANGA', 'PETROBRAS', 'ALE ', 'COMBUSTIVEIS', 'ABASTECIMENTO', 'GNV', 'GASOLINA', 'ETANOL'],
-            'Mercado': ['MERCADO', 'SUPERMERCADO', 'HIPERMERCADO', 'ATACADAO', 'ASSAI', 'CARREFOUR', 'PAO DE ACUCAR', 'TENDA', 'SAMS CLUB', 'CONFIANCA', 'SAO VICENTE', 'PAGUE MENOS SUPER', 'HORTIFRUTI', 'SACOLAO', 'ACOUGUE', 'SWIFT', 'MINI MERCADO', 'MERCEARIA', 'conveniencia', 'OXO', 'OXXO'],
-            'Farmácia': ['FARMACIA', 'DROGARIA', 'DROGASIL', 'RAIA', 'DROGA RAIA', 'PAGUE MENOS', 'ULTRAFARMA', 'SAO PAULO', 'PANVEL', 'FARMA', 'BIFARMA', 'DROGAL', 'kondor'],
+            'Mercado': ['MERCADO', 'SUPERMERCADO', 'HIPERMERCADO', 'ATACADAO', 'ASSAI', 'CARREFOUR', 'PAO DE ACUCAR', 'TENDA', 'SAMS CLUB', 'CONFIANCA', 'SAO VICENTE', 'PAGUE MENOS SUPER', 'HORTIFRUTI', 'SACOLAO', 'ACOUGUE', 'SWIFT', 'MINI MERCADO', 'MERCEARIA', 'CONVENIENCIA', 'OXO', 'OXXO'],
+            'Farmácia': ['FARMACIA', 'DROGARIA', 'DROGASIL', 'RAIA', 'DROGA RAIA', 'PAGUE MENOS', 'ULTRAFARMA', 'SAO PAULO', 'PANVEL', 'FARMA', 'BIFARMA', 'DROGAL', 'KONDOR'],
             'Roupa': ['RENNER', 'RIACHUELO', 'C&A', 'CEA', 'ZARA', 'SHEIN', 'SHOPEE', 'CENTAURO', 'DECATHLON', 'NIKE', 'ADIDAS', 'HERING', 'MARISA', 'PERNAMBUCANAS', 'CALCADOS', 'BOUTIQUE', 'MODA', 'LUPEL', 'DAFITI', 'NETSHOES'],
             'Lazer': ['NETFLIX', 'SPOTIFY', 'AMAZON PRIME', 'DISNEY', 'HBO', 'MAX', 'YOUTUBE', 'APPLE.COM/BILL', 'GOOGLE PLAY', 'STEAM', 'PLAYSTATION', 'SONY', 'XBOX', 'NINTENDO', 'CINEMA', 'CINESYSTEM', 'CINEMARK', 'INGRESSO', 'SYMPLA', 'EVENTIM', 'RESTAURANTE', 'BAR ', 'CHOPP', 'CERVEJARIA', 'PUB', 'HOTEL', 'POUSADA', 'AIRBNB', 'BOOKING', ' CVC '],
             'Escola': ['ESCOLA', 'COLEGIO', 'FACULDADE', 'UNIVERSIDADE', 'UNIP', 'PAPELARIA', 'KALUNGA', 'LIVRARIA', 'CURSO', 'UDEMY', 'ALURA', 'MENSALIDADE ESCOLAR', 'SESI', 'SENAI']
         };
 
-        // Mapa de meses em português para parser do Banco Inter ("15 de out", "15 out", etc.)
         const PT_MONTHS = {
             'jan': '01', 'fev': '02', 'mar': '03', 'abr': '04',
             'mai': '05', 'jun': '06', 'jul': '07', 'ago': '08',
             'set': '09', 'out': '10', 'nov': '11', 'dez': '12'
         };
 
-        // Palavras de ruído que não devem ser importadas como compras
         const NOISE_BLACKLIST = [
             'SALDO ANTERIOR', 'TOTAL DA FATURA', 'PAGAMENTO DE FATURA', 'PAGAMENTO EFETUADO',
             'PAGAMENTO RECEBIDO', 'DEBITO AUTOMATICO', 'LIMITE TOTAL', 'LIMITE DISPONIVEL',
@@ -345,6 +415,75 @@
             startListening();
         }
 
+        // ==================== 1. SCRIPT DE LIMPEZA (SANTANDER DEZEMBRO) ====================
+
+        window.cleanSantanderDecemberTest = async () => {
+            toggleLoader(true, "Buscando registros Santander de Dezembro...");
+            try {
+                const colRef = db.collection('users').doc(userId).collection('expenses');
+                const snapshot = await colRef.where('paymentMethod', '==', 'Santander').get();
+
+                // Filtra qualquer ano cujo mês na string YYYY-MM-DD seja "12" (ex: 2025-12, 2026-12)
+                const docsToDelete = snapshot.docs.filter(doc => {
+                    const data = doc.data();
+                    return data.date && /^\d{4}-12/.test(data.date);
+                });
+
+                toggleLoader(false);
+
+                if (docsToDelete.length === 0) {
+                    alert("Nenhum lançamento do cartão Santander foi encontrado para o mês de Dezembro.");
+                    return;
+                }
+
+                const totalVal = docsToDelete.reduce((acc, d) => acc + (Number(d.data().value) || 0), 0);
+                const confirmMsg = `Foram encontrados ${docsToDelete.length} lançamentos do Santander em Dezembro (Total: ${fmtMoney(totalVal)}).\n\nDeseja excluir TODOS esses registros permanentemente?`;
+
+                if (!confirm(confirmMsg)) return;
+
+                toggleLoader(true, `Excluindo ${docsToDelete.length} registros...`);
+
+                const chunkSize = 450;
+                for (let i = 0; i < docsToDelete.length; i += chunkSize) {
+                    const chunk = docsToDelete.slice(i, i + chunkSize);
+                    const batch = db.batch();
+                    chunk.forEach(doc => batch.delete(doc.ref));
+                    await batch.commit();
+                }
+
+                alert(`Limpeza concluída! ${docsToDelete.length} registros de teste foram removidos.`);
+            } catch (error) {
+                console.error("Erro ao limpar registros de teste:", error);
+                alert("Erro ao executar script de limpeza. Verifique o console.");
+            } finally {
+                toggleLoader(false);
+            }
+        };
+
+        // ==================== 2. NAVEGAÇÃO POR ABAS (TABS) ====================
+
+        window.switchTab = (tabName) => {
+            activeTab = tabName;
+            const dashEl = document.getElementById('tab-dashboard');
+            const extEl = document.getElementById('tab-extrato');
+            const btnDash = document.getElementById('tab-btn-dashboard');
+            const btnExt = document.getElementById('tab-btn-extrato');
+
+            if (tabName === 'dashboard') {
+                dashEl.classList.remove('hidden');
+                extEl.classList.add('hidden');
+                btnDash.classList.add('active');
+                btnExt.classList.remove('active');
+                // Redesenha gráficos para garantir responsividade ao exibir a aba
+                render(currentFilterState);
+            } else {
+                dashEl.classList.add('hidden');
+                extEl.classList.remove('hidden');
+                btnExt.classList.add('active');
+                btnDash.classList.remove('active');
+            }
+        };
+
         // ==================== LÓGICA DE IMPORTAÇÃO DE PDF ====================
 
         window.handlePdfUpload = async (event) => {
@@ -363,7 +502,6 @@
                     const page = await pdf.getPage(pageNum);
                     const textContent = await page.getTextContent();
                     
-                    // Agrupa elementos por coordenada Y aproximada (tolerância de 3px para mesma linha)
                     const rows = {};
                     textContent.items.forEach(item => {
                         const str = item.str.trim();
@@ -374,7 +512,6 @@
                         rows[y].push({ x: item.transform[4], text: item.str });
                     });
 
-                    // Ordena linhas de cima para baixo (Y decrescente no PDF) e palavras da esquerda para direita (X crescente)
                     const sortedY = Object.keys(rows).map(Number).sort((a, b) => b - a);
                     sortedY.forEach(y => {
                         const lineStr = rows[y]
@@ -387,7 +524,6 @@
                     });
                 }
 
-                // Detecta qual é o banco emissor pelo conteúdo textual do PDF
                 const upperBlob = rawTextBlob.toUpperCase();
                 let detectedBank = 'Inter';
                 if (upperBlob.includes('SANTANDER') || upperBlob.includes('SX ') || upperBlob.includes('ESFERA')) {
@@ -399,7 +535,7 @@
                 extractedPdfItems = parseInvoiceLines(fullLines, detectedBank);
 
                 if (extractedPdfItems.length === 0) {
-                    alert("Nenhuma transação padrão foi identificada automaticamente neste PDF. Verifique se o PDF possui texto selecionável (não é imagem escaneada) ou adicione manualmente na revisão.");
+                    alert("Nenhuma transação padrão foi identificada automaticamente neste PDF. Verifique se o PDF possui texto selecionável ou adicione manualmente na revisão.");
                 }
 
                 openPdfReviewModal(detectedBank);
@@ -407,7 +543,7 @@
                 console.error("Erro ao processar PDF:", err);
                 alert("Falha ao processar o PDF. Verifique se o arquivo não está protegido por senha.");
             } finally {
-                event.target.value = ""; // Reseta input para permitir reenviar o mesmo arquivo
+                event.target.value = "";
                 toggleLoader(false);
             }
         };
@@ -417,21 +553,14 @@
             const refYear = currentDate.getFullYear();
             const refMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
 
-            // Regex 1: Padrão Santander / Genérico -> "DD/MM (/YYYY opcional) DESCRIÇÃO ... R$ VALOR"
             const regexSlashDate = /^(\d{2})\/(\d{2})(?:\/(\d{2,4}))?\s+(.+?)\s+(?:-\s*)?(?:R\$\s*)?(-?\d{1,3}(?:\.\d{3})*,\d{2})(?:\s+[CD-]|$)/i;
-
-            // Regex 2: Padrão Banco Inter -> "15 de out. de 2026 DESCRIÇÃO R$ 120,00" ou "15 out DESCRIÇÃO 120,00"
             const regexInterExtenso = /^(\d{2})\s+(?:de\s+)?([a-zç]{3})\.?(?:\s+(?:de\s+)?(\d{2,4}))?\s+(.+?)\s+(?:\+\s*|-\s*)?(?:R\$\s*)?(-?\d{1,3}(?:\.\d{3})*,\d{2})$/i;
-
-            // Regex 3: Quando a data aparece colada ou após numeração de cartão no meio da linha
             const regexMidLine = /(?:^|\s)(\d{2})\/(\d{2})\s+([A-Z0-9\*\.\-\s\/]{4,45}?)\s+(?:R\$\s*)?(\d{1,3}(?:\.\d{3})*,\d{2})(?:\s|$)/i;
 
             lines.forEach(line => {
                 const upperLine = line.toUpperCase();
 
-                // Filtra linhas administrativas, totais ou pagamentos da fatura
                 if (NOISE_BLACKLIST.some(noise => upperLine.includes(noise))) return;
-                // Ignora créditos ou estornos (valores negativos explícitos como "- R$ 50,00" ou "+ R$ 50,00" no Inter)
                 if (/\+\s*R\$\s*\d/.test(line) || /-\s*R\$\s*\d/.test(line)) return;
 
                 let match = line.match(regexSlashDate);
@@ -460,29 +589,18 @@
                     const value = parseFloat(rawVal.replace(/\./g, '').replace(',', '.'));
                     if (isNaN(value) || value <= 0) return;
 
-                    // Validação básica de dia e mês
                     const dNum = parseInt(day, 10);
                     const mNum = parseInt(month, 10);
                     if (dNum < 1 || dNum > 31 || mNum < 1 || mNum > 12) return;
 
-                    // Limpa sufixos de valores em dólar ou códigos extras da descrição
                     let cleanDesc = desc
                         .replace(/\s+R\$$/i, '')
                         .replace(/\s+US\$.*$/i, '')
-                        .replace(/^\d{4}\s+/, '') // Remove final de cartão caso tenha vindo junto
+                        .replace(/^\d{4}\s+/, '')
                         .trim();
 
                     if (cleanDesc.length < 2) return;
 
-                    // Define a data para pertencer ao ano/mês do filtro atual caso seja parcela antiga,
-                    // ou mantém o dia/mês real com o ano de referência
-                    let finalYear = refYear;
-                    if (year) {
-                        finalYear = year.length === 2 ? `20${year}` : year;
-                    }
-                    
-                    // Por padrão, posiciona no mês que o usuário está visualizando no painel para entrar direto no extrato atual,
-                    // mantendo o dia original da compra (limitado ao último dia do mês).
                     const maxDaysInRefMonth = new Date(refYear, parseInt(refMonth, 10), 0).getDate();
                     const safeDay = String(Math.min(dNum, maxDaysInRefMonth)).padStart(2, '0');
                     const formattedDate = `${refYear}-${refMonth}-${safeDay}`;
@@ -650,8 +768,6 @@
 
             try {
                 const colRef = db.collection('users').doc(userId).collection('expenses');
-                
-                // O Firestore permite até 500 operações por writeBatch
                 const chunkSize = 450;
                 for (let i = 0; i < approved.length; i += chunkSize) {
                     const chunk = approved.slice(i, i + chunkSize);
@@ -685,7 +801,7 @@
             }
         };
 
-        // ==================== GERENCIAMENTO DO SISTEMA ORIGINAL ====================
+        // ==================== GERENCIAMENTO E BI RENDER ====================
 
         window.openConfig = () => {
             renderCategoriesManager();
@@ -744,69 +860,101 @@
         function render(filter = "") {
             currentFilterState = filter;
             const monthKey = currentDate.toISOString().slice(0, 7);
-            const prevDate = new Date(currentDate);
-            prevDate.setMonth(prevDate.getMonth() - 1);
+            const prevDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 15);
             const prevMonthKey = prevDate.toISOString().slice(0, 7);
 
             document.getElementById('current-month').innerText = currentDate.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
             
-            let curExp = expenses.filter(e => e.date?.startsWith(monthKey)).sort((a,b) => new Date(b.date) - new Date(a.date));
-            let prevExp = expenses.filter(e => e.date?.startsWith(prevMonthKey));
+            const allMonthExpenses = expenses.filter(e => e.date?.startsWith(monthKey)).sort((a,b) => new Date(b.date) - new Date(a.date));
+            let curExp = [...allMonthExpenses];
+            const prevExp = expenses.filter(e => e.date?.startsWith(prevMonthKey));
+
+            // Atualiza badge de contagem na aba Extrato
+            document.getElementById('extrato-count-badge').innerText = allMonthExpenses.length;
 
             const indicator = document.getElementById('active-filter-indicator');
             if (filter && filter !== 'all' && filter !== 'gastos' && filter !== 'Reserva') {
                 if(filter.startsWith('card:')) {
                     const cardName = filter.split(':')[1];
                     curExp = curExp.filter(e => (e.paymentMethod || 'Outros') === cardName && e.category !== 'Reserva');
-                    indicator.innerText = `Filtrado por: Cartão ${cardName}`;
+                    indicator.innerText = `Filtrado por: Cartão ${cardName} (${curExp.length} itens)`;
                     indicator.classList.remove('hidden');
                 } else {
                     curExp = curExp.filter(e => e.category === filter);
-                    indicator.innerText = `Filtrado por: Categoria ${filter}`;
+                    indicator.innerText = `Filtrado por: Categoria ${filter} (${curExp.length} itens)`;
                     indicator.classList.remove('hidden');
                 }
             } else if (filter === 'gastos') {
                 curExp = curExp.filter(e => e.category !== 'Reserva');
-                indicator.innerText = "Filtrado por: Compras Gerais";
+                indicator.innerText = `Filtrado por: Compras Gerais (${curExp.length} itens)`;
                 indicator.classList.remove('hidden');
             } else if (filter === 'Reserva') {
                 curExp = curExp.filter(e => e.category === 'Reserva');
-                indicator.innerText = "Filtrado por: Reserva";
+                indicator.innerText = `Filtrado por: Reserva (${curExp.length} itens)`;
                 indicator.classList.remove('hidden');
             } else {
                 indicator.classList.add('hidden');
             }
 
-            const totalCompras = expenses.filter(e => e.date?.startsWith(monthKey) && e.category !== 'Reserva').reduce((acc, i) => acc + (i.value || 0), 0);
-            const totalComprasAnterior = prevExp.filter(i => i.category !== 'Reserva').reduce((acc, i) => acc + (i.value || 0), 0);
-            const totalReservaMes = expenses.filter(e => e.date?.startsWith(monthKey) && e.category === 'Reserva').reduce((acc, i) => acc + (i.value || 0), 0);
+            const validExpenses = allMonthExpenses.filter(e => e.category !== 'Reserva');
+            const prevValidExpenses = prevExp.filter(i => i.category !== 'Reserva');
+
+            const totalCompras = validExpenses.reduce((acc, i) => acc + (i.value || 0), 0);
+            const totalComprasAnterior = prevValidExpenses.reduce((acc, i) => acc + (i.value || 0), 0);
+            const totalReservaMes = allMonthExpenses.filter(e => e.category === 'Reserva').reduce((acc, i) => acc + (i.value || 0), 0);
 
             const diff = totalCompras - totalComprasAnterior;
             const percentComp = totalComprasAnterior > 0 ? (diff / totalComprasAnterior * 100).toFixed(0) : 0;
             const reserveProgress = Math.min((totalReservaMes / EXPECTED_RESERVE) * 100, 100).toFixed(1);
 
+            // Cálculo do Gasto Médio Diário e Projeção
+            const now = new Date();
+            const isCurrentRealMonth = (now.getFullYear() === currentDate.getFullYear() && now.getMonth() === currentDate.getMonth());
+            const totalDaysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+            const elapsedDays = isCurrentRealMonth ? Math.max(1, now.getDate()) : totalDaysInMonth;
+            const dailyAverage = totalCompras / elapsedDays;
+            const projectedMonthTotal = dailyAverage * totalDaysInMonth;
+
+            // Renderiza os 3 Cards de KPI no topo do Dashboard BI
             document.getElementById('summary-display').innerHTML = `
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="card p-4 rounded-2xl border-l-4 border-red-500">
-                        <p class="text-[9px] font-bold text-slate-500 uppercase">Compras</p>
-                        <p class="text-lg font-black">${fmtMoney(totalCompras)}</p>
-                        <p class="text-[8px] font-bold ${diff > 0 ? 'text-red-500' : 'text-emerald-500'}">${diff > 0 ? '▲' : '▼'} ${Math.abs(percentComp)}% vs ant.</p>
+                <div class="card p-4 rounded-2xl border-l-4 border-red-500">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Compras do Mês</p>
+                    <p class="text-xl font-black mt-0.5">${fmtMoney(totalCompras)}</p>
+                    <p class="text-[10px] font-bold mt-1 ${diff > 0 ? 'text-red-400' : 'text-emerald-400'}">
+                        ${diff > 0 ? '▲' : '▼'} ${Math.abs(percentComp)}% vs mês anterior (${fmtMoney(totalComprasAnterior)})
+                    </p>
+                </div>
+
+                <div class="card p-4 rounded-2xl border-l-4 border-blue-500">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Gasto Médio Diário (${elapsedDays}d)</p>
+                    <p class="text-xl font-black text-blue-400 mt-0.5">${fmtMoney(dailyAverage)}<span class="text-xs text-slate-500 font-bold">/dia</span></p>
+                    <p class="text-[10px] font-bold text-slate-400 mt-1">
+                        ${isCurrentRealMonth ? `Projeção ${totalDaysInMonth}d: ${fmtMoney(projectedMonthTotal)}` : `Mês encerrado (${totalDaysInMonth} dias)`}
+                    </p>
+                </div>
+
+                <div class="card p-4 rounded-2xl border-l-4 border-amber-500 relative overflow-hidden">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Reserva (Meta ${fmtMoney(EXPECTED_RESERVE)})</p>
+                    <div class="flex items-baseline gap-2 mt-0.5">
+                        <p class="text-xl font-black text-amber-500">${fmtMoney(totalReservaMes)}</p>
+                        <span class="text-xs font-black text-slate-400">${reserveProgress}%</span>
                     </div>
-                    <div class="card p-4 rounded-2xl border-l-4 border-amber-500 relative overflow-hidden">
-                        <p class="text-[9px] font-bold text-slate-500 uppercase">Reserva (Mês)</p>
-                        <div class="flex items-baseline gap-1">
-                            <p class="text-lg font-black text-amber-500">${fmtMoney(totalReservaMes)}</p>
-                            <span class="text-[10px] font-bold text-slate-400">${reserveProgress}%</span>
-                        </div>
-                        <div class="w-full bg-slate-800 h-1 absolute bottom-0 left-0">
-                            <div class="h-full ${reserveProgress >= 100 ? 'bg-emerald-500' : 'bg-amber-500'} transition-all duration-700" style="width: ${reserveProgress}%"></div>
-                        </div>
+                    <p class="text-[10px] font-bold text-slate-400 mt-1">
+                        ${totalReservaMes >= EXPECTED_RESERVE ? 'Meta atingida! 🎉' : `Faltam ${fmtMoney(EXPECTED_RESERVE - totalReservaMes)}`}
+                    </p>
+                    <div class="w-full bg-slate-800 h-1.5 absolute bottom-0 left-0">
+                        <div class="h-full ${reserveProgress >= 100 ? 'bg-emerald-500' : 'bg-amber-500'} transition-all duration-700" style="width: ${reserveProgress}%"></div>
                     </div>
                 </div>
             `;
 
+            // Renderiza Alertas Inteligentes (Insights) e Top 5 Despesas
+            renderSmartInsights(validExpenses, prevValidExpenses, totalCompras, totalComprasAnterior, totalReservaMes);
+            renderTopExpenses(validExpenses, totalCompras);
+
+            // Renderiza Lista do Extrato (Aba 2)
             document.getElementById('expense-list').innerHTML = curExp.map(i => `
-                <div onclick="openModal('${i.id}')" class="flex items-center justify-between p-5 active:bg-slate-800 cursor-pointer hover:bg-slate-900/40 transition">
+                <div onclick="openModal('${i.id}')" class="flex items-center justify-between p-4 lg:p-5 active:bg-slate-800 cursor-pointer hover:bg-slate-900/40 transition">
                     <div class="flex items-center gap-4">
                         <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg ${i.category === 'Reserva' ? 'bg-amber-900/20' : 'bg-slate-800'}">
                             ${i.category === 'Reserva' ? '💰' : '🛒'}
@@ -820,12 +968,161 @@
                     </div>
                     <p class="font-black text-sm ${i.category === 'Reserva' ? 'text-amber-500' : 'text-slate-100'}">${fmtMoney(i.value)}</p>
                 </div>
-            `).join('') || '<p class="p-10 text-center text-slate-600 text-xs uppercase font-bold tracking-widest">Vazio</p>';
+            `).join('') || '<p class="p-10 text-center text-slate-600 text-xs uppercase font-bold tracking-widest">Nenhum lançamento encontrado</p>';
             
-            const validExpenses = expenses.filter(e => e.date?.startsWith(monthKey) && e.category !== 'Reserva');
-            updateChart(validExpenses);
-            updateCardChart(validExpenses);
-            updateComparisonChart(totalCompras, totalComprasAnterior);
+            // Atualiza Gráficos (apenas se a aba dashboard estiver visível)
+            if (activeTab === 'dashboard') {
+                updateChart(validExpenses);
+                updateCardChart(validExpenses);
+                updateComparisonChart(totalCompras, totalComprasAnterior);
+            }
+        }
+
+        // ==================== 3. PAINEL DE ALERTAS INTELIGENTES (INSIGHTS) ====================
+
+        function renderSmartInsights(curValid, prevValid, totalCur, totalPrev, totalReserva) {
+            const alerts = [];
+
+            // 1. Alerta de Gastos Totais vs Mês Passado
+            if (totalPrev > 0) {
+                if (totalCur > totalPrev) {
+                    const diffVal = totalCur - totalPrev;
+                    const pct = ((diffVal / totalPrev) * 100).toFixed(1);
+                    alerts.push({
+                        icon: '🚨',
+                        color: 'border-red-500/40 bg-red-950/20 text-red-300',
+                        title: 'Gastos Acima do Mês Anterior',
+                        desc: `Suas compras superaram o mês passado em <b>+${pct}%</b> (${fmtMoney(diffVal)} a mais).`
+                    });
+                } else if (totalCur > 0) {
+                    const savedVal = totalPrev - totalCur;
+                    const pct = ((savedVal / totalPrev) * 100).toFixed(1);
+                    alerts.push({
+                        icon: '📉',
+                        color: 'border-emerald-500/40 bg-emerald-950/20 text-emerald-300',
+                        title: 'Ritmo de Economia',
+                        desc: `Você gastou <b>${pct}% a menos</b> (${fmtMoney(savedVal)}) em relação ao mês anterior.`
+                    });
+                }
+            } else if (totalCur > 0) {
+                alerts.push({
+                    icon: '📊',
+                    color: 'border-blue-500/40 bg-blue-950/20 text-blue-300',
+                    title: 'Sem Base Anterior',
+                    desc: `Total acumulado de <b>${fmtMoney(totalCur)}</b> sem histórico no mês anterior para comparação.`
+                });
+            }
+
+            // 2. Alerta de Categoria que Mais Cresceu Percentualmente
+            const curCats = {};
+            const prevCats = {};
+            curValid.forEach(e => curCats[e.category] = (curCats[e.category] || 0) + (e.value || 0));
+            prevValid.forEach(e => prevCats[e.category] = (prevCats[e.category] || 0) + (e.value || 0));
+
+            let fastestCat = null;
+            let maxGrowthPct = 0;
+            let fastestDiffVal = 0;
+
+            Object.keys(curCats).forEach(cat => {
+                const curV = curCats[cat];
+                const prevV = prevCats[cat] || 0;
+                if (prevV > 0 && curV > prevV) {
+                    const pct = ((curV - prevV) / prevV) * 100;
+                    if (pct > maxGrowthPct) {
+                        maxGrowthPct = pct;
+                        fastestCat = cat;
+                        fastestDiffVal = curV - prevV;
+                    }
+                }
+            });
+
+            if (fastestCat) {
+                alerts.push({
+                    icon: '📈',
+                    color: 'border-amber-500/40 bg-amber-950/20 text-amber-300',
+                    title: `Alta em ${fastestCat}`,
+                    desc: `Foi a categoria que mais cresceu: <b>+${maxGrowthPct.toFixed(0)}%</b> (+${fmtMoney(fastestDiffVal)} vs mês ant.).`
+                });
+            } else if (Object.keys(curCats).length > 0) {
+                // Caso não haja crescimento percentual (ex: mês anterior zerado), destaca a maior categoria atual
+                const topCat = Object.entries(curCats).sort((a,b) => b[1] - a[1])[0];
+                const share = totalCur > 0 ? ((topCat[1] / totalCur) * 100).toFixed(0) : 0;
+                alerts.push({
+                    icon: '🎯',
+                    color: 'border-blue-500/40 bg-blue-950/20 text-blue-300',
+                    title: `Maior Foco: ${topCat[0]}`,
+                    desc: `Concentra <b>${share}%</b> das despesas do mês com <b>${fmtMoney(topCat[1])}</b>.`
+                });
+            }
+
+            // 3. Aviso de Meta da Reserva de Emergência
+            const missingReserve = EXPECTED_RESERVE - totalReserva;
+            if (missingReserve <= 0) {
+                alerts.push({
+                    icon: '✅',
+                    color: 'border-emerald-500/40 bg-emerald-950/20 text-emerald-300',
+                    title: 'Meta de Reserva Batida!',
+                    desc: `Você aportou <b>${fmtMoney(totalReserva)}</b>, atingindo 100% da meta mensal de ${fmtMoney(EXPECTED_RESERVE)}.`
+                });
+            } else {
+                const pctDone = ((totalReserva / EXPECTED_RESERVE) * 100).toFixed(0);
+                alerts.push({
+                    icon: '💰',
+                    color: 'border-amber-500/40 bg-amber-950/20 text-amber-300',
+                    title: 'Meta da Reserva Mensal',
+                    desc: `Faltam <b>${fmtMoney(missingReserve)}</b> para atingir a meta de ${fmtMoney(EXPECTED_RESERVE)} (${pctDone}% concluído).`
+                });
+            }
+
+            document.getElementById('insights-container').innerHTML = alerts.map(a => `
+                <div class="p-3.5 rounded-xl border ${a.color} flex items-start gap-3">
+                    <span class="text-lg leading-none mt-0.5">${a.icon}</span>
+                    <div>
+                        <p class="text-[11px] font-black uppercase tracking-wider">${a.title}</p>
+                        <p class="text-xs text-slate-300 mt-1 leading-relaxed">${a.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ==================== 4. RANKING: TOP 5 MAIORES DESPESAS ====================
+
+        function renderTopExpenses(validExpenses, totalCompras) {
+            const container = document.getElementById('top-expenses-list');
+            const top5 = [...validExpenses].sort((a, b) => (b.value || 0) - (a.value || 0)).slice(0, 5);
+
+            if (top5.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-600 text-xs uppercase font-bold py-6">Nenhuma despesa registrada neste mês</p>`;
+                return;
+            }
+
+            container.innerHTML = top5.map((item, idx) => {
+                const pctOfTotal = totalCompras > 0 ? Math.min(((item.value / totalCompras) * 100), 100).toFixed(1) : 0;
+                return `
+                    <div onclick="openModal('${item.id}')" class="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 cursor-pointer transition">
+                        <div class="flex items-center justify-between gap-2 mb-1.5">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <span class="w-6 h-6 rounded-lg bg-slate-800 text-blue-400 font-black text-xs flex items-center justify-center shrink-0">
+                                    #${idx + 1}
+                                </span>
+                                <div class="truncate">
+                                    <p class="text-xs font-bold text-slate-200 truncate">${item.description}</p>
+                                    <p class="text-[10px] text-slate-500 font-bold uppercase">
+                                        ${item.category} • ${item.paymentMethod || 'Outros'} • ${item.date.split('-').reverse().slice(0,2).join('/')}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <p class="text-sm font-black text-white">${fmtMoney(item.value)}</p>
+                                <p class="text-[9px] font-bold text-slate-400">${pctOfTotal}% do mês</p>
+                            </div>
+                        </div>
+                        <div class="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+                            <div class="bg-blue-500 h-full rounded-full" style="width: ${pctOfTotal}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         window.addVal = (v) => {
@@ -834,7 +1131,10 @@
             input.value = current + v;
         };
 
-        window.setFastFilter = (f) => render(f);
+        window.setFastFilter = (f) => {
+            render(f);
+            switchTab('extrato');
+        };
 
         function updateChart(data) {
             const ctx = document.getElementById('expenseChart').getContext('2d');
@@ -854,6 +1154,7 @@
                             const index = elements[0].index;
                             const label = mainChart.data.labels[index];
                             render(label);
+                            switchTab('extrato');
                         }
                     }
                 }
@@ -888,6 +1189,7 @@
                             const index = elements[0].index;
                             const label = cardChart.data.labels[index];
                             render(`card:${label}`);
+                            switchTab('extrato');
                         }
                     }
                 }

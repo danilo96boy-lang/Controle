@@ -23,9 +23,10 @@
         :root { --bg: #020617; --card: #0f172a; --border: #1e293b; }
         body { background-color: var(--bg); color: #f8fafc; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .card { background-color: var(--card); border: 1px solid var(--border); }
-        .btn-value { background-color: #1e293b; color: #cbd5e1; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; transition: all 0.2s; }
-        .btn-value:active { background-color: #2563eb; color: #ffffff; }
+        .btn-value { background-color: #1e293b; color: #cbd5e1; padding: 0.55rem 0.9rem; border-radius: 0.75rem; font-size: 0.75rem; font-weight: 800; transition: all 0.15s; white-space: nowrap; }
+        .btn-value:active { background-color: #2563eb; color: #ffffff; transform: scale(0.95); }
         input, select { background: #000 !important; border: 1px solid var(--border) !important; color: white !important; outline: none; }
+        input:focus { border-color: #3b82f6 !important; }
         input[type="checkbox"] { accent-color: #2563eb; width: 1.1rem; height: 1.1rem; cursor: pointer; }
         #loading-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.9); z-index: 100; display: none; flex-direction: column; gap: 12px; align-items: center; justify-content: center; }
         .spinner { width: 34px; height: 34px; border: 3px solid #1e293b; border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s linear infinite; }
@@ -34,48 +35,61 @@
         /* Seletores Visuais (Cartão e Responsável) */
         .visual-selector input:checked + label {
             background-color: #2563eb;
-            border-color: #3b82f6;
+            border-color: #60a5fa;
             color: #ffffff;
             font-weight: 900;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
         }
 
         .owner-selector input[value="Sandra"]:checked + label {
             background-color: #9333ea;
-            border-color: #a855f7;
+            border-color: #c084fc;
             color: #ffffff;
             box-shadow: 0 4px 12px rgba(147, 51, 234, 0.35);
         }
 
         .owner-selector input[value="Márcia"]:checked + label {
             background-color: #db2777;
-            border-color: #ec4899;
+            border-color: #f472b6;
             color: #ffffff;
             box-shadow: 0 4px 12px rgba(219, 39, 119, 0.35);
         }
 
-        /* Botões Visuais de Categoria */
+        /* Botões Visuais de Categoria Mobile-First */
         .cat-chip {
-            transition: all 0.15s ease;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 64px;
+        }
+        .cat-chip:active {
+            transform: scale(0.95);
         }
         .cat-chip.selected {
             background-color: #2563eb;
-            border-color: #60a5fa;
+            border-color: #93c5fd;
             color: #ffffff;
             transform: scale(1.02);
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.45);
         }
 
-        .tab-btn {
-            transition: all 0.2s ease;
-        }
+        .tab-btn { transition: all 0.2s ease; }
         .tab-btn.active {
             background-color: #2563eb;
             color: #ffffff;
             box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.35);
         }
 
-        /* Custom Scrollbar */
+        /* Animação para novo item recente */
+        @keyframes pulseHighlight {
+            0% { background-color: rgba(16, 185, 129, 0.25); }
+            100% { background-color: transparent; }
+        }
+        .recent-highlight { animation: pulseHighlight 2.5s ease-out; }
+
+        /* Esconder barra de rolagem horizontal mantendo scroll */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Custom Scrollbar Geral */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #020617; }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
@@ -83,6 +97,12 @@
     </style>
 </head>
 <body class="antialiased">
+
+    <!-- Toast de Feedback Rápido -->
+    <div id="toast-feedback" class="fixed top-4 left-1/2 -translate-x-1/2 z-[110] hidden items-center gap-2.5 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-2xl border border-emerald-400/40 text-xs font-black uppercase tracking-wider transition-all">
+        <span>✅</span>
+        <span id="toast-text">Lançamento Salvo!</span>
+    </div>
 
     <!-- Login Screen -->
     <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-black p-6">
@@ -105,7 +125,7 @@
     </div>
 
     <!-- Main Application -->
-    <div id="app-container" class="hidden pb-24">
+    <div id="app-container" class="hidden pb-28">
         <header class="p-4 lg:p-8 flex flex-col gap-4 max-w-5xl mx-auto">
             <!-- Top Bar: Brand & Action Buttons -->
             <div class="flex flex-wrap justify-between items-center gap-3">
@@ -117,11 +137,11 @@
                     <!-- Input oculto + Botão de Importação PDF -->
                     <input type="file" id="pdf-upload" accept="application/pdf" class="hidden" onchange="handlePdfUpload(event)">
                     <button onclick="document.getElementById('pdf-upload').click()" class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded-xl text-[11px] uppercase font-black tracking-wider flex items-center gap-1.5 transition active:scale-95">
-                        📄 Importar Fatura (PDF)
+                        📄 Importar PDF
                     </button>
 
                     <button onclick="openConfig()" class="bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 px-3 py-1.5 rounded-xl text-[11px] uppercase font-bold transition">
-                        ⚙️ Configurações
+                        ⚙️ Config
                     </button>
                     <button id="logout-btn" class="text-slate-600 hover:text-red-400 text-xs uppercase font-bold px-2 py-1 transition">Sair</button>
                 </div>
@@ -134,7 +154,7 @@
                 <button id="next-month" class="p-3 text-blue-500 hover:bg-slate-800/60 rounded-xl font-bold transition">▶</button>
             </div>
 
-            <!-- 5. Navegação por Abas (Visão Geral vs Extrato Detalhado) -->
+            <!-- Navegação por Abas (Visão Geral vs Extrato Detalhado) -->
             <div class="grid grid-cols-2 gap-2 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
                 <button id="tab-btn-dashboard" onclick="switchTab('dashboard')" class="tab-btn active py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 text-slate-400">
                     <span>📊 Visão Geral</span>
@@ -151,8 +171,22 @@
             <!-- ==================== ABA 1: VISÃO GERAL (DASHBOARD BI) ==================== -->
             <div id="tab-dashboard" class="space-y-5">
                 
-                <!-- 2. Resumo Inteligente (Total Faturas, Nosso Gasto Real, A Receber Terceiros, Reserva) -->
+                <!-- Resumo Inteligente (4 KPIs) -->
                 <div id="summary-display" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
+
+                <!-- NOVO: Últimos 3 Lançamentos Recentes (Feedback Imediato p/ Mobile) -->
+                <div class="card rounded-2xl p-4 lg:p-5 border border-blue-500/20">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            <h3 class="font-black text-xs uppercase tracking-widest text-slate-200">Últimos 3 Lançamentos</h3>
+                        </div>
+                        <button onclick="switchTab('extrato')" class="text-[10px] font-black uppercase text-blue-400 hover:text-blue-300 tracking-wider">
+                            Ver todos →
+                        </button>
+                    </div>
+                    <div id="recent-launches-list" class="grid grid-cols-1 md:grid-cols-3 gap-2.5"></div>
+                </div>
 
                 <!-- Painel de Alertas Inteligentes (Insights do Mês) -->
                 <div class="card rounded-2xl p-4 lg:p-5">
@@ -201,7 +235,6 @@
                             <h3 class="font-black text-xs uppercase tracking-widest text-slate-400">Extrato Detalhado</h3>
                             <span id="active-filter-indicator" class="text-[10px] text-blue-400 font-bold uppercase mt-1 hidden"></span>
                         </div>
-                        <!-- Botões de Filtro Rápido (Incluindo filtro por Responsável) -->
                         <div class="flex flex-wrap items-center gap-1.5">
                             <button onclick="setFastFilter('owner:Casal')" class="px-3 h-8 flex items-center gap-1.5 bg-blue-900/20 hover:bg-blue-900/40 text-blue-400 border border-blue-500/20 rounded-full text-[11px] font-bold transition">
                                 👫 Nosso (Casal)
@@ -226,23 +259,26 @@
 
         </main>
 
-        <!-- Botão Flutuante de Novo Gasto -->
-        <button onclick="openModal()" class="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 hover:bg-blue-500 rounded-full shadow-2xl flex items-center justify-center text-3xl z-40 active:scale-95 transition-transform">+</button>
+        <!-- Botão Flutuante de Novo Gasto (Com Rótulo em Telas Maiores e Fácil Alcance no Polegar) -->
+        <button onclick="openModal()" class="fixed bottom-6 right-6 h-16 px-6 bg-blue-600 hover:bg-blue-500 rounded-full shadow-2xl shadow-blue-600/40 flex items-center justify-center gap-2 text-white font-black z-40 active:scale-95 transition-transform">
+            <span class="text-2xl leading-none">+</span>
+            <span class="text-xs uppercase tracking-widest">Lançar</span>
+        </button>
     </div>
 
-    <!-- Modal de Inserção/Edição Manual (Reformulado p/ Usabilidade e Consistência) -->
-    <div id="expense-modal" class="fixed inset-0 bg-black/95 hidden z-50 items-end lg:items-center justify-center p-2 lg:p-4 backdrop-blur-sm overflow-y-auto">
-        <div class="card w-full max-w-lg rounded-t-3xl lg:rounded-3xl p-5 lg:p-6 my-auto max-h-[94vh] overflow-y-auto">
-            <div class="w-12 h-1.5 bg-slate-800 rounded-full mx-auto mb-4 lg:hidden"></div>
+    <!-- Modal de Inserção/Edição Manual (Mobile-First Ultra Rápido) -->
+    <div id="expense-modal" class="fixed inset-0 bg-black/95 hidden z-50 items-end lg:items-center justify-center p-0 sm:p-4 backdrop-blur-sm overflow-y-auto">
+        <div class="card w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 lg:p-6 mt-auto sm:my-auto max-h-[95vh] overflow-y-auto border-b-0 sm:border-b">
+            <div class="w-12 h-1.5 bg-slate-800 rounded-full mx-auto mb-3 sm:hidden"></div>
             <div class="flex justify-between items-center mb-4">
-                <h3 id="modal-title" class="font-black text-sm uppercase tracking-widest text-slate-300">Novo Lançamento</h3>
-                <button type="button" onclick="closeModal('expense-modal')" class="text-slate-500 hover:text-white text-sm font-bold">✕</button>
+                <h3 id="modal-title" class="font-black text-sm uppercase tracking-widest text-slate-200">⚡ Lançamento Rápido</h3>
+                <button type="button" onclick="closeModal('expense-modal')" class="w-8 h-8 rounded-full bg-slate-900 text-slate-400 hover:text-white text-sm font-bold flex items-center justify-center">✕</button>
             </div>
 
             <form id="expense-form" class="space-y-4" novalidate>
-                <!-- 1. Responsável pela Compra (Radio Buttons Visuais Obrigatórios) -->
+                <!-- 1. Responsável pela Compra -->
                 <div class="space-y-1.5">
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">1. Responsável pela Compra *</label>
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">1. De quem é a compra?</label>
                     <div class="grid grid-cols-3 gap-2 visual-selector owner-selector">
                         <div class="relative">
                             <input type="radio" name="form-owner" id="owner-casal" value="Casal" checked class="sr-only">
@@ -268,47 +304,58 @@
                     </div>
                 </div>
 
-                <!-- 2. Valor e Data -->
-                <div class="grid grid-cols-5 gap-2.5">
-                    <div class="col-span-3 relative">
-                        <span class="absolute left-3.5 top-3.5 text-slate-500 font-bold text-sm">R$</span>
-                        <input type="number" step="0.01" required id="form-val" placeholder="0,00" class="w-full p-3 pl-10 rounded-xl text-xl font-black">
+                <!-- 2. Valor e Data + Botões Rápidos de Valor -->
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">2. Qual o valor e data?</label>
+                    <div class="grid grid-cols-5 gap-2.5">
+                        <div class="col-span-3 relative">
+                            <span class="absolute left-3.5 top-3.5 text-slate-500 font-black text-sm">R$</span>
+                            <input type="number" step="0.01" inputmode="decimal" required id="form-val" placeholder="0,00" class="w-full p-3 pl-10 rounded-xl text-2xl font-black">
+                        </div>
+                        <div class="col-span-2">
+                            <input type="date" id="form-date" required class="p-3.5 rounded-xl text-xs font-bold w-full h-full">
+                        </div>
                     </div>
-                    <div class="col-span-2">
-                        <input type="date" id="form-date" required class="p-3.5 rounded-xl text-xs font-bold w-full h-full">
+                    <div class="flex gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
+                        <button type="button" onclick="addVal(10)" class="btn-value">+10</button>
+                        <button type="button" onclick="addVal(20)" class="btn-value">+20</button>
+                        <button type="button" onclick="addVal(50)" class="btn-value">+50</button>
+                        <button type="button" onclick="addVal(100)" class="btn-value">+100</button>
+                        <button type="button" onclick="addVal(200)" class="btn-value">+200</button>
+                        <button type="button" onclick="document.getElementById('form-val').value=''" class="btn-value text-red-400 ml-auto">Zerar</button>
                     </div>
                 </div>
 
-                <!-- Atalhos de Valor -->
-                <div class="flex gap-2 overflow-x-auto pb-1">
-                    <button type="button" onclick="addVal(20)" class="btn-value">+20</button>
-                    <button type="button" onclick="addVal(50)" class="btn-value">+50</button>
-                    <button type="button" onclick="addVal(100)" class="btn-value">+100</button>
-                    <button type="button" onclick="addVal(200)" class="btn-value">+200</button>
-                    <button type="button" onclick="document.getElementById('form-val').value=''" class="btn-value text-red-400 ml-auto">Limpar</button>
-                </div>
-
-                <!-- 3. Descrição -->
-                <div class="space-y-1">
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">2. O que foi comprado? *</label>
-                    <input type="text" id="form-desc" required placeholder="Ex: Pão de Açúcar, iFood, Farmácia..." class="w-full p-3.5 rounded-xl text-sm font-semibold">
-                </div>
-
-                <!-- 4. Categoria com Botões/Ícones Grandes Visuais -->
-                <div class="space-y-1.5">
+                <!-- 3. Descrição + Sugestões de Locais Frequentes do Histórico (1-Tap) -->
+                <div class="space-y-2">
                     <div class="flex justify-between items-center">
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider">3. Selecione a Categoria *</label>
-                        <span id="selected-cat-label" class="text-[10px] font-black uppercase text-blue-400"></span>
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider">3. Onde ou o que comprou?</label>
+                        <span class="text-[9px] text-slate-500 font-bold">Toque num local ou digite</span>
+                    </div>
+                    <input type="text" id="form-desc" required oninput="handleDescriptionTyping(this.value)" placeholder="Ex: iFood, Pão de Açúcar, Uber..." autocomplete="off" class="w-full p-3.5 rounded-xl text-sm font-semibold">
+                    
+                    <!-- Chips Horizontais de Locais Frequentes -->
+                    <div class="space-y-1">
+                        <span class="text-[9px] font-black uppercase tracking-wider text-slate-500 block">⚡ Locais Frequentes (1 Toque):</span>
+                        <div id="frequent-places-chips" class="flex gap-1.5 overflow-x-auto no-scrollbar pb-1"></div>
+                    </div>
+                </div>
+
+                <!-- 4. Grade Visual de Categorias com Auto-Preenchimento -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider">4. Categoria (Toque no ícone)</label>
+                        <span id="selected-cat-label" class="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-blue-950/60 text-blue-400 border border-blue-500/20">Nenhuma</span>
                     </div>
                     <input type="hidden" id="form-cat" required>
-                    <div id="visual-categories-grid" class="grid grid-cols-3 sm:grid-cols-5 gap-2 max-h-44 overflow-y-auto pr-1"></div>
+                    <div id="visual-categories-grid" class="grid grid-cols-3 sm:grid-cols-5 gap-2"></div>
                 </div>
                 
                 <!-- 5. Forma de Pagamento e Parcelas -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                    <div class="sm:col-span-2 space-y-1.5">
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">4. Cartão / Pagamento *</label>
-                        <div class="grid grid-cols-3 gap-2 visual-selector">
+                <div class="grid grid-cols-3 gap-2.5 pt-1">
+                    <div class="col-span-2 space-y-1.5">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">5. Pagamento</label>
+                        <div class="grid grid-cols-3 gap-1.5 visual-selector">
                             <div class="relative">
                                 <input type="radio" name="form-payment" id="pay-inter" value="Inter" checked class="sr-only">
                                 <label for="pay-inter" class="block text-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Inter</label>
@@ -319,7 +366,7 @@
                             </div>
                             <div class="relative">
                                 <input type="radio" name="form-payment" id="pay-outros" value="Outros" class="sr-only">
-                                <label for="pay-outros" class="block text-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Outros</label>
+                                <label for="pay-outros" class="block text-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Pix/Outros</label>
                             </div>
                         </div>
                     </div>
@@ -327,8 +374,8 @@
                     <div id="installments-wrapper" class="space-y-1.5">
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Parcelas</label>
                         <div class="relative">
-                            <span class="absolute left-3 top-2.5 text-slate-500 text-xs">📦</span>
-                            <input type="number" id="form-installments" min="1" max="48" class="w-full p-2.5 pl-8 rounded-xl text-xs font-bold" value="1">
+                            <span class="absolute left-2.5 top-2.5 text-slate-500 text-xs">📦</span>
+                            <input type="number" id="form-installments" min="1" max="48" inputmode="numeric" class="w-full p-2.5 pl-7 rounded-xl text-xs font-bold" value="1">
                         </div>
                     </div>
                 </div>
@@ -336,8 +383,10 @@
                 <p id="form-error-msg" class="text-red-400 text-xs font-bold text-center hidden bg-red-950/40 border border-red-500/30 p-2.5 rounded-xl"></p>
 
                 <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="closeModal('expense-modal')" class="flex-1 py-3.5 text-slate-400 font-bold text-xs uppercase">Cancelar</button>
-                    <button type="submit" id="save-btn" class="flex-[2] bg-blue-600 hover:bg-blue-500 py-3.5 rounded-xl font-black uppercase tracking-widest text-xs text-white shadow-lg shadow-blue-600/30 transition">Gravar Despesa</button>
+                    <button type="button" onclick="closeModal('expense-modal')" class="flex-1 py-4 rounded-xl bg-slate-900 text-slate-400 font-bold text-xs uppercase">Cancelar</button>
+                    <button type="submit" id="save-btn" class="flex-[2] bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-black uppercase tracking-widest text-xs text-white shadow-lg shadow-blue-600/30 active:scale-95 transition">
+                        ✅ Salvar Gasto
+                    </button>
                 </div>
                 <button type="button" id="delete-btn" onclick="deleteItem()" class="w-full text-red-500 hover:text-red-400 text-[10px] font-black uppercase tracking-widest pt-1 hidden">🗑️ Excluir Este Registro</button>
             </form>
@@ -347,7 +396,6 @@
     <!-- Modal de Revisão e Conciliação de PDF -->
     <div id="pdf-review-modal" class="fixed inset-0 bg-black/95 hidden z-50 items-center justify-center p-2 lg:p-6 backdrop-blur-sm">
         <div class="card w-full max-w-6xl rounded-3xl p-4 lg:p-6 flex flex-col max-h-[92vh]">
-            <!-- Header do Modal -->
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-800">
                 <div>
                     <div class="flex items-center gap-2">
@@ -357,7 +405,6 @@
                     <p class="text-xs text-slate-400 mt-1">Defina quem é o responsável por cada compra (Casal, Sandra ou Márcia) antes de gravar.</p>
                 </div>
 
-                <!-- Controles Globais do Lote -->
                 <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
                     <div class="flex items-center gap-1.5 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
                         <span class="text-[10px] font-bold text-slate-400 uppercase">Cartão:</span>
@@ -373,7 +420,6 @@
                 </div>
             </div>
 
-            <!-- Lista / Tabela de Itens Extraídos -->
             <div class="overflow-y-auto flex-1 my-4 pr-1">
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -393,7 +439,6 @@
                 </table>
             </div>
 
-            <!-- Adicionar Linha Manual na Revisão -->
             <div class="pb-3 border-b border-slate-800 flex justify-between items-center">
                 <button type="button" onclick="addBlankPdfRow()" class="text-[11px] font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1">
                     + Adicionar linha manualmente ao lote
@@ -401,7 +446,6 @@
                 <span class="text-[11px] text-slate-500" id="pdf-selection-stats">0 itens selecionados</span>
             </div>
 
-            <!-- Footer com Soma e Ações -->
             <div class="pt-4 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div class="flex items-baseline gap-2">
                     <span class="text-xs font-bold uppercase text-slate-400">Total Selecionado:</span>
@@ -435,7 +479,7 @@
                 <button onclick="addNewCategory()" class="bg-blue-600 hover:bg-blue-500 px-4 rounded-xl font-bold text-xl">+</button>
             </div>
 
-            <!-- 4. Botão de Limpeza do Mês (Perigo) com Confirmação Dupla -->
+            <!-- Zona de Perigo -->
             <div class="pt-5 border-t border-slate-800/80 space-y-3">
                 <p class="text-[10px] font-black uppercase tracking-widest text-red-500/80">⚠️ Zona de Perigo</p>
                 <div class="p-3.5 rounded-2xl bg-red-950/20 border border-red-500/20 flex flex-col gap-2">
@@ -468,7 +512,6 @@
 
         let categories = ['Mercado', 'Lazer', 'Delivery', 'Posto', 'Farmácia', 'Roupa', 'Escola', 'Carro', 'Reserva', 'Outros'];
         
-        // Ícones visuais para facilitar o preenchimento rápido por botões
         const CATEGORY_ICONS = {
             'Mercado': '🛒',
             'Lazer': '🎉',
@@ -482,6 +525,17 @@
             'Outros': '📦'
         };
 
+        // Locais padrão caso o histórico ainda tenha poucos lançamentos
+        const DEFAULT_PLACES = [
+            { desc: 'iFood', cat: 'Delivery', pay: 'Inter' },
+            { desc: 'Mercado', cat: 'Mercado', pay: 'Inter' },
+            { desc: 'Uber', cat: 'Carro', pay: 'Inter' },
+            { desc: 'Farmácia', cat: 'Farmácia', pay: 'Inter' },
+            { desc: 'Posto', cat: 'Posto', pay: 'Santander' },
+            { desc: 'Padaria', cat: 'Delivery', pay: 'Inter' },
+            { desc: 'Shopee', cat: 'Roupa', pay: 'Inter' }
+        ];
+
         const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#a855f7', '#14b8a6', '#f43f5e'];
         const CARD_COLORS = ['#ff7a00', '#cc0000', '#475569'];
         
@@ -490,16 +544,19 @@
         let currentFilterState = "all";
         let activeTab = "dashboard";
         let extractedPdfItems = [];
+        let lastCreatedId = null;
 
+        // Dicionário Expandido para Preenchimento Automático Enquanto Digita
         const CATEGORY_KEYWORDS = {
-            'Delivery': ['IFOOD', 'IFD*', 'RAPPI', 'ZE DELIVERY', 'ZEDELIVERY', 'AIQFOME', 'BURGER KING', 'MCDONALDS', 'ARCOS DOURADOS', 'PIZZA', 'SUSHI', 'LANCHE', 'PADARIA', 'CONFEITARIA', 'ACAITERIA', 'SORVETERIA'],
-            'Carro': ['UBER', '99APP', '99 *', '99 POP', 'SEM PARAR', 'CONECTCAR', 'VELOE', 'ESTACIONAMENTO', 'PARK', 'PEDAGIO', 'CCR ', 'AUTOBAN', 'ECOVIAS', 'MECANICA', 'AUTO PECAS', 'AUTOPECAS', 'PNEU', 'LAVA RAPIDO', 'IPVA', 'DETRAN', 'SEGURO AUTO', 'PORTO SEGURO', 'AZUL SEGUROS'],
-            'Posto': ['POSTO', 'AUTO POSTO', 'SHELL', 'IPIRANGA', 'PETROBRAS', 'ALE ', 'COMBUSTIVEIS', 'ABASTECIMENTO', 'GNV', 'GASOLINA', 'ETANOL'],
-            'Mercado': ['MERCADO', 'SUPERMERCADO', 'HIPERMERCADO', 'ATACADAO', 'ASSAI', 'CARREFOUR', 'PAO DE ACUCAR', 'TENDA', 'SAMS CLUB', 'CONFIANCA', 'SAO VICENTE', 'PAGUE MENOS SUPER', 'HORTIFRUTI', 'SACOLAO', 'ACOUGUE', 'SWIFT', 'MINI MERCADO', 'MERCEARIA', 'CONVENIENCIA', 'OXO', 'OXXO'],
-            'Farmácia': ['FARMACIA', 'DROGARIA', 'DROGASIL', 'RAIA', 'DROGA RAIA', 'PAGUE MENOS', 'ULTRAFARMA', 'SAO PAULO', 'PANVEL', 'FARMA', 'BIFARMA', 'DROGAL', 'KONDOR'],
-            'Roupa': ['RENNER', 'RIACHUELO', 'C&A', 'CEA', 'ZARA', 'SHEIN', 'SHOPEE', 'CENTAURO', 'DECATHLON', 'NIKE', 'ADIDAS', 'HERING', 'MARISA', 'PERNAMBUCANAS', 'CALCADOS', 'BOUTIQUE', 'MODA', 'LUPEL', 'DAFITI', 'NETSHOES'],
-            'Lazer': ['NETFLIX', 'SPOTIFY', 'AMAZON PRIME', 'DISNEY', 'HBO', 'MAX', 'YOUTUBE', 'APPLE.COM/BILL', 'GOOGLE PLAY', 'STEAM', 'PLAYSTATION', 'SONY', 'XBOX', 'NINTENDO', 'CINEMA', 'CINESYSTEM', 'CINEMARK', 'INGRESSO', 'SYMPLA', 'EVENTIM', 'RESTAURANTE', 'BAR ', 'CHOPP', 'CERVEJARIA', 'PUB', 'HOTEL', 'POUSADA', 'AIRBNB', 'BOOKING', ' CVC '],
-            'Escola': ['ESCOLA', 'COLEGIO', 'FACULDADE', 'UNIVERSIDADE', 'UNIP', 'PAPELARIA', 'KALUNGA', 'LIVRARIA', 'CURSO', 'UDEMY', 'ALURA', 'MENSALIDADE ESCOLAR', 'SESI', 'SENAI']
+            'Delivery': ['IFOOD', 'IFD', 'RAPPI', 'ZE DELIVERY', 'ZEDELIVERY', 'AIQFOME', 'BURGER', 'BK', 'MCDONALDS', 'MC DONALDS', 'ARCOS DOURADOS', 'PIZZA', 'PIZZARIA', 'SUSHI', 'TEMAKI', 'LANCHE', 'PADARIA', 'PANIFICADORA', 'CONFEITARIA', 'ACAI', 'ACAITERIA', 'SORVETE', 'SORVETERIA', 'DOCERIA', 'CAFE', 'PASTEL'],
+            'Carro': ['UBER', '99APP', '99 ', '99POP', 'SEM PARAR', 'CONECTCAR', 'VELOE', 'ESTACIONAMENTO', 'PARK', 'PEDAGIO', 'CCR', 'AUTOBAN', 'ECOVIAS', 'MECANICA', 'OFICINA', 'AUTO PECAS', 'AUTOPECAS', 'PNEU', 'LAVA RAPIDO', 'LAVAGEM', 'IPVA', 'DETRAN', 'SEGURO AUTO', 'PORTO SEGURO', 'AZUL SEGUROS', 'BORRACHARIA'],
+            'Posto': ['POSTO', 'AUTO POSTO', 'SHELL', 'IPIRANGA', 'PETROBRAS', 'BR ', 'ALE ', 'COMBUSTIVEL', 'COMBUSTIVEIS', 'ABASTECIMENTO', 'GNV', 'GASOLINA', 'ETANOL', 'DIESEL'],
+            'Mercado': ['MERCADO', 'SUPERMERCADO', 'HIPERMERCADO', 'ATACADAO', 'ASSAI', 'CARREFOUR', 'PAO DE ACUCAR', 'TENDA', 'SAMS CLUB', 'CONFIANCA', 'SAO VICENTE', 'PAGUE MENOS SUPER', 'HORTIFRUTI', 'SACOLAO', 'ACOUGUE', 'SWIFT', 'MINI MERCADO', 'MERCEARIA', 'CONVENIENCIA', 'OXXO', 'DELTA', 'PAULISTAO', 'DIA%'],
+            'Farmácia': ['FARMACIA', 'DROGARIA', 'DROGASIL', 'RAIA', 'DROGA RAIA', 'PAGUE MENOS', 'ULTRAFARMA', 'SAO PAULO', 'PANVEL', 'FARMA', 'BIFARMA', 'DROGAL', 'KONDOR', 'REMEDIO', 'MEDICAMENTO'],
+            'Roupa': ['RENNER', 'RIACHUELO', 'C&A', 'CEA', 'ZARA', 'SHEIN', 'SHOPEE', 'MERCADO LIVRE', 'MELI', 'AMAZON', 'CENTAURO', 'DECATHLON', 'NIKE', 'ADIDAS', 'HERING', 'MARISA', 'PERNAMBUCANAS', 'CALCADOS', 'SAPATO', 'TENIS', 'BOUTIQUE', 'MODA', 'LUPEL', 'DAFITI', 'NETSHOES', 'VESTIDO', 'ROUPA'],
+            'Lazer': ['NETFLIX', 'SPOTIFY', 'AMAZON PRIME', 'DISNEY', 'HBO', 'MAX', 'YOUTUBE', 'APPLE.COM/BILL', 'GOOGLE PLAY', 'STEAM', 'PLAYSTATION', 'SONY', 'XBOX', 'NINTENDO', 'CINEMA', 'CINESYSTEM', 'CINEMARK', 'INGRESSO', 'SYMPLA', 'EVENTIM', 'RESTAURANTE', 'OUTBACK', 'MADERO', 'BAR ', 'CHOPP', 'CERVEJARIA', 'PUB', 'HOTEL', 'POUSADA', 'AIRBNB', 'BOOKING', 'CVC', 'PASSEIO', 'CHURRASCO'],
+            'Escola': ['ESCOLA', 'COLEGIO', 'FACULDADE', 'UNIVERSIDADE', 'UNIP', 'PAPELARIA', 'KALUNGA', 'LIVRARIA', 'CURSO', 'UDEMY', 'ALURA', 'MENSALIDADE ESCOLAR', 'SESI', 'SENAI', 'UNIFORME', 'MATERIAL ESCOLAR'],
+            'Reserva': ['RESERVA', 'POUPANCA', 'INVESTIMENTO', 'CAIXINHA', 'CDB', 'TESOURO']
         };
 
         const PT_MONTHS = {
@@ -530,6 +587,17 @@
             return `<span class="px-2 py-0.5 rounded-md bg-blue-950/60 text-blue-300 border border-blue-500/20 text-[9px] font-bold uppercase">👫 Casal</span>`;
         }
 
+        function showToast(message) {
+            const toast = document.getElementById('toast-feedback');
+            document.getElementById('toast-text').innerText = message;
+            toast.classList.remove('hidden');
+            toast.classList.add('flex');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+                toast.classList.remove('flex');
+            }, 2800);
+        }
+
         document.getElementById('login-form').onsubmit = (e) => {
             e.preventDefault();
             const u = document.getElementById('user').value.toLowerCase().trim();
@@ -552,33 +620,195 @@
             startListening();
         }
 
-        // ==================== SELEÇÃO VISUAL DE CATEGORIAS ====================
+        // ==================== GRADE VISUAL DE CATEGORIAS & AUTO-DETECÇÃO ====================
 
-        function renderVisualCategoryButtons(selectedCat = '') {
+        function renderVisualCategoryButtons(selectedCat = '', isAutoGuessed = false) {
             const grid = document.getElementById('visual-categories-grid');
             const hiddenInput = document.getElementById('form-cat');
             const labelIndicator = document.getElementById('selected-cat-label');
 
             hiddenInput.value = selectedCat;
-            labelIndicator.innerText = selectedCat ? `${getCatIcon(selectedCat)} ${selectedCat}` : 'Nenhuma selecionada';
+            if (selectedCat) {
+                labelIndicator.innerHTML = `${getCatIcon(selectedCat)} ${selectedCat} ${isAutoGuessed ? '<span class="ml-1 text-emerald-400">✨ Auto</span>' : ''}`;
+            } else {
+                labelIndicator.innerText = 'Toque abaixo';
+            }
 
             grid.innerHTML = categories.map(cat => {
                 const isSelected = cat === selectedCat;
                 return `
-                    <button type="button" onclick="selectVisualCategory('${cat}')" class="cat-chip flex flex-col items-center justify-center p-2.5 rounded-xl border ${isSelected ? 'selected' : 'border-slate-800 bg-slate-900/60 text-slate-300 hover:bg-slate-800/70'}">
-                        <span class="text-lg leading-none mb-1">${getCatIcon(cat)}</span>
-                        <span class="text-[10px] font-bold truncate w-full text-center">${cat}</span>
+                    <button type="button" onclick="selectVisualCategory('${cat}')" class="cat-chip flex flex-col items-center justify-center p-2.5 rounded-2xl border ${isSelected ? 'selected' : 'border-slate-800 bg-slate-900/70 text-slate-300 hover:bg-slate-800/80'}">
+                        <span class="text-xl leading-none mb-1.5">${getCatIcon(cat)}</span>
+                        <span class="text-[11px] font-extrabold truncate w-full text-center">${cat}</span>
                     </button>
                 `;
             }).join('');
         }
 
-        window.selectVisualCategory = (cat) => {
+        window.selectVisualCategory = (cat, isAuto = false) => {
             document.getElementById('form-error-msg').classList.add('hidden');
-            renderVisualCategoryButtons(cat);
+            renderVisualCategoryButtons(cat, isAuto);
         };
 
-        // ==================== 4. BOTÃO DE LIMPEZA DO MÊS (CONFIRMAÇÃO DUPLA) ====================
+        // Detecta categoria automaticamente enquanto o usuário digita a descrição
+        window.handleDescriptionTyping = (text) => {
+            const clean = text.trim();
+            if (clean.length < 2) return;
+
+            // 1. Tenta achar correspondência exata ou parcial no histórico de lançamentos do casal
+            const upperInput = clean.toUpperCase();
+            const historicalMatch = expenses.find(e => 
+                e.description && 
+                e.description.replace(/\s*\(\d+\/\d+\)$/, '').toUpperCase() === upperInput &&
+                e.category &&
+                categories.includes(e.category)
+            );
+
+            if (historicalMatch) {
+                selectVisualCategory(historicalMatch.category, true);
+                return;
+            }
+
+            // 2. Tenta pelo dicionário inteligente de palavras-chave
+            const matchedCat = detectCategoryByKeyword(clean);
+            if (matchedCat) {
+                selectVisualCategory(matchedCat, true);
+            }
+        };
+
+        function detectCategoryByKeyword(description) {
+            const upper = description
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toUpperCase();
+
+            for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+                if (categories.includes(cat)) {
+                    for (const kw of keywords) {
+                        if (upper.includes(kw.toUpperCase())) {
+                            return cat;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        // ==================== SUGESTÕES DE LOCAIS FREQUENTES (BASEADO NO HISTÓRICO) ====================
+
+        function renderFrequentPlacesChips() {
+            const container = document.getElementById('frequent-places-chips');
+            if (!container) return;
+
+            const freqMap = {};
+            expenses.forEach(e => {
+                if (!e.description || e.category === 'Reserva') return;
+                // Remove indicador de parcela Ex: "Loja (1/3)" -> "Loja"
+                const cleanName = e.description.replace(/\s*\(\d+\/\d+\)$/, '').trim();
+                if (cleanName.length < 2 || cleanName.length > 25) return;
+
+                const key = cleanName.toUpperCase();
+                if (!freqMap[key]) {
+                    freqMap[key] = {
+                        count: 0,
+                        desc: cleanName,
+                        cat: e.category || 'Outros',
+                        pay: e.paymentMethod || 'Inter'
+                    };
+                }
+                freqMap[key].count++;
+            });
+
+            let suggestions = Object.values(freqMap)
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 10);
+
+            // Completa com locais padrão caso o usuário tenha menos de 5 locais no histórico
+            if (suggestions.length < 5) {
+                DEFAULT_PLACES.forEach(def => {
+                    if (!suggestions.some(s => s.desc.toUpperCase() === def.desc.toUpperCase())) {
+                        suggestions.push(def);
+                    }
+                });
+            }
+
+            container.innerHTML = suggestions.map(item => {
+                const safeDesc = item.desc.replace(/'/g, "\\'");
+                const safeCat = categories.includes(item.cat) ? item.cat : ( detectCategoryByKeyword(item.desc) || 'Outros' );
+                return `
+                    <button type="button" onclick="applyQuickPlace('${safeDesc}', '${safeCat}', '${item.pay}')" class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 active:scale-95 transition">
+                        <span class="text-xs">${getCatIcon(safeCat)}</span>
+                        <span class="text-[11px] font-bold text-slate-200">${item.desc}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        window.applyQuickPlace = (desc, cat, pay) => {
+            document.getElementById('form-desc').value = desc;
+            if (cat && categories.includes(cat)) {
+                selectVisualCategory(cat, true);
+            }
+            if (pay) {
+                const targetPay = document.querySelector(`input[name="form-payment"][value="${pay}"]`);
+                if (targetPay) targetPay.checked = true;
+            }
+            // Se o campo de valor estiver vazio, foca nele para agilizar
+            const valInput = document.getElementById('form-val');
+            if (!valInput.value) valInput.focus();
+        };
+
+        // ==================== ÚLTIMOS 3 LANÇAMENTOS RECENTES (TELA PRINCIPAL) ====================
+
+        function renderRecentLaunches() {
+            const container = document.getElementById('recent-launches-list');
+            if (!container) return;
+
+            if (expenses.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-3 py-4 text-center text-slate-500 text-xs font-bold uppercase">
+                        Nenhum gasto registrado ainda. Toque em "+ Lançar" para começar.
+                    </div>
+                `;
+                return;
+            }
+
+            // Ordena pelos mais recentemente criados (usando createdAt se disponível, senão date)
+            const sortedRecent = [...expenses].sort((a, b) => {
+                const timeA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : new Date(a.date || 0).getTime();
+                const timeB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : new Date(b.date || 0).getTime();
+                return timeB - timeA;
+            }).slice(0, 3);
+
+            container.innerHTML = sortedRecent.map(item => {
+                const isJustAdded = item.id === lastCreatedId;
+                const shortDate = item.date ? item.date.split('-').reverse().slice(0, 2).join('/') : '';
+                return `
+                    <div onclick="openModal('${item.id}')" class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 cursor-pointer flex items-center justify-between gap-2 transition ${isJustAdded ? 'recent-highlight border-emerald-500/50' : ''}">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center text-base shrink-0">
+                                ${getCatIcon(item.category)}
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-xs font-bold text-slate-100 truncate">${item.description}</p>
+                                <div class="flex items-center gap-1.5 mt-0.5">
+                                    <span class="text-[9px] font-bold text-slate-400 uppercase">${item.category}</span>
+                                    <span class="text-slate-600 text-[9px]">•</span>
+                                    <span class="text-[9px] font-bold text-slate-500">${shortDate}</span>
+                                    ${(item.owner && item.owner !== 'Casal') ? `<span class="text-[9px] font-black text-purple-400">• ${item.owner}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <p class="text-xs font-black text-white">${fmtMoney(item.value)}</p>
+                            <span class="text-[9px] text-slate-500 font-bold uppercase">${item.paymentMethod || 'Outros'}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ==================== ZONA DE PERIGO: LIMPEZA DO MÊS ====================
 
         window.clearCurrentMonthData = async () => {
             const monthKey = currentDate.toISOString().slice(0, 7);
@@ -592,13 +822,11 @@
 
             const totalMonthVal = monthDocs.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
 
-            // Confirmação 1
             const firstConfirm = confirm(
                 `⚠️ ATENÇÃO: Você está prestes a excluir ${monthDocs.length} lançamentos de ${monthLabel} (Soma: ${fmtMoney(totalMonthVal)}).\n\nDeseja prosseguir para a confirmação final?`
             );
             if (!firstConfirm) return;
 
-            // Confirmação 2 (Digitar APAGAR)
             const typed = prompt(`Tem certeza absoluta?\nDigite APAGAR (em maiúsculas) para confirmar a exclusão de todos os dados de ${monthLabel}:`);
             if (typed !== 'APAGAR') {
                 alert("Operação cancelada. Nenhum dado foi apagado.");
@@ -616,7 +844,7 @@
                     await batch.commit();
                 }
                 closeModal('config-modal');
-                alert(`Todos os ${monthDocs.length} lançamentos de ${monthLabel} foram removidos.`);
+                showToast("Mês limpo com sucesso!");
             } catch (err) {
                 console.error("Erro ao limpar mês:", err);
                 alert("Erro ao excluir os lançamentos do mês.");
@@ -625,7 +853,7 @@
             }
         };
 
-        // ==================== 5. NAVEGAÇÃO POR ABAS ====================
+        // ==================== NAVEGAÇÃO POR ABAS ====================
 
         window.switchTab = (tabName) => {
             activeTab = tabName;
@@ -788,16 +1016,8 @@
         }
 
         function guessCategory(description) {
-            const upper = description.toUpperCase();
-            for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-                if (categories.includes(cat)) {
-                    for (const kw of keywords) {
-                        if (upper.includes(kw.toUpperCase())) {
-                            return cat;
-                        }
-                    }
-                }
-            }
+            const matched = detectCategoryByKeyword(description);
+            if (matched) return matched;
             return categories.includes('Outros') ? 'Outros' : categories[0];
         }
 
@@ -952,6 +1172,7 @@
                     
                     chunk.forEach(item => {
                         const newDocRef = colRef.doc();
+                        lastCreatedId = newDocRef.id;
                         batch.set(newDocRef, {
                             date: item.date,
                             description: item.description.trim(),
@@ -969,6 +1190,7 @@
 
                 closeModal('pdf-review-modal');
                 extractedPdfItems = [];
+                showToast(`${approved.length} itens importados!`);
             } catch (error) {
                 console.error("Erro na gravação em lote:", error);
                 alert("Ocorreu um erro ao gravar o lote no Firestore.");
@@ -1046,7 +1268,9 @@
 
             document.getElementById('extrato-count-badge').innerText = allMonthExpenses.length;
 
-            // Aplicação de Filtros no Extrato
+            // Atualiza os Últimos 3 Lançamentos Recentes na tela principal
+            renderRecentLaunches();
+
             const indicator = document.getElementById('active-filter-indicator');
             if (filter && filter !== 'all') {
                 if (filter.startsWith('card:')) {
@@ -1072,7 +1296,6 @@
                 indicator.classList.add('hidden');
             }
 
-            // Separação Inteligente: Geral vs Nosso Gasto Real (Casal) vs Terceiros (Sandra e Márcia)
             const allPurchases = allMonthExpenses.filter(e => e.category !== 'Reserva');
             const couplePurchases = allPurchases.filter(e => (e.owner || 'Casal') === 'Casal');
             const sandraPurchases = allPurchases.filter(e => e.owner === 'Sandra');
@@ -1093,20 +1316,16 @@
             const percentComp = totalNossoAnterior > 0 ? (diffCouple / totalNossoAnterior * 100).toFixed(0) : 0;
             const reserveProgress = Math.min((totalReservaMes / EXPECTED_RESERVE) * 100, 100).toFixed(1);
 
-            // Totais por cartão para o subtítulo do Card Geral
             const totalInter = allPurchases.filter(e => (e.paymentMethod || 'Outros') === 'Inter').reduce((a, b) => a + (Number(b.value) || 0), 0);
             const totalSantander = allPurchases.filter(e => e.paymentMethod === 'Santander').reduce((a, b) => a + (Number(b.value) || 0), 0);
 
-            // Gasto Médio Diário do Casal
             const now = new Date();
             const isCurrentRealMonth = (now.getFullYear() === currentDate.getFullYear() && now.getMonth() === currentDate.getMonth());
             const totalDaysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
             const elapsedDays = isCurrentRealMonth ? Math.max(1, now.getDate()) : totalDaysInMonth;
             const dailyAverageCouple = totalNossoGasto / elapsedDays;
 
-            // 2. Renderiza os 4 Cards Superiores (BI)
             document.getElementById('summary-display').innerHTML = `
-                <!-- Card 1: Total das Faturas (Geral) -->
                 <div class="card p-4 rounded-2xl border-l-4 border-slate-400">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Total das Faturas (Geral)</p>
                     <p class="text-xl font-black text-white mt-0.5">${fmtMoney(totalFaturasGeral)}</p>
@@ -1115,7 +1334,6 @@
                     </p>
                 </div>
 
-                <!-- Card 2: Nosso Gasto Real (Casal) -->
                 <div onclick="setFastFilter('owner:Casal')" class="card p-4 rounded-2xl border-l-4 border-blue-500 cursor-pointer hover:border-blue-400 transition">
                     <div class="flex justify-between items-center">
                         <p class="text-[9px] font-black text-blue-400 uppercase tracking-wider">👫 Nosso Gasto Real</p>
@@ -1127,7 +1345,6 @@
                     </p>
                 </div>
 
-                <!-- Card 3: A Receber (Terceiros: Sandra + Márcia) -->
                 <div class="card p-4 rounded-2xl border-l-4 border-purple-500">
                     <p class="text-[9px] font-black text-purple-400 uppercase tracking-wider">🤝 A Receber (Terceiros)</p>
                     <p class="text-xl font-black text-purple-300 mt-0.5">${fmtMoney(totalTerceiros)}</p>
@@ -1138,7 +1355,6 @@
                     </div>
                 </div>
 
-                <!-- Card 4: Reserva do Mês -->
                 <div onclick="setFastFilter('Reserva')" class="card p-4 rounded-2xl border-l-4 border-amber-500 relative overflow-hidden cursor-pointer">
                     <p class="text-[9px] font-black text-amber-500 uppercase tracking-wider">💰 Reserva (Meta ${fmtMoney(EXPECTED_RESERVE)})</p>
                     <div class="flex items-baseline gap-2 mt-0.5">
@@ -1154,11 +1370,9 @@
                 </div>
             `;
 
-            // Renderiza Insights e Top 5 baseados no Gasto Real do Casal
             renderSmartInsights(couplePurchases, prevCouplePurchases, totalNossoGasto, totalNossoAnterior, totalTerceiros, totalSandra, totalMarcia, totalReservaMes);
             renderTopExpenses(couplePurchases, totalNossoGasto);
 
-            // Renderiza Lista do Extrato Detalhado (Aba 2)
             document.getElementById('expense-list').innerHTML = curExp.map(i => `
                 <div onclick="openModal('${i.id}')" class="flex items-center justify-between p-4 lg:p-5 active:bg-slate-800 cursor-pointer hover:bg-slate-900/40 transition">
                     <div class="flex items-center gap-3.5 min-w-0">
@@ -1193,7 +1407,6 @@
         function renderSmartInsights(coupleCur, couplePrev, totalCur, totalPrev, totalTerceiros, totalSandra, totalMarcia, totalReserva) {
             const alerts = [];
 
-            // 1. Alerta sobre Compras de Terceiros ou Comparativo Mensal do Casal
             if (totalPrev > 0) {
                 if (totalCur > totalPrev) {
                     const diffVal = totalCur - totalPrev;
@@ -1223,7 +1436,6 @@
                 });
             }
 
-            // 2. Alerta de Reembolso de Terceiros (Sandra e Márcia) ou Categoria Vilã
             if (totalTerceiros > 0) {
                 const shareFatura = (totalCur + totalTerceiros) > 0 ? ((totalTerceiros / (totalCur + totalTerceiros)) * 100).toFixed(0) : 0;
                 alerts.push({
@@ -1252,7 +1464,6 @@
                 });
             }
 
-            // 3. Aviso de Meta da Reserva de Emergência
             const missingReserve = EXPECTED_RESERVE - totalReserva;
             if (missingReserve <= 0) {
                 alerts.push({
@@ -1414,7 +1625,7 @@
             });
         }
 
-        // ==================== 3. VALIDAÇÃO FORTE E GRAVAÇÃO DO FORMULÁRIO ====================
+        // ==================== VALIDAÇÃO E GRAVAÇÃO DO FORMULÁRIO ====================
 
         function showFormError(msg) {
             const errEl = document.getElementById('form-error-msg');
@@ -1428,18 +1639,23 @@
             
             const rawDate = document.getElementById('form-date').value;
             const description = document.getElementById('form-desc').value.trim();
-            const category = document.getElementById('form-cat').value.trim();
+            let category = document.getElementById('form-cat').value.trim();
             const totalValue = parseFloat(document.getElementById('form-val').value);
             const installments = parseInt(document.getElementById('form-installments').value) || 1;
             const paymentRadio = document.querySelector('input[name="form-payment"]:checked');
             const ownerRadio = document.querySelector('input[name="form-owner"]:checked');
 
-            // Validações explícitas para garantir consistência de dados
+            // Se a pessoa digitou algo e esqueceu de tocar na categoria, tenta deduzir antes de bloquear
+            if (!category && description) {
+                const autoCat = detectCategoryByKeyword(description);
+                if (autoCat) category = autoCat;
+            }
+
             if (!ownerRadio) return showFormError("Selecione quem é o Responsável pela compra.");
+            if (isNaN(totalValue) || totalValue <= 0) return showFormError("Informe o valor da compra maior que R$ 0,00.");
             if (!rawDate) return showFormError("Informe a data da compra.");
-            if (isNaN(totalValue) || totalValue <= 0) return showFormError("Informe um valor válido maior que R$ 0,00.");
-            if (description.length < 2) return showFormError("Preencha a descrição do que foi comprado.");
-            if (!category) return showFormError("Toque em um dos botões de Categoria para classificar o gasto.");
+            if (description.length < 2) return showFormError("Preencha onde ou o que foi comprado.");
+            if (!category) return showFormError("Toque em um dos ícones de Categoria abaixo.");
             if (!paymentRadio) return showFormError("Selecione a Forma de Pagamento.");
 
             const paymentMethod = paymentRadio.value;
@@ -1451,11 +1667,12 @@
 
             const saveBtn = document.getElementById('save-btn');
             saveBtn.disabled = true;
-            saveBtn.innerText = "GRAVANDO...";
+            saveBtn.innerText = "SALVANDO...";
             toggleLoader(true);
 
             try {
                 if (currentEditId) {
+                    lastCreatedId = currentEditId;
                     await col.doc(currentEditId).set({
                         date: rawDate,
                         description: description,
@@ -1464,12 +1681,13 @@
                         paymentMethod: paymentMethod,
                         owner: owner
                     }, { merge: true });
+                    showToast("Lançamento atualizado!");
                 } else {
                     for (let i = 0; i < installments; i++) {
                         const dueDate = new Date(baseDate);
                         dueDate.setMonth(baseDate.getMonth() + i);
                         
-                        await col.add({
+                        const docRef = await col.add({
                             date: dueDate.toISOString().split('T')[0],
                             description: installments > 1 ? `${description} (${i + 1}/${installments})` : description,
                             category: category,
@@ -1478,7 +1696,9 @@
                             owner: owner,
                             createdAt: new Date()
                         });
+                        if (i === 0) lastCreatedId = docRef.id;
                     }
+                    showToast(`${getCatIcon(category)} ${description} (${fmtMoney(totalValue)}) salvo!`);
                 }
                 closeModal('expense-modal');
                 this.reset();
@@ -1489,7 +1709,7 @@
                 alert("Erro ao gravar dados.");
             } finally {
                 saveBtn.disabled = false;
-                saveBtn.innerText = "GRAVAR DESPESA";
+                saveBtn.innerText = "✅ SALVAR GASTO";
                 toggleLoader(false);
             }
         };
@@ -1499,14 +1719,16 @@
             document.getElementById('form-error-msg').classList.add('hidden');
             document.getElementById('delete-btn').classList.toggle('hidden', !id);
             document.getElementById('installments-wrapper').classList.toggle('hidden', !!id);
-            document.getElementById('modal-title').innerText = id ? 'Editar Lançamento' : 'Novo Lançamento';
+            document.getElementById('modal-title').innerText = id ? '✏️ Editar Lançamento' : '⚡ Lançamento Rápido';
             
+            renderFrequentPlacesChips();
+
             if (id) {
                 const i = expenses.find(e => e.id === id);
                 document.getElementById('form-date').value = i.date;
                 document.getElementById('form-desc').value = i.description;
                 document.getElementById('form-val').value = i.value;
-                renderVisualCategoryButtons(i.category || '');
+                renderVisualCategoryButtons(i.category || '', false);
                 
                 const targetPay = document.querySelector(`input[name="form-payment"][value="${i.paymentMethod || 'Outros'}"]`);
                 if (targetPay) targetPay.checked = true;
@@ -1519,8 +1741,7 @@
                 document.getElementById('pay-inter').checked = true;
                 document.getElementById('owner-casal').checked = true;
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
-                // Exige que a categoria seja clicada conscientemente (ou pré-seleciona nenhuma para forçar atenção)
-                renderVisualCategoryButtons('');
+                renderVisualCategoryButtons('', false);
             }
             document.getElementById('expense-modal').classList.remove('hidden');
             document.getElementById('expense-modal').classList.add('flex');
@@ -1535,6 +1756,7 @@
             if(confirm("Apagar este registro permanentemente?")) {
                 db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete();
                 closeModal('expense-modal');
+                showToast("Registro excluído.");
             }
         };
 

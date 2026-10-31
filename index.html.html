@@ -7,26 +7,47 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-auth-compat.js"></script>
+    
+    <!-- PDF.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+
     <style>
         :root { --bg: #020617; --card: #0f172a; --border: #1e293b; }
         body { background-color: var(--bg); color: #f8fafc; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .card { background-color: var(--card); border: 1px solid var(--border); }
-        .btn-value { @apply bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-xs font-bold active:bg-blue-600 active:text-white transition; }
+        .btn-value { background-color: #1e293b; color: #cbd5e1; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; transition: all 0.2s; }
+        .btn-value:active { background-color: #2563eb; color: #ffffff; }
         input, select { background: #000 !important; border: 1px solid var(--border) !important; color: white !important; outline: none; }
-        #loading-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.9); z-index: 100; display: none; align-items: center; justify-content: center; }
-        .spinner { width: 30px; height: 30px; border: 3px solid #1e293b; border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s linear infinite; }
+        input[type="checkbox"] { accent-color: #2563eb; width: 1.1rem; height: 1.1rem; cursor: pointer; }
+        #loading-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.9); z-index: 100; display: none; flex-direction: column; gap: 12px; align-items: center; justify-content: center; }
+        .spinner { width: 34px; height: 34px; border: 3px solid #1e293b; border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
         .card-selector input:checked + label {
-            @apply bg-blue-600 border-blue-500 text-white font-black;
+            background-color: #2563eb;
+            border-color: #3b82f6;
+            color: #ffffff;
+            font-weight: 900;
         }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
     </style>
 </head>
 <body class="antialiased">
 
+    <!-- Login Screen -->
     <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-black p-6">
         <div class="w-full max-w-sm text-center">
             <h2 class="text-3xl font-black text-white mb-2 tracking-tighter">VAULT</h2>
@@ -40,15 +61,25 @@
         </div>
     </div>
 
-    <div id="loading-overlay"><div class="spinner"></div></div>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <p id="loading-text" class="text-xs font-bold uppercase tracking-widest text-slate-400">Processando...</p>
+    </div>
 
+    <!-- Main Application -->
     <div id="app-container" class="hidden pb-24">
         <header class="p-4 lg:p-8 flex flex-col gap-4 max-w-5xl mx-auto">
-            <div class="flex justify-between items-center">
+            <div class="flex flex-wrap justify-between items-center gap-2">
                 <span class="text-xs font-black uppercase tracking-widest text-slate-500">Fluxo Mensal</span>
-                <div class="flex gap-4">
-                    <button onclick="openConfig()" class="text-slate-400 text-xs uppercase font-bold">⚙️ Categorias</button>
-                    <button id="logout-btn" class="text-slate-600 text-xs uppercase font-bold">Sair</button>
+                <div class="flex items-center gap-3">
+                    <!-- Input oculto + Botão de Importação PDF -->
+                    <input type="file" id="pdf-upload" accept="application/pdf" class="hidden" onchange="handlePdfUpload(event)">
+                    <button onclick="document.getElementById('pdf-upload').click()" class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded-xl text-xs uppercase font-black tracking-wider flex items-center gap-1.5 transition active:scale-95">
+                        📄 Importar Fatura (PDF)
+                    </button>
+                    <button onclick="openConfig()" class="text-slate-400 hover:text-white text-xs uppercase font-bold transition">⚙️ Categorias</button>
+                    <button id="logout-btn" class="text-slate-600 hover:text-red-400 text-xs uppercase font-bold transition">Sair</button>
                 </div>
             </div>
             
@@ -84,9 +115,9 @@
                         <span id="active-filter-indicator" class="text-[9px] text-blue-400 font-bold uppercase mt-0.5 hidden"></span>
                     </div>
                     <div class="flex gap-2">
-                         <button onclick="setFastFilter('gastos')" class="w-8 h-8 flex items-center justify-center bg-red-900/20 text-red-500 rounded-full text-xs">🛒</button>
-                         <button onclick="setFastFilter('Reserva')" class="w-8 h-8 flex items-center justify-center bg-amber-900/20 text-amber-500 rounded-full text-xs">💰</button>
-                         <button onclick="setFastFilter('all')" class="w-8 h-8 flex items-center justify-center bg-slate-800 text-slate-400 rounded-full text-xs">✕</button>
+                        <button onclick="setFastFilter('gastos')" class="w-8 h-8 flex items-center justify-center bg-red-900/20 text-red-500 rounded-full text-xs">🛒</button>
+                        <button onclick="setFastFilter('Reserva')" class="w-8 h-8 flex items-center justify-center bg-amber-900/20 text-amber-500 rounded-full text-xs">💰</button>
+                        <button onclick="setFastFilter('all')" class="w-8 h-8 flex items-center justify-center bg-slate-800 text-slate-400 rounded-full text-xs">✕</button>
                     </div>
                 </div>
                 <div id="expense-list" class="divide-y divide-slate-800/50"></div>
@@ -96,6 +127,7 @@
         <button onclick="openModal()" class="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 rounded-full shadow-2xl flex items-center justify-center text-3xl z-40 active:scale-95 transition-transform">+</button>
     </div>
 
+    <!-- Modal de Inserção/Edição Manual -->
     <div id="expense-modal" class="fixed inset-0 bg-black/95 hidden z-50 items-end lg:items-center justify-center p-4 backdrop-blur-sm">
         <div class="card w-full max-w-lg rounded-t-3xl lg:rounded-3xl p-6 mb-[-1rem] lg:mb-0">
             <div class="w-12 h-1.5 bg-slate-800 rounded-full mx-auto mb-6 lg:hidden"></div>
@@ -151,6 +183,81 @@
         </div>
     </div>
 
+    <!-- Modal de Revisão e Conciliação de PDF -->
+    <div id="pdf-review-modal" class="fixed inset-0 bg-black/95 hidden z-50 items-center justify-center p-2 lg:p-6 backdrop-blur-sm">
+        <div class="card w-full max-w-5xl rounded-3xl p-4 lg:p-6 flex flex-col max-h-[92vh]">
+            <!-- Header do Modal -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-800">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 class="font-black text-sm lg:text-base uppercase tracking-widest text-white">Conciliação de Fatura PDF</h3>
+                        <span id="pdf-detected-bank" class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-600/20 text-blue-400 border border-blue-500/30">Auto</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-1">Revise os lançamentos identificados, ajuste as categorias e confirme a importação em lote.</p>
+                </div>
+
+                <!-- Controles Globais do Lote -->
+                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+                    <div class="flex items-center gap-1.5 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Cartão:</span>
+                        <select id="bulk-payment-method" onchange="applyBulkPayment(this.value)" class="text-xs font-bold py-1 px-2 rounded-lg">
+                            <option value="Inter">Inter</option>
+                            <option value="Santander">Santander</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                    <button type="button" onclick="normalizeDatesToCurrentMonth()" title="Força todas as datas para o mês selecionado no painel (ideal para parcelas de meses anteriores)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold uppercase px-3 py-2.5 rounded-xl border border-slate-700 transition">
+                        📅 Fixar Mês Atual
+                    </button>
+                </div>
+            </div>
+
+            <!-- Lista / Tabela de Itens Extraídos -->
+            <div class="overflow-y-auto flex-1 my-4 pr-1">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-800 text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                            <th class="py-2 px-2 w-8 text-center">
+                                <input type="checkbox" id="select-all-pdf" checked onchange="toggleSelectAllPdf(this.checked)">
+                            </th>
+                            <th class="py-2 px-2 w-32">Data</th>
+                            <th class="py-2 px-2">Estabelecimento / Descrição</th>
+                            <th class="py-2 px-2 w-40">Categoria (IA/Auto)</th>
+                            <th class="py-2 px-2 w-28">Pagamento</th>
+                            <th class="py-2 px-2 w-28 text-right">Valor (R$)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pdf-items-tbody" class="divide-y divide-slate-800/60 text-xs"></tbody>
+                </table>
+            </div>
+
+            <!-- Adicionar Linha Manual na Revisão (caso algum item do PDF precise de ajuste extra) -->
+            <div class="pb-3 border-b border-slate-800 flex justify-between items-center">
+                <button type="button" onclick="addBlankPdfRow()" class="text-[11px] font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1">
+                    + Adicionar linha manualmente ao lote
+                </button>
+                <span class="text-[11px] text-slate-500" id="pdf-selection-stats">0 itens selecionados</span>
+            </div>
+
+            <!-- Footer com Soma e Ações -->
+            <div class="pt-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-baseline gap-2">
+                    <span class="text-xs font-bold uppercase text-slate-400">Total Selecionado:</span>
+                    <span id="pdf-total-preview" class="text-xl font-black text-emerald-400">R$ 0,00</span>
+                </div>
+                <div class="flex gap-3 w-full sm:w-auto">
+                    <button type="button" onclick="closeModal('pdf-review-modal')" class="flex-1 sm:flex-none px-6 py-3.5 rounded-xl text-slate-400 hover:text-white font-bold text-xs uppercase tracking-widest">
+                        Cancelar
+                    </button>
+                    <button type="button" id="confirm-batch-btn" onclick="savePdfBatch()" class="flex-[2] sm:flex-none bg-blue-600 hover:bg-blue-500 px-8 py-3.5 rounded-xl font-black uppercase tracking-widest text-xs text-white shadow-lg shadow-blue-600/30 transition">
+                        Gravar Lote
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Configuração de Categorias -->
     <div id="config-modal" class="fixed inset-0 bg-black/95 hidden z-50 items-center justify-center p-4 backdrop-blur-sm">
         <div class="card w-full max-w-sm rounded-3xl p-6">
             <h3 class="font-black text-sm uppercase tracking-widest text-slate-400 mb-6">Gerenciar Categorias</h3>
@@ -187,6 +294,34 @@
         const EXPECTED_RESERVE = 3000;
         let expenses = [], currentDate = new Date(), currentEditId = null, mainChart = null, compChart = null, cardChart = null, unsubscribe = null;
         let currentFilterState = "all";
+        let extractedPdfItems = [];
+
+        // Dicionário de Categorização Inteligente (Baseado em palavras-chave comuns em faturas)
+        const CATEGORY_KEYWORDS = {
+            'Delivery': ['IFOOD', 'IFD*', 'RAPPI', 'ZE DELIVERY', 'ZEDELIVERY', 'AIQFOME', 'BURGER KING', 'MCDONALDS', 'ARCOS DOURADOS', 'PIZZA', 'SUSHI', 'LANCHE', 'PADARIA', 'CONFEITARIA', 'ACAITERIA', 'SORVETERIA'],
+            'Carro': ['UBER', '99APP', '99 *', '99 POP', 'SEM PARAR', 'CONECTCAR', 'VELOE', 'ESTACIONAMENTO', 'PARK', 'PEDAGIO', 'CCR ', 'AUTOBAN', 'ECOVIAS', 'MECANICA', 'AUTO PECAS', 'AUTOPECAS', 'PNEU', 'LAVA RAPIDO', 'IPVA', 'DETRAN', 'SEGURO AUTO', 'PORTO SEGURO', 'AZUL SEGUROS'],
+            'Posto': ['POSTO', 'AUTO POSTO', 'SHELL', 'IPIRANGA', 'PETROBRAS', 'ALE ', 'COMBUSTIVEIS', 'ABASTECIMENTO', 'GNV', 'GASOLINA', 'ETANOL'],
+            'Mercado': ['MERCADO', 'SUPERMERCADO', 'HIPERMERCADO', 'ATACADAO', 'ASSAI', 'CARREFOUR', 'PAO DE ACUCAR', 'TENDA', 'SAMS CLUB', 'CONFIANCA', 'SAO VICENTE', 'PAGUE MENOS SUPER', 'HORTIFRUTI', 'SACOLAO', 'ACOUGUE', 'SWIFT', 'MINI MERCADO', 'MERCEARIA', 'conveniencia', 'OXO', 'OXXO'],
+            'Farmácia': ['FARMACIA', 'DROGARIA', 'DROGASIL', 'RAIA', 'DROGA RAIA', 'PAGUE MENOS', 'ULTRAFARMA', 'SAO PAULO', 'PANVEL', 'FARMA', 'BIFARMA', 'DROGAL', 'kondor'],
+            'Roupa': ['RENNER', 'RIACHUELO', 'C&A', 'CEA', 'ZARA', 'SHEIN', 'SHOPEE', 'CENTAURO', 'DECATHLON', 'NIKE', 'ADIDAS', 'HERING', 'MARISA', 'PERNAMBUCANAS', 'CALCADOS', 'BOUTIQUE', 'MODA', 'LUPEL', 'DAFITI', 'NETSHOES'],
+            'Lazer': ['NETFLIX', 'SPOTIFY', 'AMAZON PRIME', 'DISNEY', 'HBO', 'MAX', 'YOUTUBE', 'APPLE.COM/BILL', 'GOOGLE PLAY', 'STEAM', 'PLAYSTATION', 'SONY', 'XBOX', 'NINTENDO', 'CINEMA', 'CINESYSTEM', 'CINEMARK', 'INGRESSO', 'SYMPLA', 'EVENTIM', 'RESTAURANTE', 'BAR ', 'CHOPP', 'CERVEJARIA', 'PUB', 'HOTEL', 'POUSADA', 'AIRBNB', 'BOOKING', ' CVC '],
+            'Escola': ['ESCOLA', 'COLEGIO', 'FACULDADE', 'UNIVERSIDADE', 'UNIP', 'PAPELARIA', 'KALUNGA', 'LIVRARIA', 'CURSO', 'UDEMY', 'ALURA', 'MENSALIDADE ESCOLAR', 'SESI', 'SENAI']
+        };
+
+        // Mapa de meses em português para parser do Banco Inter ("15 de out", "15 out", etc.)
+        const PT_MONTHS = {
+            'jan': '01', 'fev': '02', 'mar': '03', 'abr': '04',
+            'mai': '05', 'jun': '06', 'jul': '07', 'ago': '08',
+            'set': '09', 'out': '10', 'nov': '11', 'dez': '12'
+        };
+
+        // Palavras de ruído que não devem ser importadas como compras
+        const NOISE_BLACKLIST = [
+            'SALDO ANTERIOR', 'TOTAL DA FATURA', 'PAGAMENTO DE FATURA', 'PAGAMENTO EFETUADO',
+            'PAGAMENTO RECEBIDO', 'DEBITO AUTOMATICO', 'LIMITE TOTAL', 'LIMITE DISPONIVEL',
+            'ENCARGOS', 'TAXA DE JUROS', 'CET ', 'ROTATIVO', 'PARCELAMENTO DE FATURA',
+            'RESUMO DA FATURA', 'VENCIMENTO', 'VALOR MINIMO', 'CREDITO EM FATURA'
+        ];
 
         document.getElementById('login-form').onsubmit = (e) => {
             e.preventDefault();
@@ -209,6 +344,348 @@
             updateCatDropdown();
             startListening();
         }
+
+        // ==================== LÓGICA DE IMPORTAÇÃO DE PDF ====================
+
+        window.handlePdfUpload = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            toggleLoader(true, "Lendo arquivo PDF...");
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                
+                let fullLines = [];
+                let rawTextBlob = "";
+
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    const textContent = await page.getTextContent();
+                    
+                    // Agrupa elementos por coordenada Y aproximada (tolerância de 3px para mesma linha)
+                    const rows = {};
+                    textContent.items.forEach(item => {
+                        const str = item.str.trim();
+                        if (!str) return;
+                        rawTextBlob += " " + str;
+                        const y = Math.round(item.transform[5] / 3) * 3;
+                        if (!rows[y]) rows[y] = [];
+                        rows[y].push({ x: item.transform[4], text: item.str });
+                    });
+
+                    // Ordena linhas de cima para baixo (Y decrescente no PDF) e palavras da esquerda para direita (X crescente)
+                    const sortedY = Object.keys(rows).map(Number).sort((a, b) => b - a);
+                    sortedY.forEach(y => {
+                        const lineStr = rows[y]
+                            .sort((a, b) => a.x - b.x)
+                            .map(i => i.text.trim())
+                            .join(' ')
+                            .replace(/\s+/g, ' ')
+                            .trim();
+                        if (lineStr.length > 5) fullLines.push(lineStr);
+                    });
+                }
+
+                // Detecta qual é o banco emissor pelo conteúdo textual do PDF
+                const upperBlob = rawTextBlob.toUpperCase();
+                let detectedBank = 'Inter';
+                if (upperBlob.includes('SANTANDER') || upperBlob.includes('SX ') || upperBlob.includes('ESFERA')) {
+                    detectedBank = 'Santander';
+                } else if (upperBlob.includes('BANCO INTER') || upperBlob.includes('INTERMEDIUM') || upperBlob.includes('CARTAO INTER')) {
+                    detectedBank = 'Inter';
+                }
+
+                extractedPdfItems = parseInvoiceLines(fullLines, detectedBank);
+
+                if (extractedPdfItems.length === 0) {
+                    alert("Nenhuma transação padrão foi identificada automaticamente neste PDF. Verifique se o PDF possui texto selecionável (não é imagem escaneada) ou adicione manualmente na revisão.");
+                }
+
+                openPdfReviewModal(detectedBank);
+            } catch (err) {
+                console.error("Erro ao processar PDF:", err);
+                alert("Falha ao processar o PDF. Verifique se o arquivo não está protegido por senha.");
+            } finally {
+                event.target.value = ""; // Reseta input para permitir reenviar o mesmo arquivo
+                toggleLoader(false);
+            }
+        };
+
+        function parseInvoiceLines(lines, defaultBank) {
+            const results = [];
+            const refYear = currentDate.getFullYear();
+            const refMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+
+            // Regex 1: Padrão Santander / Genérico -> "DD/MM (/YYYY opcional) DESCRIÇÃO ... R$ VALOR"
+            const regexSlashDate = /^(\d{2})\/(\d{2})(?:\/(\d{2,4}))?\s+(.+?)\s+(?:-\s*)?(?:R\$\s*)?(-?\d{1,3}(?:\.\d{3})*,\d{2})(?:\s+[CD-]|$)/i;
+
+            // Regex 2: Padrão Banco Inter -> "15 de out. de 2026 DESCRIÇÃO R$ 120,00" ou "15 out DESCRIÇÃO 120,00"
+            const regexInterExtenso = /^(\d{2})\s+(?:de\s+)?([a-zç]{3})\.?(?:\s+(?:de\s+)?(\d{2,4}))?\s+(.+?)\s+(?:\+\s*|-\s*)?(?:R\$\s*)?(-?\d{1,3}(?:\.\d{3})*,\d{2})$/i;
+
+            // Regex 3: Quando a data aparece colada ou após numeração de cartão no meio da linha
+            const regexMidLine = /(?:^|\s)(\d{2})\/(\d{2})\s+([A-Z0-9\*\.\-\s\/]{4,45}?)\s+(?:R\$\s*)?(\d{1,3}(?:\.\d{3})*,\d{2})(?:\s|$)/i;
+
+            lines.forEach(line => {
+                const upperLine = line.toUpperCase();
+
+                // Filtra linhas administrativas, totais ou pagamentos da fatura
+                if (NOISE_BLACKLIST.some(noise => upperLine.includes(noise))) return;
+                // Ignora créditos ou estornos (valores negativos explícitos como "- R$ 50,00" ou "+ R$ 50,00" no Inter)
+                if (/\+\s*R\$\s*\d/.test(line) || /-\s*R\$\s*\d/.test(line)) return;
+
+                let match = line.match(regexSlashDate);
+                let day, month, year, desc, rawVal;
+
+                if (match) {
+                    [, day, month, year, desc, rawVal] = match;
+                } else {
+                    const matchInter = line.match(regexInterExtenso);
+                    if (matchInter) {
+                        const [, d, mStr, y, description, val] = matchInter;
+                        day = d;
+                        month = PT_MONTHS[mStr.toLowerCase()] || refMonth;
+                        year = y;
+                        desc = description;
+                        rawVal = val;
+                    } else {
+                        const matchMid = line.match(regexMidLine);
+                        if (matchMid) {
+                            [, day, month, desc, rawVal] = matchMid;
+                        }
+                    }
+                }
+
+                if (day && month && desc && rawVal) {
+                    const value = parseFloat(rawVal.replace(/\./g, '').replace(',', '.'));
+                    if (isNaN(value) || value <= 0) return;
+
+                    // Validação básica de dia e mês
+                    const dNum = parseInt(day, 10);
+                    const mNum = parseInt(month, 10);
+                    if (dNum < 1 || dNum > 31 || mNum < 1 || mNum > 12) return;
+
+                    // Limpa sufixos de valores em dólar ou códigos extras da descrição
+                    let cleanDesc = desc
+                        .replace(/\s+R\$$/i, '')
+                        .replace(/\s+US\$.*$/i, '')
+                        .replace(/^\d{4}\s+/, '') // Remove final de cartão caso tenha vindo junto
+                        .trim();
+
+                    if (cleanDesc.length < 2) return;
+
+                    // Define a data para pertencer ao ano/mês do filtro atual caso seja parcela antiga,
+                    // ou mantém o dia/mês real com o ano de referência
+                    let finalYear = refYear;
+                    if (year) {
+                        finalYear = year.length === 2 ? `20${year}` : year;
+                    }
+                    
+                    // Por padrão, posiciona no mês que o usuário está visualizando no painel para entrar direto no extrato atual,
+                    // mantendo o dia original da compra (limitado ao último dia do mês).
+                    const maxDaysInRefMonth = new Date(refYear, parseInt(refMonth, 10), 0).getDate();
+                    const safeDay = String(Math.min(dNum, maxDaysInRefMonth)).padStart(2, '0');
+                    const formattedDate = `${refYear}-${refMonth}-${safeDay}`;
+
+                    const guessedCategory = guessCategory(cleanDesc);
+
+                    results.push({
+                        selected: true,
+                        date: formattedDate,
+                        originalDateHint: `${day}/${month}`,
+                        description: cleanDesc,
+                        category: guessedCategory,
+                        paymentMethod: defaultBank,
+                        value: value
+                    });
+                }
+            });
+
+            return results;
+        }
+
+        function guessCategory(description) {
+            const upper = description.toUpperCase();
+            for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+                if (categories.includes(cat)) {
+                    for (const kw of keywords) {
+                        if (upper.includes(kw.toUpperCase())) {
+                            return cat;
+                        }
+                    }
+                }
+            }
+            return categories.includes('Outros') ? 'Outros' : categories[0];
+        }
+
+        function openPdfReviewModal(detectedBank) {
+            const badge = document.getElementById('pdf-detected-bank');
+            badge.innerText = `Cartão Sugerido: ${detectedBank}`;
+            document.getElementById('bulk-payment-method').value = detectedBank;
+
+            renderPdfReviewRows();
+
+            const modal = document.getElementById('pdf-review-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function renderPdfReviewRows() {
+            const tbody = document.getElementById('pdf-items-tbody');
+            if (extractedPdfItems.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="py-10 text-center text-slate-500 font-bold uppercase text-xs">
+                            Nenhuma linha carregada. Clique em "+ Adicionar linha manualmente ao lote" abaixo se desejar.
+                        </td>
+                    </tr>
+                `;
+                updatePdfTotals();
+                return;
+            }
+
+            const catOptions = (selectedCat) => categories.map(c => 
+                `<option value="${c}" ${c === selectedCat ? 'selected' : ''}>${c}</option>`
+            ).join('');
+
+            const payOptions = (selectedPay) => ['Inter', 'Santander', 'Outros'].map(p => 
+                `<option value="${p}" ${p === selectedPay ? 'selected' : ''}>${p}</option>`
+            ).join('');
+
+            tbody.innerHTML = extractedPdfItems.map((item, idx) => `
+                <tr class="hover:bg-slate-900/60 transition ${!item.selected ? 'opacity-40' : ''}">
+                    <td class="py-2.5 px-2 text-center">
+                        <input type="checkbox" ${item.selected ? 'checked' : ''} onchange="updatePdfItem(${idx}, 'selected', this.checked)">
+                    </td>
+                    <td class="py-2.5 px-2">
+                        <input type="date" value="${item.date}" onchange="updatePdfItem(${idx}, 'date', this.value)" class="p-1.5 rounded-lg text-xs w-full">
+                        ${item.originalDateHint ? `<span class="text-[9px] text-slate-500 block mt-0.5">PDF: ${item.originalDateHint}</span>` : ''}
+                    </td>
+                    <td class="py-2.5 px-2">
+                        <input type="text" value="${item.description.replace(/"/g, '&quot;')}" onchange="updatePdfItem(${idx}, 'description', this.value)" class="p-1.5 rounded-lg text-xs w-full font-semibold">
+                    </td>
+                    <td class="py-2.5 px-2">
+                        <select onchange="updatePdfItem(${idx}, 'category', this.value)" class="p-1.5 rounded-lg text-xs w-full font-semibold">
+                            ${catOptions(item.category)}
+                        </select>
+                    </td>
+                    <td class="py-2.5 px-2">
+                        <select onchange="updatePdfItem(${idx}, 'paymentMethod', this.value)" class="p-1.5 rounded-lg text-xs w-full">
+                            ${payOptions(item.paymentMethod)}
+                        </select>
+                    </td>
+                    <td class="py-2.5 px-2 text-right">
+                        <input type="number" step="0.01" value="${item.value.toFixed(2)}" onchange="updatePdfItem(${idx}, 'value', parseFloat(this.value)||0)" class="p-1.5 rounded-lg text-xs w-24 text-right font-black">
+                    </td>
+                </tr>
+            `).join('');
+
+            updatePdfTotals();
+        }
+
+        window.updatePdfItem = (index, field, val) => {
+            if (!extractedPdfItems[index]) return;
+            extractedPdfItems[index][field] = val;
+            if (field === 'selected' || field === 'value') {
+                renderPdfReviewRows();
+            }
+        };
+
+        window.toggleSelectAllPdf = (checked) => {
+            extractedPdfItems.forEach(item => item.selected = checked);
+            renderPdfReviewRows();
+        };
+
+        window.applyBulkPayment = (paymentMethod) => {
+            extractedPdfItems.forEach(item => item.paymentMethod = paymentMethod);
+            renderPdfReviewRows();
+        };
+
+        window.normalizeDatesToCurrentMonth = () => {
+            const refYear = currentDate.getFullYear();
+            const refMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+            const maxDays = new Date(refYear, parseInt(refMonth, 10), 0).getDate();
+
+            extractedPdfItems.forEach(item => {
+                const parts = item.date.split('-');
+                const day = Math.min(parseInt(parts[2] || '01', 10), maxDays);
+                item.date = `${refYear}-${refMonth}-${String(day).padStart(2, '0')}`;
+            });
+            renderPdfReviewRows();
+        };
+
+        window.addBlankPdfRow = () => {
+            const defaultPay = document.getElementById('bulk-payment-method').value || 'Inter';
+            const todayIso = currentDate.toISOString().slice(0, 7) + '-' + String(new Date().getDate()).padStart(2, '0');
+            extractedPdfItems.push({
+                selected: true,
+                date: todayIso,
+                originalDateHint: 'Manual',
+                description: 'Novo Lançamento',
+                category: 'Outros',
+                paymentMethod: defaultPay,
+                value: 0
+            });
+            renderPdfReviewRows();
+        };
+
+        function updatePdfTotals() {
+            const selected = extractedPdfItems.filter(i => i.selected && i.value > 0);
+            const sum = selected.reduce((acc, cur) => acc + (cur.value || 0), 0);
+            document.getElementById('pdf-total-preview').innerText = fmtMoney(sum);
+            document.getElementById('pdf-selection-stats').innerText = `${selected.length} de ${extractedPdfItems.length} itens selecionados`;
+        }
+
+        window.savePdfBatch = async () => {
+            const approved = extractedPdfItems.filter(i => i.selected && i.value > 0 && i.description.trim() !== '');
+            if (approved.length === 0) {
+                alert("Selecione pelo menos um item válido com valor maior que zero para importar.");
+                return;
+            }
+
+            const btn = document.getElementById('confirm-batch-btn');
+            btn.disabled = true;
+            btn.innerText = "GRAVANDO LOTE...";
+            toggleLoader(true, `Gravando ${approved.length} registros no Firebase...`);
+
+            try {
+                const colRef = db.collection('users').doc(userId).collection('expenses');
+                
+                // O Firestore permite até 500 operações por writeBatch
+                const chunkSize = 450;
+                for (let i = 0; i < approved.length; i += chunkSize) {
+                    const chunk = approved.slice(i, i + chunkSize);
+                    const batch = db.batch();
+                    
+                    chunk.forEach(item => {
+                        const newDocRef = colRef.doc();
+                        batch.set(newDocRef, {
+                            date: item.date,
+                            description: item.description.trim(),
+                            category: item.category,
+                            value: Number(item.value),
+                            paymentMethod: item.paymentMethod,
+                            createdAt: new Date(),
+                            importedFromPdf: true
+                        });
+                    });
+
+                    await batch.commit();
+                }
+
+                closeModal('pdf-review-modal');
+                extractedPdfItems = [];
+            } catch (error) {
+                console.error("Erro na gravação em lote:", error);
+                alert("Ocorreu um erro ao gravar o lote no Firestore.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "GRAVAR LOTE";
+                toggleLoader(false);
+            }
+        };
+
+        // ==================== GERENCIAMENTO DO SISTEMA ORIGINAL ====================
 
         window.openConfig = () => {
             renderCategoriesManager();
@@ -329,7 +806,7 @@
             `;
 
             document.getElementById('expense-list').innerHTML = curExp.map(i => `
-                <div onclick="openModal('${i.id}')" class="flex items-center justify-between p-5 active:bg-slate-800 transition">
+                <div onclick="openModal('${i.id}')" class="flex items-center justify-between p-5 active:bg-slate-800 cursor-pointer hover:bg-slate-900/40 transition">
                     <div class="flex items-center gap-4">
                         <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg ${i.category === 'Reserva' ? 'bg-amber-900/20' : 'bg-slate-800'}">
                             ${i.category === 'Reserva' ? '💰' : '🛒'}
@@ -359,7 +836,6 @@
 
         window.setFastFilter = (f) => render(f);
 
-        // GRAFICO DE CATEGORIAS COMPRAS (AGORA INTERATIVO E FILTRÁVEL)
         function updateChart(data) {
             const ctx = document.getElementById('expenseChart').getContext('2d');
             if(mainChart) mainChart.destroy();
@@ -373,7 +849,6 @@
                     maintainAspectRatio: false, 
                     plugins: { legend: { display: true, position: 'right', labels: { color: '#94a3b8', font: { size: 9 }, usePointStyle: true, boxWidth: 6 } } }, 
                     cutout: '75%',
-                    // INTERATIVIDADE CLIQUE DA CATEGORIA: Filtra o extrato pela categoria clicada
                     onClick: (e, elements) => {
                         if (elements && elements.length > 0) {
                             const index = elements[0].index;
@@ -537,7 +1012,11 @@
         document.getElementById('prev-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()-1); render(currentFilterState); };
         document.getElementById('next-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()+1); render(currentFilterState); };
         document.getElementById('logout-btn').onclick = () => { auth.signOut(); location.reload(); };
-        function toggleLoader(s) { document.getElementById('loading-overlay').style.display = s ? 'flex' : 'none'; }
+        
+        function toggleLoader(s, text = "Processando...") { 
+            document.getElementById('loading-text').innerText = text;
+            document.getElementById('loading-overlay').style.display = s ? 'flex' : 'none'; 
+        }
         function fmtMoney(v) { return (v || 0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
     </script>
 </body>

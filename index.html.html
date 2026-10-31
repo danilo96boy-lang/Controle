@@ -32,7 +32,7 @@
         .spinner { width: 34px; height: 34px; border: 3px solid #1e293b; border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        /* Seletores Visuais */
+        /* Seletores Visuais (Cartão, Responsável e Início da Parcela) */
         .visual-selector input:checked + label {
             background-color: #2563eb;
             border-color: #60a5fa;
@@ -62,11 +62,14 @@
             box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
         }
 
+        /* Botões Visuais de Categoria Mobile-First */
         .cat-chip {
             transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
             min-height: 64px;
         }
-        .cat-chip:active { transform: scale(0.95); }
+        .cat-chip:active {
+            transform: scale(0.95);
+        }
         .cat-chip.selected {
             background-color: #2563eb;
             border-color: #93c5fd;
@@ -80,13 +83,6 @@
             background-color: #2563eb;
             color: #ffffff;
             box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.35);
-        }
-
-        .scope-pill { transition: all 0.15s ease; }
-        .scope-pill.active {
-            background-color: #2563eb;
-            color: #ffffff;
-            border-color: #60a5fa;
         }
 
         @keyframes pulseHighlight {
@@ -178,42 +174,10 @@
             <!-- ==================== ABA 1: VISÃO GERAL (DASHBOARD BI) ==================== -->
             <div id="tab-dashboard" class="space-y-5">
                 
-                <!-- Linha 1: Visão Global (Total Faturas, Nosso Gasto Global, Terceiros, Reserva) -->
+                <!-- Resumo Inteligente (4 KPIs) -->
                 <div id="summary-display" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
 
-                <!-- NOVO: Raio-X do Nosso Gasto: À Vista do Mês vs Parcelas Fixas Comprometidas -->
-                <div class="card rounded-2xl p-4 lg:p-5 border border-slate-800 space-y-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
-                        <div>
-                            <h3 class="font-black text-xs uppercase tracking-widest text-white flex items-center gap-2">
-                                <span>🔍 Raio-X do Casal: Gastos do Mês (À Vista) vs. Parcelas Fixas</span>
-                            </h3>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Separação clara entre o que vocês estão gastando agora no mês e o que já vinha parcelado</p>
-                        </div>
-                        <span id="couple-split-badge" class="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-slate-900 border border-slate-700 text-slate-300 self-start sm:self-center"></span>
-                    </div>
-
-                    <!-- Cards Duplos: À Vista vs Parcelado + Barra de Proporção -->
-                    <div id="couple-split-cards" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
-
-                    <!-- Barra Termômetro de Comprometimento -->
-                    <div id="couple-split-bar"></div>
-
-                    <!-- Lista Compacta das Parcelas Fixas Ativas neste Mês -->
-                    <div class="pt-2">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-[10px] font-black uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
-                                📦 Parcelas Fixas Cobradas Neste Mês (Casal)
-                            </span>
-                            <button onclick="setFastFilter('type:parcelado')" class="text-[10px] font-bold text-slate-400 hover:text-white">
-                                Filtrar no extrato →
-                            </button>
-                        </div>
-                        <div id="active-installments-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-56 overflow-y-auto pr-1"></div>
-                    </div>
-                </div>
-
-                <!-- Últimos 3 Lançamentos Recentes -->
+                <!-- Últimos 3 Lançamentos Recentes (Feedback Imediato) -->
                 <div class="card rounded-2xl p-4 lg:p-5 border border-blue-500/20">
                     <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center gap-2">
@@ -233,39 +197,23 @@
                         <h3 class="font-black text-xs uppercase tracking-widest text-slate-400 flex items-center gap-2">
                             <span>⚡ Alertas & Insights do Mês</span>
                         </h3>
-                        <span class="text-[10px] font-bold text-slate-500 uppercase">Análise Automática</span>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase">Base: Nosso Gasto Real</span>
                     </div>
                     <div id="insights-container" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
-                </div>
-
-                <!-- Seletor de Modo para os Gráficos e Top 5 -->
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pt-1">
-                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Visão dos Gráficos & Top 5 do Casal:</span>
-                    <div class="flex flex-wrap gap-1.5">
-                        <button id="scope-all" onclick="setDashboardScope('all')" class="scope-pill active px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900 text-[10px] font-black uppercase tracking-wider text-slate-300">
-                            🌐 Global (Tudo)
-                        </button>
-                        <button id="scope-avista" onclick="setDashboardScope('avista')" class="scope-pill px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900 text-[10px] font-black uppercase tracking-wider text-slate-300">
-                            ⚡ Só Gastos à Vista
-                        </button>
-                        <button id="scope-parcelado" onclick="setDashboardScope('parcelado')" class="scope-pill px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900 text-[10px] font-black uppercase tracking-wider text-slate-300">
-                            📦 Só Parcelas Fixas
-                        </button>
-                    </div>
                 </div>
 
                 <!-- Gráficos Principais -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="card rounded-2xl p-4 cursor-pointer hover:border-slate-700 transition" title="Clique em uma fatia para filtrar no Extrato">
-                        <p id="chart-cat-title" class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Nossas Categorias (Casal)</p>
+                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Nossas Categorias (Casal)</p>
                         <div class="relative h-48"><canvas id="expenseChart"></canvas></div>
                     </div>
                     <div class="card rounded-2xl p-4 cursor-pointer hover:border-slate-700 transition" title="Clique em uma fatia para filtrar no Extrato">
-                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Composição: À Vista vs Parcelas</p>
+                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Total nos Cartões (Geral)</p>
                         <div class="relative h-48"><canvas id="cardChart"></canvas></div>
                     </div>
                     <div class="card rounded-2xl p-4">
-                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Comparativo Mês Ant. vs Atual</p>
+                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Nosso Gasto: Ant. vs Atual</p>
                         <div class="relative h-48"><canvas id="comparisonChart"></canvas></div>
                     </div>
                 </div>
@@ -274,8 +222,8 @@
                 <div class="card rounded-2xl p-5">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h3 id="top5-title" class="font-black text-xs uppercase tracking-widest text-slate-400">🏆 Top 5 Maiores Despesas (Casal)</h3>
-                            <p class="text-[10px] text-slate-500 mt-0.5">Alterne acima entre Global, Só À Vista ou Só Parcelas para filtrar este ranking</p>
+                            <h3 class="font-black text-xs uppercase tracking-widest text-slate-400">🏆 Top 5 Maiores Despesas (Casal)</h3>
+                            <p class="text-[10px] text-slate-500 mt-0.5">Maiores gastos reais do casal neste mês (ignora compras da Sandra, Márcia e Reserva)</p>
                         </div>
                     </div>
                     <div id="top-expenses-list" class="space-y-3"></div>
@@ -291,20 +239,14 @@
                             <span id="active-filter-indicator" class="text-[10px] text-blue-400 font-bold uppercase mt-1 hidden"></span>
                         </div>
                         <div class="flex flex-wrap items-center gap-1.5">
-                            <button onclick="setFastFilter('type:avista')" class="px-3 h-8 flex items-center gap-1.5 bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-500/30 rounded-full text-[11px] font-bold transition">
-                                ⚡ Só À Vista (Casal)
-                            </button>
-                            <button onclick="setFastFilter('type:parcelado')" class="px-3 h-8 flex items-center gap-1.5 bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-300 border border-indigo-500/30 rounded-full text-[11px] font-bold transition">
-                                📦 Só Parcelas (Casal)
-                            </button>
                             <button onclick="setFastFilter('owner:Casal')" class="px-3 h-8 flex items-center gap-1.5 bg-blue-900/20 hover:bg-blue-900/40 text-blue-400 border border-blue-500/20 rounded-full text-[11px] font-bold transition">
-                                👫 Tudo Casal
+                                👫 Nosso (Casal)
                             </button>
                             <button onclick="setFastFilter('owner:Sandra')" class="px-3 h-8 flex items-center gap-1.5 bg-purple-900/20 hover:bg-purple-900/40 text-purple-300 border border-purple-500/20 rounded-full text-[11px] font-bold transition">
-                                👩 Sandra
+                                👩 Mãe Sandra
                             </button>
                             <button onclick="setFastFilter('owner:Márcia')" class="px-3 h-8 flex items-center gap-1.5 bg-pink-900/20 hover:bg-pink-900/40 text-pink-300 border border-pink-500/20 rounded-full text-[11px] font-bold transition">
-                                👵 Márcia
+                                👵 Sogra Márcia
                             </button>
                             <button onclick="setFastFilter('Reserva')" class="px-3 h-8 flex items-center gap-1.5 bg-amber-900/20 hover:bg-amber-900/40 text-amber-400 border border-amber-500/20 rounded-full text-[11px] font-bold transition">
                                 💰 Reserva
@@ -453,7 +395,7 @@
                         <button type="button" onclick="setInstallments(12)" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300">12x</button>
                     </div>
 
-                    <!-- Pergunta se a 1ª Parcela entra Neste Mês ou Só no Próximo Mês -->
+                    <!-- NOVO: Pergunta se a 1ª Parcela entra Neste Mês ou Só no Próximo Mês -->
                     <div id="installment-start-box" class="hidden p-3.5 rounded-2xl bg-blue-950/20 border border-blue-500/30 space-y-2.5">
                         <div class="flex items-center justify-between">
                             <label class="text-[10px] font-black text-blue-300 uppercase tracking-wider flex items-center gap-1.5">
@@ -636,12 +578,12 @@
         ];
 
         const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#a855f7', '#14b8a6', '#f43f5e'];
+        const CARD_COLORS = ['#ff7a00', '#cc0000', '#475569'];
         
         const EXPECTED_RESERVE = 3000;
         let expenses = [], currentDate = new Date(), currentEditId = null, mainChart = null, compChart = null, cardChart = null, unsubscribe = null;
         let currentFilterState = "all";
         let activeTab = "dashboard";
-        let dashboardScope = "all"; // 'all' | 'avista' | 'parcelado'
         let extractedPdfItems = [];
         let lastCreatedId = null;
 
@@ -674,40 +616,6 @@
             return CATEGORY_ICONS[cat] || '🏷️';
         }
 
-        // ==================== DETECTOR INTELIGENTE DE COMPRA PARCELADA ====================
-        // Reconhece tanto flag explícito quanto padrões de texto "(1/10)", "02/12", "PARC 03/06"
-        function getInstallmentInfo(item) {
-            if (!item) return { isInstallment: false, current: 1, total: 1, isLast: false };
-            if (item.isInstallment === true && item.installmentTotal > 1) {
-                return {
-                    isInstallment: true,
-                    current: item.installmentIndex || 1,
-                    total: item.installmentTotal,
-                    isLast: (item.installmentIndex === item.installmentTotal)
-                };
-            }
-            const desc = String(item.description || '');
-            // Procura padrões como (1/10), (02/12) ou PARC 01/05 no final/meio da descrição
-            const match = desc.match(/(?:\(|\bPARC(?:ELA)?\s*)(\d{1,2})\/(\d{1,2})\)?/i) || desc.match(/\s(\d{1,2})\/(\d{1,2})$/);
-            if (match) {
-                const cur = parseInt(match[1], 10);
-                const tot = parseInt(match[2], 10);
-                if (tot > 1 && cur >= 1 && cur <= tot && tot <= 48) {
-                    return {
-                        isInstallment: true,
-                        current: cur,
-                        total: tot,
-                        isLast: cur === tot
-                    };
-                }
-            }
-            return { isInstallment: false, current: 1, total: 1, isLast: false };
-        }
-
-        function isInstallmentItem(item) {
-            return getInstallmentInfo(item).isInstallment;
-        }
-
         function getOwnerBadge(owner) {
             const normalized = owner || 'Casal';
             if (normalized === 'Sandra') {
@@ -717,15 +625,6 @@
                 return `<span class="px-2 py-0.5 rounded-md bg-pink-950/80 text-pink-300 border border-pink-500/30 text-[9px] font-black uppercase">👵 Sogra Márcia</span>`;
             }
             return `<span class="px-2 py-0.5 rounded-md bg-blue-950/60 text-blue-300 border border-blue-500/20 text-[9px] font-bold uppercase">👫 Casal</span>`;
-        }
-
-        function getTypeBadge(item) {
-            if (item.category === 'Reserva') return '';
-            const info = getInstallmentInfo(item);
-            if (info.isInstallment) {
-                return `<span class="px-2 py-0.5 rounded-md bg-indigo-950/90 text-indigo-300 border border-indigo-500/30 text-[9px] font-black uppercase">📦 Parcela ${info.current}/${info.total}${info.isLast ? ' (Última!)' : ''}</span>`;
-            }
-            return `<span class="px-2 py-0.5 rounded-md bg-emerald-950/70 text-emerald-300 border border-emerald-500/25 text-[9px] font-bold uppercase">⚡ À Vista</span>`;
         }
 
         function showToast(message) {
@@ -739,11 +638,12 @@
             }, 3000);
         }
 
+        // ==================== FUNÇÃO SEGURA PARA SOMAR MESES SEM BUG DE DIA 31 ====================
         function addMonthsSafe(isoDateStr, monthsToAdd) {
             const [y, m, d] = isoDateStr.split('-').map(Number);
             const targetMonthIndex = (m - 1) + monthsToAdd;
             const targetYear = y + Math.floor(targetMonthIndex / 12);
-            const normalizedMonth = ((targetMonthIndex % 12) + 12) % 12;
+            const normalizedMonth = ((targetMonthIndex % 12) + 12) % 12; // 0..11
             const maxDaysInTargetMonth = new Date(targetYear, normalizedMonth + 1, 0).getDate();
             const safeDay = Math.min(d, maxDaysInTargetMonth);
 
@@ -756,17 +656,7 @@
             return d.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).replace('.', '').toUpperCase();
         }
 
-        // ==================== CONTROLE DE ESCOPO DOS GRÁFICOS (GLOBAL vs À VISTA vs PARCELAS) ====================
-        window.setDashboardScope = (scope) => {
-            dashboardScope = scope;
-            ['all', 'avista', 'parcelado'].forEach(s => {
-                const btn = document.getElementById(`scope-${s}`);
-                if (btn) btn.classList.toggle('active', s === scope);
-            });
-            render(currentFilterState);
-        };
-
-        // ==================== CONTROLE DE PARCELAS NO FORMULÁRIO ====================
+        // ==================== CONTROLE DE PARCELAS E SELETOR "ENTRA ESTE MÊS OU PRÓXIMO" ====================
         window.setInstallments = (n) => {
             document.getElementById('form-installments').value = n;
             handleInstallmentChange();
@@ -790,6 +680,7 @@
             const offsetRadio = document.querySelector('input[name="form-installment-offset"]:checked');
             const offset = offsetRadio ? parseInt(offsetRadio.value, 10) : 0;
 
+            // Atualiza os rótulos dos botões com o nome real dos meses
             const thisMonthStr = formatMonthYearShort(addMonthsSafe(rawDate, 0));
             const nextMonthStr = formatMonthYearShort(addMonthsSafe(rawDate, 1));
             const lblThis = document.getElementById('label-this-month-name');
@@ -831,7 +722,7 @@
             startListening();
         }
 
-        // ==================== GRADE VISUAL DE CATEGORIAS ====================
+        // ==================== GRADE VISUAL DE CATEGORIAS & AUTO-DETECÇÃO ====================
 
         function renderVisualCategoryButtons(selectedCat = '', isAutoGuessed = false) {
             const grid = document.getElementById('visual-categories-grid');
@@ -987,7 +878,6 @@
             container.innerHTML = sortedRecent.map(item => {
                 const isJustAdded = item.id === lastCreatedId;
                 const shortDate = item.date ? item.date.split('-').reverse().slice(0, 2).join('/') : '';
-                const instInfo = getInstallmentInfo(item);
                 return `
                     <div onclick="openModal('${item.id}')" class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 cursor-pointer flex items-center justify-between gap-2 transition ${isJustAdded ? 'recent-highlight border-emerald-500/50' : ''}">
                         <div class="flex items-center gap-2.5 min-w-0">
@@ -996,12 +886,11 @@
                             </div>
                             <div class="min-w-0">
                                 <p class="text-xs font-bold text-slate-100 truncate">${item.description}</p>
-                                <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                <div class="flex items-center gap-1.5 mt-0.5">
                                     <span class="text-[9px] font-bold text-slate-400 uppercase">${item.category}</span>
                                     <span class="text-slate-600 text-[9px]">•</span>
-                                    <span class="text-[9px] font-bold ${instInfo.isInstallment ? 'text-indigo-400' : 'text-emerald-400'}">${instInfo.isInstallment ? `📦 ${instInfo.current}/${instInfo.total}` : '⚡ À Vista'}</span>
-                                    <span class="text-slate-600 text-[9px]">•</span>
                                     <span class="text-[9px] font-bold text-slate-500">${shortDate}</span>
+                                    ${(item.owner && item.owner !== 'Casal') ? `<span class="text-[9px] font-black text-purple-400">• ${item.owner}</span>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -1379,7 +1268,6 @@
                     chunk.forEach(item => {
                         const newDocRef = colRef.doc();
                         lastCreatedId = newDocRef.id;
-                        const instInfo = getInstallmentInfo(item);
                         batch.set(newDocRef, {
                             date: item.date,
                             description: item.description.trim(),
@@ -1387,9 +1275,6 @@
                             category: item.category,
                             value: Number(item.value),
                             paymentMethod: item.paymentMethod,
-                            isInstallment: instInfo.isInstallment,
-                            installmentIndex: instInfo.current,
-                            installmentTotal: instInfo.total,
                             createdAt: new Date(),
                             importedFromPdf: true
                         });
@@ -1480,7 +1365,6 @@
 
             renderRecentLaunches();
 
-            // Filtros do Extrato
             const indicator = document.getElementById('active-filter-indicator');
             if (filter && filter !== 'all') {
                 if (filter.startsWith('card:')) {
@@ -1492,14 +1376,6 @@
                     const ownerName = filter.split(':')[1];
                     curExp = curExp.filter(e => (e.owner || 'Casal') === ownerName && e.category !== 'Reserva');
                     indicator.innerText = `Filtro: Responsável ${ownerName} (${curExp.length} lançamentos)`;
-                    indicator.classList.remove('hidden');
-                } else if (filter === 'type:avista') {
-                    curExp = curExp.filter(e => (e.owner || 'Casal') === 'Casal' && e.category !== 'Reserva' && !isInstallmentItem(e));
-                    indicator.innerText = `Filtro: Gastos à Vista do Casal (${curExp.length} lançamentos)`;
-                    indicator.classList.remove('hidden');
-                } else if (filter === 'type:parcelado') {
-                    curExp = curExp.filter(e => (e.owner || 'Casal') === 'Casal' && e.category !== 'Reserva' && isInstallmentItem(e));
-                    indicator.innerText = `Filtro: Parcelas Fixas do Casal (${curExp.length} lançamentos)`;
                     indicator.classList.remove('hidden');
                 } else if (filter === 'Reserva') {
                     curExp = curExp.filter(e => e.category === 'Reserva');
@@ -1514,47 +1390,35 @@
                 indicator.classList.add('hidden');
             }
 
-            // Separação Global vs Casal vs Terceiros
             const allPurchases = allMonthExpenses.filter(e => e.category !== 'Reserva');
             const couplePurchases = allPurchases.filter(e => (e.owner || 'Casal') === 'Casal');
             const sandraPurchases = allPurchases.filter(e => e.owner === 'Sandra');
             const marciaPurchases = allPurchases.filter(e => e.owner === 'Márcia');
 
-            // Separação do Casal: À Vista (Variável do Mês) vs Parcelas Fixas (Comprometido)
-            const coupleSpotPurchases = couplePurchases.filter(e => !isInstallmentItem(e));
-            const coupleInstallmentPurchases = couplePurchases.filter(e => isInstallmentItem(e));
-
             const prevCouplePurchases = prevExp.filter(e => e.category !== 'Reserva' && (e.owner || 'Casal') === 'Casal');
-            const prevCoupleSpot = prevCouplePurchases.filter(e => !isInstallmentItem(e));
 
             const totalFaturasGeral = allPurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
-            const totalNossoGastoGlobal = couplePurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
-            const totalNossoAvista = coupleSpotPurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
-            const totalNossoParcelado = coupleInstallmentPurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
-
+            const totalNossoGasto = couplePurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
             const totalSandra = sandraPurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
             const totalMarcia = marciaPurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
             const totalTerceiros = totalSandra + totalMarcia;
 
             const totalNossoAnterior = prevCouplePurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
-            const totalNossoAvistaAnterior = prevCoupleSpot.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
             const totalReservaMes = allMonthExpenses.filter(e => e.category === 'Reserva').reduce((acc, i) => acc + (Number(i.value) || 0), 0);
 
-            const diffCouple = totalNossoGastoGlobal - totalNossoAnterior;
+            const diffCouple = totalNossoGasto - totalNossoAnterior;
             const percentComp = totalNossoAnterior > 0 ? (diffCouple / totalNossoAnterior * 100).toFixed(0) : 0;
             const reserveProgress = Math.min((totalReservaMes / EXPECTED_RESERVE) * 100, 100).toFixed(1);
 
             const totalInter = allPurchases.filter(e => (e.paymentMethod || 'Outros') === 'Inter').reduce((a, b) => a + (Number(b.value) || 0), 0);
             const totalSantander = allPurchases.filter(e => e.paymentMethod === 'Santander').reduce((a, b) => a + (Number(b.value) || 0), 0);
 
-            // Cálculo de dias corridos para Média Diária (focada no Gasto à Vista do mês)
             const now = new Date();
             const isCurrentRealMonth = (now.getFullYear() === currentDate.getFullYear() && now.getMonth() === currentDate.getMonth());
             const totalDaysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
             const elapsedDays = isCurrentRealMonth ? Math.max(1, now.getDate()) : totalDaysInMonth;
-            const dailyAverageSpot = totalNossoAvista / elapsedDays;
+            const dailyAverageCouple = totalNossoGasto / elapsedDays;
 
-            // Linha 1: 4 Cards Globais
             document.getElementById('summary-display').innerHTML = `
                 <div class="card p-4 rounded-2xl border-l-4 border-slate-400">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Total das Faturas (Geral)</p>
@@ -1566,10 +1430,10 @@
 
                 <div onclick="setFastFilter('owner:Casal')" class="card p-4 rounded-2xl border-l-4 border-blue-500 cursor-pointer hover:border-blue-400 transition">
                     <div class="flex justify-between items-center">
-                        <p class="text-[9px] font-black text-blue-400 uppercase tracking-wider">🌐 Nosso Gasto Global</p>
-                        <span class="text-[9px] font-bold text-slate-400">À Vista + Parcelas</span>
+                        <p class="text-[9px] font-black text-blue-400 uppercase tracking-wider">👫 Nosso Gasto Real</p>
+                        <span class="text-[9px] font-bold text-slate-500">${fmtMoney(dailyAverageCouple)}/dia</span>
                     </div>
-                    <p class="text-xl font-black text-white mt-0.5">${fmtMoney(totalNossoGastoGlobal)}</p>
+                    <p class="text-xl font-black text-white mt-0.5">${fmtMoney(totalNossoGasto)}</p>
                     <p class="text-[10px] font-bold mt-1 ${diffCouple > 0 ? 'text-red-400' : 'text-emerald-400'}">
                         ${diffCouple > 0 ? '▲' : '▼'} ${Math.abs(percentComp)}% vs mês ant. (${fmtMoney(totalNossoAnterior)})
                     </p>
@@ -1600,33 +1464,9 @@
                 </div>
             `;
 
-            // Renderiza o Novo Painel: Raio-X À Vista vs Parcelas Fixas
-            renderCoupleSplitPanel(coupleSpotPurchases, coupleInstallmentPurchases, totalNossoAvista, totalNossoParcelado, totalNossoGastoGlobal, dailyAverageSpot, totalNossoAvistaAnterior);
+            renderSmartInsights(couplePurchases, prevCouplePurchases, totalNossoGasto, totalNossoAnterior, totalTerceiros, totalSandra, totalMarcia, totalReservaMes);
+            renderTopExpenses(couplePurchases, totalNossoGasto);
 
-            // Renderiza Insights
-            renderSmartInsights(coupleSpotPurchases, coupleInstallmentPurchases, totalNossoAvista, totalNossoParcelado, totalNossoGastoGlobal, totalNossoAvistaAnterior, totalTerceiros, totalReservaMes);
-
-            // Escopo ativo para os Gráficos e Top 5
-            let scopedCoupleList = couplePurchases;
-            let scopedTotal = totalNossoGastoGlobal;
-            let scopeTitleSuffix = "Global (À Vista + Parcelas)";
-
-            if (dashboardScope === 'avista') {
-                scopedCoupleList = coupleSpotPurchases;
-                scopedTotal = totalNossoAvista;
-                scopeTitleSuffix = "Somente Gastos à Vista";
-            } else if (dashboardScope === 'parcelado') {
-                scopedCoupleList = coupleInstallmentPurchases;
-                scopedTotal = totalNossoParcelado;
-                scopeTitleSuffix = "Somente Parcelas Fixas";
-            }
-
-            document.getElementById('chart-cat-title').innerText = `Categorias: ${scopeTitleSuffix}`;
-            document.getElementById('top5-title').innerText = `🏆 Top 5 Maiores Despesas (${scopeTitleSuffix})`;
-
-            renderTopExpenses(scopedCoupleList, scopedTotal);
-
-            // Lista do Extrato Detalhado (Aba 2)
             document.getElementById('expense-list').innerHTML = curExp.map(i => `
                 <div onclick="openModal('${i.id}')" class="flex items-center justify-between p-4 lg:p-5 active:bg-slate-800 cursor-pointer hover:bg-slate-900/40 transition">
                     <div class="flex items-center gap-3.5 min-w-0">
@@ -1634,10 +1474,9 @@
                             ${getCatIcon(i.category)}
                         </div>
                         <div class="min-w-0">
-                            <div class="flex items-center gap-1.5 flex-wrap">
+                            <div class="flex items-center gap-2 flex-wrap">
                                 <p class="text-sm font-bold text-slate-100 truncate">${i.description}</p>
                                 ${i.category !== 'Reserva' ? getOwnerBadge(i.owner) : ''}
-                                ${getTypeBadge(i)}
                             </div>
                             <p class="text-[10px] text-slate-500 font-bold uppercase mt-0.5">
                                 ${i.category} ${i.paymentMethod && i.category !== 'Reserva' ? `• [${i.paymentMethod}]` : ''} • ${i.date.split('-').reverse().slice(0,2).join('/')}
@@ -1651,181 +1490,74 @@
             `).join('') || '<p class="p-10 text-center text-slate-600 text-xs uppercase font-bold tracking-widest">Nenhum lançamento encontrado para este filtro</p>';
             
             if (activeTab === 'dashboard') {
-                updateChart(scopedCoupleList);
-                updateCompositionChart(totalNossoAvista, totalNossoParcelado, totalTerceiros);
-                updateComparisonChart(totalNossoAvista, totalNossoParcelado, totalNossoAvistaAnterior, totalNossoAnterior - totalNossoAvistaAnterior);
+                updateChart(couplePurchases);
+                updateCardChart(allPurchases);
+                updateComparisonChart(totalNossoGasto, totalNossoAnterior);
             }
-        }
-
-        // ==================== PAINEL RAIO-X: GASTOS À VISTA DO MÊS VS PARCELAS FIXAS ====================
-
-        function renderCoupleSplitPanel(spotList, instList, totalAvista, totalParcelado, totalGlobal, dailySpot, prevAvista) {
-            const pctAvista = totalGlobal > 0 ? Math.round((totalAvista / totalGlobal) * 100) : 0;
-            const pctParcelado = totalGlobal > 0 ? (100 - pctAvista) : 0;
-
-            // Calcula quantas parcelas terminam neste mês (ex: 10/10, 6/6) e quanto dinheiro elas vão liberar no próximo mês
-            const endingThisMonth = instList.filter(i => getInstallmentInfo(i).isLast);
-            const freedValueNextMonth = endingThisMonth.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
-
-            const diffSpot = totalAvista - prevAvista;
-            const pctSpotComp = prevAvista > 0 ? ((diffSpot / prevAvista) * 100).toFixed(0) : 0;
-
-            document.getElementById('couple-split-badge').innerText = `${pctAvista}% À Vista • ${pctParcelado}% Parcelado`;
-
-            document.getElementById('couple-split-cards').innerHTML = `
-                <!-- Card Gastos à Vista (Variáveis do Mês) -->
-                <div onclick="setFastFilter('type:avista')" class="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 cursor-pointer hover:border-emerald-400 transition flex flex-col justify-between">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                            ⚡ Gastos do Mês (Sem Parcelado)
-                        </span>
-                        <span class="text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300">${spotList.length} compras</span>
-                    </div>
-                    <div class="my-2">
-                        <p class="text-2xl font-black text-white">${fmtMoney(totalAvista)}</p>
-                        <p class="text-[11px] font-bold text-slate-400 mt-0.5">
-                            Ritmo real do mês: <strong class="text-emerald-300">${fmtMoney(dailySpot)}/dia</strong>
-                        </p>
-                    </div>
-                    <p class="text-[10px] font-bold ${diffSpot > 0 ? 'text-red-400' : 'text-emerald-400'}">
-                        ${prevAvista > 0 ? `${diffSpot > 0 ? '▲' : '▼'} ${Math.abs(pctSpotComp)}% vs gastos à vista do mês ant. (${fmtMoney(prevAvista)})` : 'Compras diretas feitas neste mês'}
-                    </p>
-                </div>
-
-                <!-- Card Parcelas Fixas (Comprometido) -->
-                <div onclick="setFastFilter('type:parcelado')" class="p-4 rounded-2xl bg-indigo-950/25 border border-indigo-500/30 cursor-pointer hover:border-indigo-400 transition flex flex-col justify-between">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-black uppercase tracking-wider text-indigo-300 flex items-center gap-1.5">
-                            📦 Parcelas Fixas do Mês
-                        </span>
-                        <span class="text-[10px] font-black px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300">${instList.length} parcelas</span>
-                    </div>
-                    <div class="my-2">
-                        <p class="text-2xl font-black text-indigo-200">${fmtMoney(totalParcelado)}</p>
-                        <p class="text-[11px] font-bold text-slate-400 mt-0.5">
-                            Compromisso fixo: <strong class="text-indigo-300">${pctParcelado}% do orçamento do casal</strong>
-                        </p>
-                    </div>
-                    <p class="text-[10px] font-bold ${endingThisMonth.length > 0 ? 'text-emerald-400' : 'text-slate-400'}">
-                        ${endingThisMonth.length > 0 
-                            ? `🎉 ${endingThisMonth.length} parcela(s) acabam este mês (Libera +${fmtMoney(freedValueNextMonth)} mês que vem!)` 
-                            : 'Nenhuma parcela encerrando neste mês'}
-                    </p>
-                </div>
-            `;
-
-            document.getElementById('couple-split-bar').innerHTML = `
-                <div class="space-y-1.5">
-                    <div class="w-full h-3 bg-slate-900 rounded-full overflow-hidden flex border border-slate-800">
-                        <div class="bg-emerald-500 h-full transition-all duration-500" style="width: ${pctAvista}%" title="Gastos à Vista: ${pctAvista}%"></div>
-                        <div class="bg-indigo-500 h-full transition-all duration-500" style="width: ${pctParcelado}%" title="Parcelas Fixas: ${pctParcelado}%"></div>
-                    </div>
-                    <div class="flex justify-between text-[10px] font-bold text-slate-400">
-                        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> À Vista: ${fmtMoney(totalAvista)} (${pctAvista}%)</span>
-                        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-indigo-500"></span> Parcelas Fixas: ${fmtMoney(totalParcelado)} (${pctParcelado}%)</span>
-                    </div>
-                </div>
-            `;
-
-            // Lista de Parcelas Ativas no Mês
-            const grid = document.getElementById('active-installments-grid');
-            if (instList.length === 0) {
-                grid.innerHTML = `
-                    <div class="col-span-full py-4 text-center text-slate-500 text-xs font-bold uppercase bg-slate-900/40 rounded-xl border border-slate-800/60">
-                        Nenhuma parcela fixa ativa para o casal neste mês 🎉
-                    </div>
-                `;
-                return;
-            }
-
-            const sortedInst = [...instList].sort((a, b) => (b.value || 0) - (a.value || 0));
-            grid.innerHTML = sortedInst.map(item => {
-                const info = getInstallmentInfo(item);
-                const cleanTitle = String(item.description || '').replace(/\s*\(\d+\/\d+\)$/, '').trim();
-                const progressPct = Math.round((info.current / info.total) * 100);
-                return `
-                    <div onclick="openModal('${item.id}')" class="p-2.5 rounded-xl bg-slate-900/80 border ${info.isLast ? 'border-emerald-500/40' : 'border-slate-800'} hover:border-indigo-500/50 cursor-pointer transition flex flex-col justify-between gap-1.5">
-                        <div class="flex items-start justify-between gap-2">
-                            <div class="min-w-0">
-                                <p class="text-xs font-bold text-slate-200 truncate">${getCatIcon(item.category)} ${cleanTitle}</p>
-                                <span class="text-[9px] font-black uppercase ${info.isLast ? 'text-emerald-400' : 'text-indigo-400'}">
-                                    Parcela ${info.current} de ${info.total} ${info.isLast ? '• ÚLTIMA!' : `• Faltam ${info.total - info.current}`}
-                                </span>
-                            </div>
-                            <span class="text-xs font-black text-white shrink-0">${fmtMoney(item.value)}</span>
-                        </div>
-                        <div class="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-                            <div class="${info.isLast ? 'bg-emerald-500' : 'bg-indigo-500'} h-full" style="width: ${progressPct}%"></div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
         }
 
         // ==================== ALERTAS INTELIGENTES ====================
 
-        function renderSmartInsights(spotCur, instCur, totalAvista, totalParcelado, totalGlobal, prevAvista, totalTerceiros, totalReserva) {
+        function renderSmartInsights(coupleCur, couplePrev, totalCur, totalPrev, totalTerceiros, totalSandra, totalMarcia, totalReserva) {
             const alerts = [];
 
-            // 1. Insight sobre os Gastos à Vista (Variáveis do Mês)
-            if (prevAvista > 0) {
-                if (totalAvista > prevAvista) {
-                    const diff = totalAvista - prevAvista;
-                    const pct = ((diff / prevAvista) * 100).toFixed(0);
+            if (totalPrev > 0) {
+                if (totalCur > totalPrev) {
+                    const diffVal = totalCur - totalPrev;
+                    const pct = ((diffVal / totalPrev) * 100).toFixed(1);
                     alerts.push({
-                        icon: '⚡',
+                        icon: '🚨',
                         color: 'border-red-500/40 bg-red-950/20 text-red-300',
-                        title: 'Gasto à Vista Subiu',
-                        desc: `Sem contar parcelas, vocês gastaram <b>+${pct}%</b> (${fmtMoney(diff)} a mais) em compras do mês vs mês passado.`
+                        title: 'Nosso Gasto Subiu',
+                        desc: `Os gastos reais do casal superaram o mês passado em <b>+${pct}%</b> (+${fmtMoney(diffVal)}).`
                     });
                 } else {
-                    const saved = prevAvista - totalAvista;
-                    const pct = ((saved / prevAvista) * 100).toFixed(0);
+                    const savedVal = totalPrev - totalCur;
+                    const pct = ((savedVal / totalPrev) * 100).toFixed(1);
                     alerts.push({
-                        icon: '👏',
+                        icon: '📉',
                         color: 'border-emerald-500/40 bg-emerald-950/20 text-emerald-300',
-                        title: 'Controle no Dia a Dia!',
-                        desc: `Nas compras à vista do mês, vocês economizaram <b>${pct}%</b> (${fmtMoney(saved)} a menos) que no mês anterior.`
+                        title: 'Economia Real do Casal',
+                        desc: `Vocês gastaram <b>${pct}% a menos</b> (${fmtMoney(savedVal)}) comparando apenas os gastos do casal.`
                     });
                 }
             } else {
                 alerts.push({
-                    icon: '⚡',
-                    color: 'border-emerald-500/40 bg-emerald-950/20 text-emerald-300',
-                    title: 'Gasto Puro do Mês',
-                    desc: `Descontando as parcelas fixas, o gasto real de vocês no dia a dia deste mês é de <b>${fmtMoney(totalAvista)}</b>.`
+                    icon: '👫',
+                    color: 'border-blue-500/40 bg-blue-950/20 text-blue-300',
+                    title: 'Orçamento do Casal Isolado',
+                    desc: `O gasto real de vocês está em <b>${fmtMoney(totalCur)}</b>, livre das compras de terceiros.`
                 });
             }
 
-            // 2. Insight sobre Peso das Parcelas Fixas e Alívio Futuro
-            const endingCount = instCur.filter(i => getInstallmentInfo(i).isLast).length;
-            const endingSum = instCur.filter(i => getInstallmentInfo(i).isLast).reduce((a, b) => a + (Number(b.value) || 0), 0);
-
-            if (endingCount > 0) {
+            if (totalTerceiros > 0) {
+                const shareFatura = (totalCur + totalTerceiros) > 0 ? ((totalTerceiros / (totalCur + totalTerceiros)) * 100).toFixed(0) : 0;
                 alerts.push({
-                    icon: '🔓',
-                    color: 'border-indigo-500/40 bg-indigo-950/20 text-indigo-300',
-                    title: 'Alívio na Próxima Fatura!',
-                    desc: `<b>${endingCount} parcela(s)</b> terminam neste mês, liberando <b>${fmtMoney(endingSum)}</b> do orçamento do mês que vem.`
+                    icon: '🤝',
+                    color: 'border-purple-500/40 bg-purple-950/20 text-purple-300',
+                    title: `Terceiros: ${shareFatura}% da Fatura`,
+                    desc: `Sandra (<b>${fmtMoney(totalSandra)}</b>) e Márcia (<b>${fmtMoney(totalMarcia)}</b>) somam <b>${fmtMoney(totalTerceiros)}</b> a receber.`
                 });
-            } else if (totalParcelado > 0) {
-                const share = totalGlobal > 0 ? Math.round((totalParcelado / totalGlobal) * 100) : 0;
+            } else if (coupleCur.length > 0) {
+                const curCats = {};
+                coupleCur.forEach(e => curCats[e.category] = (curCats[e.category] || 0) + (e.value || 0));
+                const topCat = Object.entries(curCats).sort((a,b) => b[1] - a[1])[0];
+                const share = totalCur > 0 ? ((topCat[1] / totalCur) * 100).toFixed(0) : 0;
                 alerts.push({
-                    icon: '📦',
-                    color: 'border-indigo-500/40 bg-indigo-950/20 text-indigo-300',
-                    title: `Parcelas Fixas: ${share}% do Gasto`,
-                    desc: `Vocês já entram no mês com <b>${fmtMoney(totalParcelado)}</b> comprometidos em ${instCur.length} parcelas.`
+                    icon: '🎯',
+                    color: 'border-amber-500/40 bg-amber-950/20 text-amber-300',
+                    title: `Maior Categoria: ${topCat[0]}`,
+                    desc: `Representa <b>${share}%</b> dos gastos do casal neste mês (${fmtMoney(topCat[1])}).`
                 });
             } else {
                 alerts.push({
                     icon: '✨',
                     color: 'border-slate-700 bg-slate-900/40 text-slate-300',
-                    title: 'Zero Parcelamentos',
-                    desc: `Vocês não possuem nenhuma parcela fixa cadastrada para este mês.`
+                    title: 'Sem Compras de Terceiros',
+                    desc: `Nenhum lançamento registrado para Mãe Sandra ou Sogra Márcia neste mês.`
                 });
             }
 
-            // 3. Aviso de Meta da Reserva de Emergência
             const missingReserve = EXPECTED_RESERVE - totalReserva;
             if (missingReserve <= 0) {
                 alerts.push({
@@ -1855,18 +1587,17 @@
             `).join('');
         }
 
-        function renderTopExpenses(coupleExpenses, totalScoped) {
+        function renderTopExpenses(coupleExpenses, totalNossoGasto) {
             const container = document.getElementById('top-expenses-list');
             const top5 = [...coupleExpenses].sort((a, b) => (b.value || 0) - (a.value || 0)).slice(0, 5);
 
             if (top5.length === 0) {
-                container.innerHTML = `<p class="text-center text-slate-600 text-xs uppercase font-bold py-6">Nenhuma despesa para esta visão neste mês</p>`;
+                container.innerHTML = `<p class="text-center text-slate-600 text-xs uppercase font-bold py-6">Nenhuma despesa do casal registrada neste mês</p>`;
                 return;
             }
 
             container.innerHTML = top5.map((item, idx) => {
-                const pctOfTotal = totalScoped > 0 ? Math.min(((item.value / totalScoped) * 100), 100).toFixed(1) : 0;
-                const instInfo = getInstallmentInfo(item);
+                const pctOfTotal = totalNossoGasto > 0 ? Math.min(((item.value / totalNossoGasto) * 100), 100).toFixed(1) : 0;
                 return `
                     <div onclick="openModal('${item.id}')" class="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 cursor-pointer transition">
                         <div class="flex items-center justify-between gap-2 mb-1.5">
@@ -1875,12 +1606,7 @@
                                     #${idx + 1}
                                 </span>
                                 <div class="truncate">
-                                    <div class="flex items-center gap-1.5">
-                                        <p class="text-xs font-bold text-slate-200 truncate">${getCatIcon(item.category)} ${item.description}</p>
-                                        <span class="text-[9px] font-black uppercase ${instInfo.isInstallment ? 'text-indigo-400' : 'text-emerald-400'} shrink-0">
-                                            ${instInfo.isInstallment ? `📦 ${instInfo.current}/${instInfo.total}` : '⚡ À Vista'}
-                                        </span>
-                                    </div>
+                                    <p class="text-xs font-bold text-slate-200 truncate">${getCatIcon(item.category)} ${item.description}</p>
                                     <p class="text-[10px] text-slate-500 font-bold uppercase">
                                         ${item.category} • ${item.paymentMethod || 'Outros'} • ${item.date.split('-').reverse().slice(0,2).join('/')}
                                     </p>
@@ -1888,11 +1614,11 @@
                             </div>
                             <div class="text-right shrink-0">
                                 <p class="text-sm font-black text-white">${fmtMoney(item.value)}</p>
-                                <p class="text-[9px] font-bold text-slate-400">${pctOfTotal}% desta visão</p>
+                                <p class="text-[9px] font-bold text-slate-400">${pctOfTotal}% do nosso gasto</p>
                             </div>
                         </div>
                         <div class="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-                            <div class="${instInfo.isInstallment ? 'bg-indigo-500' : 'bg-emerald-500'} h-full rounded-full" style="width: ${pctOfTotal}%"></div>
+                            <div class="bg-blue-500 h-full rounded-full" style="width: ${pctOfTotal}%"></div>
                         </div>
                     </div>
                 `;
@@ -1936,22 +1662,23 @@
             });
         }
 
-        // Gráfico 2: Mostra claramente a proporção entre À Vista (Casal), Parcelas Fixas (Casal) e Terceiros
-        function updateCompositionChart(totalAvista, totalParcelado, totalTerceiros) {
+        function updateCardChart(data) {
             const ctx = document.getElementById('cardChart').getContext('2d');
             if(cardChart) cardChart.destroy();
             
-            if ((totalAvista + totalParcelado + totalTerceiros) === 0) return;
+            const cards = { 'Inter': 0, 'Santander': 0, 'Outros': 0 };
+            data.forEach(d => {
+                const method = d.paymentMethod || 'Outros';
+                cards[method] = (cards[method] || 0) + d.value;
+            });
 
-            const labels = ['⚡ À Vista (Casal)', '📦 Parcelas (Casal)', '🤝 Terceiros'];
-            const values = [totalAvista, totalParcelado, totalTerceiros];
-            const bgColors = ['#10b981', '#6366f1', '#a855f7'];
+            if (Object.values(cards).reduce((a, b) => a + b, 0) === 0) return;
 
             cardChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: { 
-                    labels: labels, 
-                    datasets: [{ data: values, backgroundColor: bgColors, borderWidth: 0 }] 
+                    labels: Object.keys(cards), 
+                    datasets: [{ data: Object.values(cards), backgroundColor: CARD_COLORS, borderWidth: 0 }] 
                 },
                 options: { 
                     responsive: true, 
@@ -1960,49 +1687,35 @@
                     cutout: '75%',
                     onClick: (e, elements) => {
                         if (elements && elements.length > 0) {
-                            const idx = elements[0].index;
-                            if (idx === 0) setFastFilter('type:avista');
-                            if (idx === 1) setFastFilter('type:parcelado');
-                            if (idx === 2) setFastFilter('owner:Sandra');
+                            const index = elements[0].index;
+                            const label = cardChart.data.labels[index];
+                            render(`card:${label}`);
+                            switchTab('extrato');
                         }
                     }
                 }
             });
         }
 
-        // Gráfico 3: Barras Empilhadas comparando Mês Anterior vs Atual separados por À Vista e Parcelado
-        function updateComparisonChart(curSpot, curInst, prevSpot, prevInst) {
+        function updateComparisonChart(current, prev) {
             const ctx = document.getElementById('comparisonChart').getContext('2d');
             if(compChart) compChart.destroy();
             compChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: ['Mês Ant.', 'Atual'],
-                    datasets: [
-                        {
-                            label: '⚡ À Vista',
-                            data: [prevSpot, curSpot],
-                            backgroundColor: '#10b981',
-                            borderRadius: 6,
-                            barThickness: 32
-                        },
-                        {
-                            label: '📦 Parcelas',
-                            data: [Math.max(0, prevInst), curInst],
-                            backgroundColor: '#6366f1',
-                            borderRadius: 6,
-                            barThickness: 32
-                        }
-                    ]
+                    datasets: [{
+                        data: [prev, current],
+                        backgroundColor: ['#1e293b', '#3b82f6'],
+                        borderRadius: 8,
+                        barThickness: 30
+                    }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: true, position: 'bottom', labels: { color: '#94a3b8', font: { size: 9 }, boxWidth: 8 } } },
-                    scales: {
-                        y: { stacked: true, display: false },
-                        x: { stacked: true, grid: { display: false }, ticks: { color: '#64748b', font: { size: 10, weight: 'bold' } } }
-                    }
+                    plugins: { legend: { display: false } },
+                    scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10, weight: 'bold' } } } }
                 }
             });
         }
@@ -2055,17 +1768,13 @@
             try {
                 if (currentEditId) {
                     lastCreatedId = currentEditId;
-                    const instInfo = getInstallmentInfo({ description });
                     await col.doc(currentEditId).set({
                         date: rawDate,
                         description: description,
                         category: category,
                         value: totalValue,
                         paymentMethod: paymentMethod,
-                        owner: owner,
-                        isInstallment: instInfo.isInstallment,
-                        installmentIndex: instInfo.current,
-                        installmentTotal: instInfo.total
+                        owner: owner
                     }, { merge: true });
                     showToast("Lançamento atualizado!");
                 } else {
@@ -2082,9 +1791,6 @@
                             value: installmentValue,
                             paymentMethod: paymentMethod,
                             owner: owner,
-                            isInstallment: installments > 1,
-                            installmentIndex: i + 1,
-                            installmentTotal: installments,
                             createdAt: new Date()
                         });
                     }

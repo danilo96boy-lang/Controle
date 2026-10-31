@@ -32,7 +32,7 @@
         .spinner { width: 34px; height: 34px; border: 3px solid #1e293b; border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        /* Seletores Visuais (Cartão e Responsável) */
+        /* Seletores Visuais (Cartão, Responsável e Início da Parcela) */
         .visual-selector input:checked + label {
             background-color: #2563eb;
             border-color: #60a5fa;
@@ -53,6 +53,13 @@
             border-color: #f472b6;
             color: #ffffff;
             box-shadow: 0 4px 12px rgba(219, 39, 119, 0.35);
+        }
+
+        .offset-selector input[value="1"]:checked + label {
+            background-color: #d97706;
+            border-color: #fbbf24;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
         }
 
         /* Botões Visuais de Categoria Mobile-First */
@@ -78,18 +85,15 @@
             box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.35);
         }
 
-        /* Animação para novo item recente */
         @keyframes pulseHighlight {
             0% { background-color: rgba(16, 185, 129, 0.25); }
             100% { background-color: transparent; }
         }
         .recent-highlight { animation: pulseHighlight 2.5s ease-out; }
 
-        /* Esconder barra de rolagem horizontal mantendo scroll */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Custom Scrollbar Geral */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #020617; }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
@@ -134,7 +138,6 @@
                     <span class="text-xs font-black uppercase tracking-widest text-slate-300">Vault Analytics</span>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
-                    <!-- Input oculto + Botão de Importação PDF -->
                     <input type="file" id="pdf-upload" accept="application/pdf" class="hidden" onchange="handlePdfUpload(event)">
                     <button onclick="document.getElementById('pdf-upload').click()" class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded-xl text-[11px] uppercase font-black tracking-wider flex items-center gap-1.5 transition active:scale-95">
                         📄 Importar PDF
@@ -154,7 +157,7 @@
                 <button id="next-month" class="p-3 text-blue-500 hover:bg-slate-800/60 rounded-xl font-bold transition">▶</button>
             </div>
 
-            <!-- Navegação por Abas (Visão Geral vs Extrato Detalhado) -->
+            <!-- Navegação por Abas -->
             <div class="grid grid-cols-2 gap-2 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
                 <button id="tab-btn-dashboard" onclick="switchTab('dashboard')" class="tab-btn active py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 text-slate-400">
                     <span>📊 Visão Geral</span>
@@ -174,7 +177,7 @@
                 <!-- Resumo Inteligente (4 KPIs) -->
                 <div id="summary-display" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
 
-                <!-- NOVO: Últimos 3 Lançamentos Recentes (Feedback Imediato p/ Mobile) -->
+                <!-- Últimos 3 Lançamentos Recentes (Feedback Imediato) -->
                 <div class="card rounded-2xl p-4 lg:p-5 border border-blue-500/20">
                     <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center gap-2">
@@ -188,7 +191,7 @@
                     <div id="recent-launches-list" class="grid grid-cols-1 md:grid-cols-3 gap-2.5"></div>
                 </div>
 
-                <!-- Painel de Alertas Inteligentes (Insights do Mês) -->
+                <!-- Painel de Alertas Inteligentes -->
                 <div class="card rounded-2xl p-4 lg:p-5">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="font-black text-xs uppercase tracking-widest text-slate-400 flex items-center gap-2">
@@ -259,14 +262,14 @@
 
         </main>
 
-        <!-- Botão Flutuante de Novo Gasto (Com Rótulo em Telas Maiores e Fácil Alcance no Polegar) -->
+        <!-- Botão Flutuante de Novo Gasto -->
         <button onclick="openModal()" class="fixed bottom-6 right-6 h-16 px-6 bg-blue-600 hover:bg-blue-500 rounded-full shadow-2xl shadow-blue-600/40 flex items-center justify-center gap-2 text-white font-black z-40 active:scale-95 transition-transform">
             <span class="text-2xl leading-none">+</span>
             <span class="text-xs uppercase tracking-widest">Lançar</span>
         </button>
     </div>
 
-    <!-- Modal de Inserção/Edição Manual (Mobile-First Ultra Rápido) -->
+    <!-- Modal de Inserção/Edição Manual -->
     <div id="expense-modal" class="fixed inset-0 bg-black/95 hidden z-50 items-end lg:items-center justify-center p-0 sm:p-4 backdrop-blur-sm overflow-y-auto">
         <div class="card w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 lg:p-6 mt-auto sm:my-auto max-h-[95vh] overflow-y-auto border-b-0 sm:border-b">
             <div class="w-12 h-1.5 bg-slate-800 rounded-full mx-auto mb-3 sm:hidden"></div>
@@ -306,14 +309,14 @@
 
                 <!-- 2. Valor e Data + Botões Rápidos de Valor -->
                 <div class="space-y-2">
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">2. Qual o valor e data?</label>
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">2. Valor Total e Data da Compra</label>
                     <div class="grid grid-cols-5 gap-2.5">
                         <div class="col-span-3 relative">
                             <span class="absolute left-3.5 top-3.5 text-slate-500 font-black text-sm">R$</span>
-                            <input type="number" step="0.01" inputmode="decimal" required id="form-val" placeholder="0,00" class="w-full p-3 pl-10 rounded-xl text-2xl font-black">
+                            <input type="number" step="0.01" inputmode="decimal" required id="form-val" oninput="updateInstallmentPreview()" placeholder="0,00" class="w-full p-3 pl-10 rounded-xl text-2xl font-black">
                         </div>
                         <div class="col-span-2">
-                            <input type="date" id="form-date" required class="p-3.5 rounded-xl text-xs font-bold w-full h-full">
+                            <input type="date" id="form-date" required onchange="updateInstallmentPreview()" class="p-3.5 rounded-xl text-xs font-bold w-full h-full">
                         </div>
                     </div>
                     <div class="flex gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
@@ -322,7 +325,7 @@
                         <button type="button" onclick="addVal(50)" class="btn-value">+50</button>
                         <button type="button" onclick="addVal(100)" class="btn-value">+100</button>
                         <button type="button" onclick="addVal(200)" class="btn-value">+200</button>
-                        <button type="button" onclick="document.getElementById('form-val').value=''" class="btn-value text-red-400 ml-auto">Zerar</button>
+                        <button type="button" onclick="document.getElementById('form-val').value=''; updateInstallmentPreview();" class="btn-value text-red-400 ml-auto">Zerar</button>
                     </div>
                 </div>
 
@@ -334,7 +337,6 @@
                     </div>
                     <input type="text" id="form-desc" required oninput="handleDescriptionTyping(this.value)" placeholder="Ex: iFood, Pão de Açúcar, Uber..." autocomplete="off" class="w-full p-3.5 rounded-xl text-sm font-semibold">
                     
-                    <!-- Chips Horizontais de Locais Frequentes -->
                     <div class="space-y-1">
                         <span class="text-[9px] font-black uppercase tracking-wider text-slate-500 block">⚡ Locais Frequentes (1 Toque):</span>
                         <div id="frequent-places-chips" class="flex gap-1.5 overflow-x-auto no-scrollbar pb-1"></div>
@@ -352,31 +354,71 @@
                 </div>
                 
                 <!-- 5. Forma de Pagamento e Parcelas -->
-                <div class="grid grid-cols-3 gap-2.5 pt-1">
-                    <div class="col-span-2 space-y-1.5">
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">5. Pagamento</label>
-                        <div class="grid grid-cols-3 gap-1.5 visual-selector">
-                            <div class="relative">
-                                <input type="radio" name="form-payment" id="pay-inter" value="Inter" checked class="sr-only">
-                                <label for="pay-inter" class="block text-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Inter</label>
+                <div class="space-y-3 pt-1">
+                    <div class="grid grid-cols-3 gap-2.5">
+                        <div class="col-span-2 space-y-1.5">
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">5. Pagamento</label>
+                            <div class="grid grid-cols-3 gap-1.5 visual-selector">
+                                <div class="relative">
+                                    <input type="radio" name="form-payment" id="pay-inter" value="Inter" checked class="sr-only">
+                                    <label for="pay-inter" class="block text-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Inter</label>
+                                </div>
+                                <div class="relative">
+                                    <input type="radio" name="form-payment" id="pay-santander" value="Santander" class="sr-only">
+                                    <label for="pay-santander" class="block text-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Santander</label>
+                                </div>
+                                <div class="relative">
+                                    <input type="radio" name="form-payment" id="pay-outros" value="Outros" class="sr-only">
+                                    <label for="pay-outros" class="block text-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Pix/Outros</label>
+                                </div>
                             </div>
+                        </div>
+
+                        <div id="installments-wrapper" class="space-y-1.5">
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Nº Parcelas</label>
                             <div class="relative">
-                                <input type="radio" name="form-payment" id="pay-santander" value="Santander" class="sr-only">
-                                <label for="pay-santander" class="block text-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Santander</label>
-                            </div>
-                            <div class="relative">
-                                <input type="radio" name="form-payment" id="pay-outros" value="Outros" class="sr-only">
-                                <label for="pay-outros" class="block text-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Pix/Outros</label>
+                                <span class="absolute left-2.5 top-2.5 text-slate-500 text-xs">📦</span>
+                                <input type="number" id="form-installments" min="1" max="48" inputmode="numeric" oninput="handleInstallmentChange()" class="w-full p-2.5 pl-7 rounded-xl text-xs font-black" value="1">
                             </div>
                         </div>
                     </div>
 
-                    <div id="installments-wrapper" class="space-y-1.5">
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Parcelas</label>
-                        <div class="relative">
-                            <span class="absolute left-2.5 top-2.5 text-slate-500 text-xs">📦</span>
-                            <input type="number" id="form-installments" min="1" max="48" inputmode="numeric" class="w-full p-2.5 pl-7 rounded-xl text-xs font-bold" value="1">
+                    <!-- Atalhos Rápidos de Parcelamento -->
+                    <div id="installment-quick-btns" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                        <span class="text-[9px] font-black uppercase text-slate-500 mr-1">Parcelar:</span>
+                        <button type="button" onclick="setInstallments(1)" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300">À vista (1x)</button>
+                        <button type="button" onclick="setInstallments(2)" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300">2x</button>
+                        <button type="button" onclick="setInstallments(3)" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300">3x</button>
+                        <button type="button" onclick="setInstallments(4)" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300">4x</button>
+                        <button type="button" onclick="setInstallments(6)" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300">6x</button>
+                        <button type="button" onclick="setInstallments(10)" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300">10x</button>
+                        <button type="button" onclick="setInstallments(12)" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300">12x</button>
+                    </div>
+
+                    <!-- NOVO: Pergunta se a 1ª Parcela entra Neste Mês ou Só no Próximo Mês -->
+                    <div id="installment-start-box" class="hidden p-3.5 rounded-2xl bg-blue-950/20 border border-blue-500/30 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <label class="text-[10px] font-black text-blue-300 uppercase tracking-wider flex items-center gap-1.5">
+                                <span>🗓️ Quando cai a 1ª Parcela na fatura? *</span>
+                            </label>
                         </div>
+                        <div class="grid grid-cols-2 gap-2 visual-selector offset-selector">
+                            <div class="relative">
+                                <input type="radio" name="form-installment-offset" id="offset-current" value="0" checked onchange="updateInstallmentPreview()" class="sr-only">
+                                <label for="offset-current" class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/80 text-xs font-bold text-slate-300 cursor-pointer transition-all text-center">
+                                    <span class="text-sm mb-0.5">📅 Entra Neste Mês</span>
+                                    <span id="label-this-month-name" class="text-[9px] text-slate-400 font-semibold uppercase">Mês da Compra</span>
+                                </label>
+                            </div>
+                            <div class="relative">
+                                <input type="radio" name="form-installment-offset" id="offset-next" value="1" onchange="updateInstallmentPreview()" class="sr-only">
+                                <label for="offset-next" class="flex flex-col items-center justify-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/80 text-xs font-bold text-slate-300 cursor-pointer transition-all text-center">
+                                    <span class="text-sm mb-0.5">⏭️ Só no Próximo Mês</span>
+                                    <span id="label-next-month-name" class="text-[9px] text-slate-400 font-semibold uppercase">Fatura já fechou</span>
+                                </label>
+                            </div>
+                        </div>
+                        <p id="installment-schedule-preview" class="text-[11px] font-bold text-slate-300 text-center bg-slate-900/90 py-2 px-3 rounded-xl border border-slate-800"></p>
                     </div>
                 </div>
 
@@ -525,7 +567,6 @@
             'Outros': '📦'
         };
 
-        // Locais padrão caso o histórico ainda tenha poucos lançamentos
         const DEFAULT_PLACES = [
             { desc: 'iFood', cat: 'Delivery', pay: 'Inter' },
             { desc: 'Mercado', cat: 'Mercado', pay: 'Inter' },
@@ -546,7 +587,6 @@
         let extractedPdfItems = [];
         let lastCreatedId = null;
 
-        // Dicionário Expandido para Preenchimento Automático Enquanto Digita
         const CATEGORY_KEYWORDS = {
             'Delivery': ['IFOOD', 'IFD', 'RAPPI', 'ZE DELIVERY', 'ZEDELIVERY', 'AIQFOME', 'BURGER', 'BK', 'MCDONALDS', 'MC DONALDS', 'ARCOS DOURADOS', 'PIZZA', 'PIZZARIA', 'SUSHI', 'TEMAKI', 'LANCHE', 'PADARIA', 'PANIFICADORA', 'CONFEITARIA', 'ACAI', 'ACAITERIA', 'SORVETE', 'SORVETERIA', 'DOCERIA', 'CAFE', 'PASTEL'],
             'Carro': ['UBER', '99APP', '99 ', '99POP', 'SEM PARAR', 'CONECTCAR', 'VELOE', 'ESTACIONAMENTO', 'PARK', 'PEDAGIO', 'CCR', 'AUTOBAN', 'ECOVIAS', 'MECANICA', 'OFICINA', 'AUTO PECAS', 'AUTOPECAS', 'PNEU', 'LAVA RAPIDO', 'LAVAGEM', 'IPVA', 'DETRAN', 'SEGURO AUTO', 'PORTO SEGURO', 'AZUL SEGUROS', 'BORRACHARIA'],
@@ -595,8 +635,70 @@
             setTimeout(() => {
                 toast.classList.add('hidden');
                 toast.classList.remove('flex');
-            }, 2800);
+            }, 3000);
         }
+
+        // ==================== FUNÇÃO SEGURA PARA SOMAR MESES SEM BUG DE DIA 31 ====================
+        function addMonthsSafe(isoDateStr, monthsToAdd) {
+            const [y, m, d] = isoDateStr.split('-').map(Number);
+            const targetMonthIndex = (m - 1) + monthsToAdd;
+            const targetYear = y + Math.floor(targetMonthIndex / 12);
+            const normalizedMonth = ((targetMonthIndex % 12) + 12) % 12; // 0..11
+            const maxDaysInTargetMonth = new Date(targetYear, normalizedMonth + 1, 0).getDate();
+            const safeDay = Math.min(d, maxDaysInTargetMonth);
+
+            return `${targetYear}-${String(normalizedMonth + 1).padStart(2, '0')}-${String(safeDay).padStart(2, '0')}`;
+        }
+
+        function formatMonthYearShort(isoDateStr) {
+            const [y, m] = isoDateStr.split('-').map(Number);
+            const d = new Date(y, m - 1, 15);
+            return d.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).replace('.', '').toUpperCase();
+        }
+
+        // ==================== CONTROLE DE PARCELAS E SELETOR "ENTRA ESTE MÊS OU PRÓXIMO" ====================
+        window.setInstallments = (n) => {
+            document.getElementById('form-installments').value = n;
+            handleInstallmentChange();
+        };
+
+        window.handleInstallmentChange = () => {
+            const installments = parseInt(document.getElementById('form-installments').value) || 1;
+            const box = document.getElementById('installment-start-box');
+            if (installments > 1 && !currentEditId) {
+                box.classList.remove('hidden');
+                updateInstallmentPreview();
+            } else {
+                box.classList.add('hidden');
+            }
+        };
+
+        window.updateInstallmentPreview = () => {
+            const installments = parseInt(document.getElementById('form-installments').value) || 1;
+            const rawDate = document.getElementById('form-date').value || new Date().toISOString().split('T')[0];
+            const totalVal = parseFloat(document.getElementById('form-val').value) || 0;
+            const offsetRadio = document.querySelector('input[name="form-installment-offset"]:checked');
+            const offset = offsetRadio ? parseInt(offsetRadio.value, 10) : 0;
+
+            // Atualiza os rótulos dos botões com o nome real dos meses
+            const thisMonthStr = formatMonthYearShort(addMonthsSafe(rawDate, 0));
+            const nextMonthStr = formatMonthYearShort(addMonthsSafe(rawDate, 1));
+            const lblThis = document.getElementById('label-this-month-name');
+            const lblNext = document.getElementById('label-next-month-name');
+            if (lblThis) lblThis.innerText = `1ª em ${thisMonthStr}`;
+            if (lblNext) lblNext.innerText = `1ª em ${nextMonthStr}`;
+
+            if (installments <= 1) return;
+
+            const parcelVal = totalVal > 0 ? fmtMoney(totalVal / installments) : 'R$ 0,00';
+            const firstDueDate = addMonthsSafe(rawDate, offset);
+            const lastDueDate = addMonthsSafe(rawDate, offset + installments - 1);
+
+            const previewEl = document.getElementById('installment-schedule-preview');
+            if (previewEl) {
+                previewEl.innerHTML = `📦 <b>${installments}x de ${parcelVal}</b> • Início: <span class="text-blue-400">${formatMonthYearShort(firstDueDate)}</span> → Fim: <span class="text-emerald-400">${formatMonthYearShort(lastDueDate)}</span>`;
+            }
+        };
 
         document.getElementById('login-form').onsubmit = (e) => {
             e.preventDefault();
@@ -650,12 +752,10 @@
             renderVisualCategoryButtons(cat, isAuto);
         };
 
-        // Detecta categoria automaticamente enquanto o usuário digita a descrição
         window.handleDescriptionTyping = (text) => {
             const clean = text.trim();
             if (clean.length < 2) return;
 
-            // 1. Tenta achar correspondência exata ou parcial no histórico de lançamentos do casal
             const upperInput = clean.toUpperCase();
             const historicalMatch = expenses.find(e => 
                 e.description && 
@@ -669,7 +769,6 @@
                 return;
             }
 
-            // 2. Tenta pelo dicionário inteligente de palavras-chave
             const matchedCat = detectCategoryByKeyword(clean);
             if (matchedCat) {
                 selectVisualCategory(matchedCat, true);
@@ -694,7 +793,7 @@
             return null;
         }
 
-        // ==================== SUGESTÕES DE LOCAIS FREQUENTES (BASEADO NO HISTÓRICO) ====================
+        // ==================== SUGESTÕES DE LOCAIS FREQUENTES ====================
 
         function renderFrequentPlacesChips() {
             const container = document.getElementById('frequent-places-chips');
@@ -703,7 +802,6 @@
             const freqMap = {};
             expenses.forEach(e => {
                 if (!e.description || e.category === 'Reserva') return;
-                // Remove indicador de parcela Ex: "Loja (1/3)" -> "Loja"
                 const cleanName = e.description.replace(/\s*\(\d+\/\d+\)$/, '').trim();
                 if (cleanName.length < 2 || cleanName.length > 25) return;
 
@@ -723,7 +821,6 @@
                 .sort((a, b) => b.count - a.count)
                 .slice(0, 10);
 
-            // Completa com locais padrão caso o usuário tenha menos de 5 locais no histórico
             if (suggestions.length < 5) {
                 DEFAULT_PLACES.forEach(def => {
                     if (!suggestions.some(s => s.desc.toUpperCase() === def.desc.toUpperCase())) {
@@ -753,12 +850,11 @@
                 const targetPay = document.querySelector(`input[name="form-payment"][value="${pay}"]`);
                 if (targetPay) targetPay.checked = true;
             }
-            // Se o campo de valor estiver vazio, foca nele para agilizar
             const valInput = document.getElementById('form-val');
             if (!valInput.value) valInput.focus();
         };
 
-        // ==================== ÚLTIMOS 3 LANÇAMENTOS RECENTES (TELA PRINCIPAL) ====================
+        // ==================== ÚLTIMOS 3 LANÇAMENTOS RECENTES ====================
 
         function renderRecentLaunches() {
             const container = document.getElementById('recent-launches-list');
@@ -773,7 +869,6 @@
                 return;
             }
 
-            // Ordena pelos mais recentemente criados (usando createdAt se disponível, senão date)
             const sortedRecent = [...expenses].sort((a, b) => {
                 const timeA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : new Date(a.date || 0).getTime();
                 const timeB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : new Date(b.date || 0).getTime();
@@ -1268,7 +1363,6 @@
 
             document.getElementById('extrato-count-badge').innerText = allMonthExpenses.length;
 
-            // Atualiza os Últimos 3 Lançamentos Recentes na tela principal
             renderRecentLaunches();
 
             const indicator = document.getElementById('active-filter-indicator');
@@ -1535,6 +1629,7 @@
             const input = document.getElementById('form-val');
             let current = parseFloat(input.value) || 0;
             input.value = (current + v).toFixed(2);
+            updateInstallmentPreview();
         };
 
         window.setFastFilter = (f) => {
@@ -1644,8 +1739,8 @@
             const installments = parseInt(document.getElementById('form-installments').value) || 1;
             const paymentRadio = document.querySelector('input[name="form-payment"]:checked');
             const ownerRadio = document.querySelector('input[name="form-owner"]:checked');
+            const offsetRadio = document.querySelector('input[name="form-installment-offset"]:checked');
 
-            // Se a pessoa digitou algo e esqueceu de tocar na categoria, tenta deduzir antes de bloquear
             if (!category && description) {
                 const autoCat = detectCategoryByKeyword(description);
                 if (autoCat) category = autoCat;
@@ -1660,9 +1755,9 @@
 
             const paymentMethod = paymentRadio.value;
             const owner = ownerRadio.value;
-            const baseDate = new Date(rawDate + "T12:00:00");
+            const monthOffset = (installments > 1 && offsetRadio) ? parseInt(offsetRadio.value, 10) : 0;
             
-            const installmentValue = totalValue / installments;
+            const installmentValue = Number((totalValue / installments).toFixed(2));
             const col = db.collection('users').doc(userId).collection('expenses');
 
             const saveBtn = document.getElementById('save-btn');
@@ -1683,12 +1778,14 @@
                     }, { merge: true });
                     showToast("Lançamento atualizado!");
                 } else {
+                    const batch = db.batch();
                     for (let i = 0; i < installments; i++) {
-                        const dueDate = new Date(baseDate);
-                        dueDate.setMonth(baseDate.getMonth() + i);
-                        
-                        const docRef = await col.add({
-                            date: dueDate.toISOString().split('T')[0],
+                        const dueDateStr = addMonthsSafe(rawDate, monthOffset + i);
+                        const newDocRef = col.doc();
+                        if (i === 0) lastCreatedId = newDocRef.id;
+
+                        batch.set(newDocRef, {
+                            date: dueDateStr,
                             description: installments > 1 ? `${description} (${i + 1}/${installments})` : description,
                             category: category,
                             value: installmentValue,
@@ -1696,13 +1793,20 @@
                             owner: owner,
                             createdAt: new Date()
                         });
-                        if (i === 0) lastCreatedId = docRef.id;
                     }
-                    showToast(`${getCatIcon(category)} ${description} (${fmtMoney(totalValue)}) salvo!`);
+                    await batch.commit();
+
+                    if (installments > 1) {
+                        const startLabel = formatMonthYearShort(addMonthsSafe(rawDate, monthOffset));
+                        showToast(`📦 ${installments}x de ${fmtMoney(installmentValue)} (1ª em ${startLabel})!`);
+                    } else {
+                        showToast(`${getCatIcon(category)} ${description} (${fmtMoney(totalValue)}) salvo!`);
+                    }
                 }
                 closeModal('expense-modal');
                 this.reset();
                 document.getElementById('form-installments').value = "1";
+                document.getElementById('installment-start-box').classList.add('hidden');
                 currentEditId = null;
             } catch (error) {
                 console.error(error);
@@ -1719,6 +1823,7 @@
             document.getElementById('form-error-msg').classList.add('hidden');
             document.getElementById('delete-btn').classList.toggle('hidden', !id);
             document.getElementById('installments-wrapper').classList.toggle('hidden', !!id);
+            document.getElementById('installment-quick-btns').classList.toggle('hidden', !!id);
             document.getElementById('modal-title').innerText = id ? '✏️ Editar Lançamento' : '⚡ Lançamento Rápido';
             
             renderFrequentPlacesChips();
@@ -1728,6 +1833,7 @@
                 document.getElementById('form-date').value = i.date;
                 document.getElementById('form-desc').value = i.description;
                 document.getElementById('form-val').value = i.value;
+                document.getElementById('installment-start-box').classList.add('hidden');
                 renderVisualCategoryButtons(i.category || '', false);
                 
                 const targetPay = document.querySelector(`input[name="form-payment"][value="${i.paymentMethod || 'Outros'}"]`);
@@ -1738,10 +1844,13 @@
             } else {
                 document.getElementById('expense-form').reset();
                 document.getElementById('form-installments').value = "1";
+                document.getElementById('offset-current').checked = true;
+                document.getElementById('installment-start-box').classList.add('hidden');
                 document.getElementById('pay-inter').checked = true;
                 document.getElementById('owner-casal').checked = true;
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
                 renderVisualCategoryButtons('', false);
+                updateInstallmentPreview();
             }
             document.getElementById('expense-modal').classList.remove('hidden');
             document.getElementById('expense-modal').classList.add('flex');

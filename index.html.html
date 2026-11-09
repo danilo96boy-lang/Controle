@@ -920,13 +920,20 @@
             expensesArray.forEach(e => {
                 if (e.installmentGroupId) {
                     if (!aggregated[e.installmentGroupId]) {
+                        // Melhoria 1: Usa o 'totalValue' cravado no banco (se existir). 
+                        // Caso seja um dado legado antigo, faz fallback para o 'value' da parcela.
                         aggregated[e.installmentGroupId] = { 
                             ...e, 
-                            value: 0, 
+                            value: e.totalValue ? Number(e.totalValue) : Number(e.value), 
                             description: e.description.replace(/\s*\(\d+\/\d+\)$/, '') 
                         };
+                    } else {
+                        // Retrocompatibilidade: Se NÃO houver totalValue gravado (lançamentos antigos),
+                        // ele continua somando as parcelas que caírem no mesmo mês iterativamente.
+                        if (!e.totalValue) {
+                            aggregated[e.installmentGroupId].value += Number(e.value);
+                        }
                     }
-                    aggregated[e.installmentGroupId].value += Number(e.value);
                 } else {
                     result.push(e);
                 }
@@ -1382,12 +1389,14 @@
                     }
 
                     if (updateAll) {
-                        const groupItems = expenses.filter(e => e.installmentGroupId === currentItem.installmentGroupId);
+                        // Melhoria 2: Busca direto no Firestore garantindo que pegue TODA a série, sem órfãs
+                        const groupSnapshot = await col.where('installmentGroupId', '==', currentItem.installmentGroupId).get();
                         const batch = db.batch();
                         const baseDesc = description.replace(/\s*\(\d+\/\d+\)$/, ''); 
                         
-                        groupItems.forEach(gItem => {
-                            batch.update(col.doc(gItem.id), {
+                        groupSnapshot.docs.forEach(docSnap => {
+                            const gItem = docSnap.data();
+                            batch.update(docSnap.ref, {
                                 description: `${baseDesc} (${gItem.installmentNumber}/${gItem.totalInstallments})`,
                                 category: category, owner: owner, paymentMethod: paymentMethod
                             });
@@ -1423,7 +1432,11 @@
                         };
 
                         if (installments > 1) {
-                            payload.installmentGroupId = installmentGroupId; payload.totalInstallments = installments; payload.installmentNumber = i + 1;
+                            payload.installmentGroupId = installmentGroupId; 
+                            payload.totalInstallments = installments; 
+                            payload.installmentNumber = i + 1;
+                            // Melhoria 1: Cravando o valor total no documento da parcela
+                            payload.totalValue = totalValue; 
                         }
 
                         batch.set(newDocRef, payload);
@@ -1508,14 +1521,20 @@
 
             toggleLoader(true, "Excluindo...");
             try {
+                const col = db.collection('users').doc(userId).collection('expenses');
+                
                 if (allGroup) {
                     const item = expenses.find(e => e.id === currentEditId);
-                    const groupItems = expenses.filter(e => e.installmentGroupId === item.installmentGroupId);
+                    // Melhoria 2: Query direta no Firestore para assegurar o Batch Delete completo da série
+                    const groupSnapshot = await col.where('installmentGroupId', '==', item.installmentGroupId).get();
                     const batch = db.batch();
-                    groupItems.forEach(gItem => batch.delete(db.collection('users').doc(userId).collection('expenses').doc(gItem.id)));
-                    await batch.commit(); showToast("Série excluída!");
+                    
+                    groupSnapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
+                    await batch.commit(); 
+                    showToast("Série excluída com sucesso!");
                 } else {
-                    await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete(); showToast("Registro excluído.");
+                    await col.doc(currentEditId).delete(); 
+                    showToast("Registro excluído.");
                 }
                 closeModal('expense-modal');
             } catch (err) {

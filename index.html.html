@@ -131,7 +131,6 @@
     <!-- Main Application -->
     <div id="app-container" class="hidden pb-28">
         <header class="p-4 lg:p-8 flex flex-col gap-4 max-w-5xl mx-auto">
-            <!-- Top Bar: Brand & Action Buttons -->
             <div class="flex flex-wrap justify-between items-center gap-3">
                 <div class="flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
@@ -150,20 +149,18 @@
                 </div>
             </div>
             
-            <!-- Seletor de Mês -->
             <div class="flex items-center justify-between bg-slate-900/60 p-2 rounded-2xl border border-slate-800">
                 <button id="prev-month" class="p-3 text-blue-500 hover:bg-slate-800/60 rounded-xl font-bold transition">◀</button>
                 <span id="current-month" class="font-black text-sm uppercase tracking-wider text-slate-100"></span>
                 <button id="next-month" class="p-3 text-blue-500 hover:bg-slate-800/60 rounded-xl font-bold transition">▶</button>
             </div>
 
-            <!-- Navegação por Abas -->
             <div class="grid grid-cols-2 gap-2 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
                 <button id="tab-btn-dashboard" onclick="switchTab('dashboard')" class="tab-btn active py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 text-slate-400">
                     <span>📊 Visão Geral</span>
                 </button>
                 <button id="tab-btn-extrato" onclick="switchTab('extrato')" class="tab-btn py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 text-slate-400">
-                    <span>📑 Extrato Detalhado</span>
+                    <span>📑 Extrato (Fatura)</span>
                     <span id="extrato-count-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">0</span>
                 </button>
             </div>
@@ -177,10 +174,7 @@
                 <!-- Resumo Inteligente (4 KPIs) -->
                 <div id="summary-display" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
 
-                <!-- Card de Comprometimento (Adicionado via JS no render) -->
-                <div id="commitment-display"></div>
-
-                <!-- Últimos 3 Lançamentos Recentes (Feedback Imediato) -->
+                <!-- Últimos 3 Lançamentos Recentes -->
                 <div class="card rounded-2xl p-4 lg:p-5 border border-blue-500/20">
                     <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center gap-2">
@@ -188,7 +182,7 @@
                             <h3 class="font-black text-xs uppercase tracking-widest text-slate-200">Últimos 3 Lançamentos</h3>
                         </div>
                         <button onclick="switchTab('extrato')" class="text-[10px] font-black uppercase text-blue-400 hover:text-blue-300 tracking-wider">
-                            Ver todos →
+                            Ver extrato →
                         </button>
                     </div>
                     <div id="recent-launches-list" class="grid grid-cols-1 md:grid-cols-3 gap-2.5"></div>
@@ -200,7 +194,7 @@
                         <h3 class="font-black text-xs uppercase tracking-widest text-slate-400 flex items-center gap-2">
                             <span>⚡ Alertas & Insights do Mês</span>
                         </h3>
-                        <span class="text-[10px] font-bold text-slate-500 uppercase">Base: Nosso Gasto Real</span>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase">Base: Consumo Real</span>
                     </div>
                     <div id="insights-container" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
                 </div>
@@ -208,15 +202,15 @@
                 <!-- Gráficos Principais -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="card rounded-2xl p-4 cursor-pointer hover:border-slate-700 transition" title="Clique em uma fatia para filtrar no Extrato">
-                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Nossas Categorias (Casal)</p>
+                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Consumo por Categoria</p>
                         <div class="relative h-48"><canvas id="expenseChart"></canvas></div>
                     </div>
                     <div class="card rounded-2xl p-4 cursor-pointer hover:border-slate-700 transition" title="Clique em uma fatia para filtrar no Extrato">
-                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Total nos Cartões (Geral)</p>
+                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Consumo por Cartão</p>
                         <div class="relative h-48"><canvas id="cardChart"></canvas></div>
                     </div>
                     <div class="card rounded-2xl p-4">
-                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Nosso Gasto: Ant. vs Atual</p>
+                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-4 text-center">Nosso Consumo: Ant. vs Atual</p>
                         <div class="relative h-48"><canvas id="comparisonChart"></canvas></div>
                     </div>
                 </div>
@@ -225,8 +219,8 @@
                 <div class="card rounded-2xl p-5">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h3 class="font-black text-xs uppercase tracking-widest text-slate-400">🏆 Top 5 Maiores Despesas (Casal)</h3>
-                            <p class="text-[10px] text-slate-500 mt-0.5">Maiores gastos reais do casal neste mês (ignora compras da Sandra, Márcia e Reserva)</p>
+                            <h3 class="font-black text-xs uppercase tracking-widest text-slate-400">🏆 Top 5 Maiores Compras (Casal)</h3>
+                            <p class="text-[10px] text-slate-500 mt-0.5">Visão do limite total comprometido neste mês (agrupa compras parceladas)</p>
                         </div>
                     </div>
                     <div id="top-expenses-list" class="space-y-3"></div>
@@ -238,7 +232,8 @@
                 <div class="card rounded-3xl overflow-hidden flex flex-col">
                     <div class="p-5 border-b border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
                         <div class="flex flex-col">
-                            <h3 class="font-black text-xs uppercase tracking-widest text-slate-400">Extrato Detalhado</h3>
+                            <h3 class="font-black text-xs uppercase tracking-widest text-slate-400">Extrato (Fatura do Mês)</h3>
+                            <p class="text-[9px] text-slate-500 font-bold mt-1">Exibe apenas as parcelas que caem nesta fatura.</p>
                             <span id="active-filter-indicator" class="text-[10px] text-blue-400 font-bold uppercase mt-1 hidden"></span>
                         </div>
                         <div class="flex flex-wrap items-center gap-1.5">
@@ -282,7 +277,6 @@
             </div>
 
             <form id="expense-form" class="space-y-4" novalidate>
-                <!-- 1. Responsável pela Compra -->
                 <div class="space-y-1.5">
                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">1. De quem é a compra?</label>
                     <div class="grid grid-cols-3 gap-2 visual-selector owner-selector">
@@ -310,7 +304,6 @@
                     </div>
                 </div>
 
-                <!-- 2. Valor e Data + Botões Rápidos de Valor -->
                 <div class="space-y-2">
                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">2. Valor Total e Data da Compra</label>
                     <div class="grid grid-cols-5 gap-2.5">
@@ -332,7 +325,6 @@
                     </div>
                 </div>
 
-                <!-- 3. Descrição + Sugestões de Locais Frequentes do Histórico (1-Tap) -->
                 <div class="space-y-2">
                     <div class="flex justify-between items-center">
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider">3. Onde ou o que comprou?</label>
@@ -346,7 +338,6 @@
                     </div>
                 </div>
 
-                <!-- 4. Grade Visual de Categorias com Auto-Preenchimento -->
                 <div class="space-y-2">
                     <div class="flex justify-between items-center">
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider">4. Categoria (Toque no ícone)</label>
@@ -356,7 +347,6 @@
                     <div id="visual-categories-grid" class="grid grid-cols-3 sm:grid-cols-5 gap-2"></div>
                 </div>
                 
-                <!-- 5. Forma de Pagamento e Parcelas -->
                 <div class="space-y-3 pt-1">
                     <div class="grid grid-cols-3 gap-2.5">
                         <div class="col-span-2 space-y-1.5">
@@ -367,7 +357,6 @@
                                     <label for="pay-inter" class="block text-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Inter</label>
                                 </div>
                                 <div class="relative">
-                                    <!-- AQUI: SANTANDER AGORA É O DEFAULT -->
                                     <input type="radio" name="form-payment" id="pay-santander" value="Santander" checked class="sr-only">
                                     <label for="pay-santander" class="block text-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Santander</label>
                                 </div>
@@ -387,7 +376,6 @@
                         </div>
                     </div>
 
-                    <!-- Atalhos Rápidos de Parcelamento -->
                     <div id="installment-quick-btns" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
                         <span class="text-[9px] font-black uppercase text-slate-500 mr-1">Parcelar:</span>
                         <button type="button" onclick="setInstallments(1)" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300">À vista (1x)</button>
@@ -399,7 +387,6 @@
                         <button type="button" onclick="setInstallments(12)" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300">12x</button>
                     </div>
 
-                    <!-- Pergunta se a 1ª Parcela entra Neste Mês ou Só no Próximo Mês -->
                     <div id="installment-start-box" class="hidden p-3.5 rounded-2xl bg-blue-950/20 border border-blue-500/30 space-y-2.5">
                         <div class="flex items-center justify-between">
                             <label class="text-[10px] font-black text-blue-300 uppercase tracking-wider flex items-center gap-1.5">
@@ -435,7 +422,6 @@
                     </button>
                 </div>
                 
-                <!-- Ações de Exclusão Refatoradas -->
                 <div id="delete-actions" class="hidden flex gap-2 pt-1">
                     <button type="button" id="delete-btn" onclick="deleteItem(false)" class="flex-1 text-red-500 hover:text-red-400 text-[10px] font-black uppercase tracking-widest bg-red-500/10 py-2.5 rounded-xl">🗑️ Excluir Parcela</button>
                     <button type="button" id="delete-group-btn" onclick="deleteItem(true)" class="flex-1 text-red-500 hover:text-red-400 text-[10px] font-black uppercase tracking-widest bg-red-500/10 py-2.5 rounded-xl">🗑️ Excluir Toda a Série</button>
@@ -459,7 +445,6 @@
                 <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
                     <div class="flex items-center gap-1.5 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
                         <span class="text-[10px] font-bold text-slate-400 uppercase">Cartão:</span>
-                        <!-- AQUI: SANTANDER AGORA É A OPÇÃO PADRÃO -->
                         <select id="bulk-payment-method" onchange="applyBulkPayment(this.value)" class="text-xs font-bold py-1 px-2 rounded-lg">
                             <option value="Santander" selected>Santander</option>
                             <option value="Inter">Inter</option>
@@ -622,41 +607,29 @@
             'RESUMO DA FATURA', 'VENCIMENTO', 'VALOR MINIMO', 'CREDITO EM FATURA'
         ];
 
-        function getCatIcon(cat) {
-            return CATEGORY_ICONS[cat] || '🏷️';
-        }
+        function getCatIcon(cat) { return CATEGORY_ICONS[cat] || '🏷️'; }
 
         function getOwnerBadge(owner) {
             const normalized = owner || 'Casal';
-            if (normalized === 'Sandra') {
-                return `<span class="px-2 py-0.5 rounded-md bg-purple-950/80 text-purple-300 border border-purple-500/30 text-[9px] font-black uppercase">👩 Mãe Sandra</span>`;
-            }
-            if (normalized === 'Márcia') {
-                return `<span class="px-2 py-0.5 rounded-md bg-pink-950/80 text-pink-300 border border-pink-500/30 text-[9px] font-black uppercase">👵 Sogra Márcia</span>`;
-            }
+            if (normalized === 'Sandra') return `<span class="px-2 py-0.5 rounded-md bg-purple-950/80 text-purple-300 border border-purple-500/30 text-[9px] font-black uppercase">👩 Mãe Sandra</span>`;
+            if (normalized === 'Márcia') return `<span class="px-2 py-0.5 rounded-md bg-pink-950/80 text-pink-300 border border-pink-500/30 text-[9px] font-black uppercase">👵 Sogra Márcia</span>`;
             return `<span class="px-2 py-0.5 rounded-md bg-blue-950/60 text-blue-300 border border-blue-500/20 text-[9px] font-bold uppercase">👫 Casal</span>`;
         }
 
         function showToast(message) {
             const toast = document.getElementById('toast-feedback');
             document.getElementById('toast-text').innerText = message;
-            toast.classList.remove('hidden');
-            toast.classList.add('flex');
-            setTimeout(() => {
-                toast.classList.add('hidden');
-                toast.classList.remove('flex');
-            }, 3000);
+            toast.classList.remove('hidden'); toast.classList.add('flex');
+            setTimeout(() => { toast.classList.add('hidden'); toast.classList.remove('flex'); }, 3000);
         }
 
-        // ==================== FUNÇÃO SEGURA PARA SOMAR MESES SEM BUG DE DIA 31 ====================
         function addMonthsSafe(isoDateStr, monthsToAdd) {
             const [y, m, d] = isoDateStr.split('-').map(Number);
             const targetMonthIndex = (m - 1) + monthsToAdd;
             const targetYear = y + Math.floor(targetMonthIndex / 12);
-            const normalizedMonth = ((targetMonthIndex % 12) + 12) % 12; // 0..11
+            const normalizedMonth = ((targetMonthIndex % 12) + 12) % 12;
             const maxDaysInTargetMonth = new Date(targetYear, normalizedMonth + 1, 0).getDate();
             const safeDay = Math.min(d, maxDaysInTargetMonth);
-
             return `${targetYear}-${String(normalizedMonth + 1).padStart(2, '0')}-${String(safeDay).padStart(2, '0')}`;
         }
 
@@ -666,7 +639,6 @@
             return d.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).replace('.', '').toUpperCase();
         }
 
-        // ==================== CONTROLE DE PARCELAS E SELETOR "ENTRA ESTE MÊS OU PRÓXIMO" ====================
         window.setInstallments = (n) => {
             document.getElementById('form-installments').value = n;
             handleInstallmentChange();
@@ -690,7 +662,6 @@
             const offsetRadio = document.querySelector('input[name="form-installment-offset"]:checked');
             const offset = offsetRadio ? parseInt(offsetRadio.value, 10) : 0;
 
-            // Atualiza os rótulos dos botões com o nome real dos meses
             const thisMonthStr = formatMonthYearShort(addMonthsSafe(rawDate, 0));
             const nextMonthStr = formatMonthYearShort(addMonthsSafe(rawDate, 1));
             const lblThis = document.getElementById('label-this-month-name');
@@ -725,14 +696,10 @@
 
         async function init() {
             const doc = await db.collection('users').doc(userId).get();
-            if (doc.exists && doc.data().customCategories) {
-                categories = doc.data().customCategories;
-            }
+            if (doc.exists && doc.data().customCategories) categories = doc.data().customCategories;
             renderVisualCategoryButtons();
             startListening();
         }
-
-        // ==================== GRADE VISUAL DE CATEGORIAS & AUTO-DETECÇÃO ====================
 
         function renderVisualCategoryButtons(selectedCat = '', isAutoGuessed = false) {
             const grid = document.getElementById('visual-categories-grid');
@@ -770,40 +737,28 @@
             const historicalMatch = expenses.find(e => 
                 e.description && 
                 e.description.replace(/\s*\(\d+\/\d+\)$/, '').toUpperCase() === upperInput &&
-                e.category &&
-                categories.includes(e.category)
+                e.category && categories.includes(e.category)
             );
 
             if (historicalMatch) {
-                selectVisualCategory(historicalMatch.category, true);
-                return;
+                selectVisualCategory(historicalMatch.category, true); return;
             }
 
             const matchedCat = detectCategoryByKeyword(clean);
-            if (matchedCat) {
-                selectVisualCategory(matchedCat, true);
-            }
+            if (matchedCat) selectVisualCategory(matchedCat, true);
         };
 
         function detectCategoryByKeyword(description) {
-            const upper = description
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "")
-                .toUpperCase();
-
+            const upper = description.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
             for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
                 if (categories.includes(cat)) {
                     for (const kw of keywords) {
-                        if (upper.includes(kw.toUpperCase())) {
-                            return cat;
-                        }
+                        if (upper.includes(kw.toUpperCase())) return cat;
                     }
                 }
             }
             return null;
         }
-
-        // ==================== SUGESTÕES DE LOCAIS FREQUENTES ====================
 
         function renderFrequentPlacesChips() {
             const container = document.getElementById('frequent-places-chips');
@@ -817,25 +772,15 @@
 
                 const key = cleanName.toUpperCase();
                 if (!freqMap[key]) {
-                    freqMap[key] = {
-                        count: 0,
-                        desc: cleanName,
-                        cat: e.category || 'Outros',
-                        pay: e.paymentMethod || 'Santander'
-                    };
+                    freqMap[key] = { count: 0, desc: cleanName, cat: e.category || 'Outros', pay: e.paymentMethod || 'Santander' };
                 }
                 freqMap[key].count++;
             });
 
-            let suggestions = Object.values(freqMap)
-                .sort((a, b) => b.count - a.count)
-                .slice(0, 10);
-
+            let suggestions = Object.values(freqMap).sort((a, b) => b.count - a.count).slice(0, 10);
             if (suggestions.length < 5) {
                 DEFAULT_PLACES.forEach(def => {
-                    if (!suggestions.some(s => s.desc.toUpperCase() === def.desc.toUpperCase())) {
-                        suggestions.push(def);
-                    }
+                    if (!suggestions.some(s => s.desc.toUpperCase() === def.desc.toUpperCase())) suggestions.push(def);
                 });
             }
 
@@ -853,9 +798,7 @@
 
         window.applyQuickPlace = (desc, cat, pay) => {
             document.getElementById('form-desc').value = desc;
-            if (cat && categories.includes(cat)) {
-                selectVisualCategory(cat, true);
-            }
+            if (cat && categories.includes(cat)) selectVisualCategory(cat, true);
             if (pay) {
                 const targetPay = document.querySelector(`input[name="form-payment"][value="${pay}"]`);
                 if (targetPay) targetPay.checked = true;
@@ -864,18 +807,12 @@
             if (!valInput.value) valInput.focus();
         };
 
-        // ==================== ÚLTIMOS 3 LANÇAMENTOS RECENTES ====================
-
         function renderRecentLaunches() {
             const container = document.getElementById('recent-launches-list');
             if (!container) return;
 
             if (expenses.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-3 py-4 text-center text-slate-500 text-xs font-bold uppercase">
-                        Nenhum gasto registrado ainda. Toque em "+ Lançar" para começar.
-                    </div>
-                `;
+                container.innerHTML = `<div class="col-span-3 py-4 text-center text-slate-500 text-xs font-bold uppercase">Nenhum gasto registrado ainda.</div>`;
                 return;
             }
 
@@ -913,12 +850,12 @@
             }).join('');
         }
 
-        // ==================== ZONA DE PERIGO: LIMPEZA DO MÊS ====================
-
         window.clearCurrentMonthData = async () => {
             const monthKey = currentDate.toISOString().slice(0, 7);
             const monthLabel = currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase();
-            const monthDocs = expenses.filter(e => e.date?.startsWith(monthKey));
+            
+            // Apaga tudo o que vence OU que foi comprado neste mês
+            const monthDocs = expenses.filter(e => e.date?.startsWith(monthKey) || e.originalDate?.startsWith(monthKey));
 
             if (monthDocs.length === 0) {
                 alert(`Não há lançamentos registrados em ${monthLabel} para apagar.`);
@@ -958,8 +895,6 @@
             }
         };
 
-        // ==================== NAVEGAÇÃO POR ABAS ====================
-
         window.switchTab = (tabName) => {
             activeTab = tabName;
             const dashEl = document.getElementById('tab-dashboard');
@@ -968,392 +903,36 @@
             const btnExt = document.getElementById('tab-btn-extrato');
 
             if (tabName === 'dashboard') {
-                dashEl.classList.remove('hidden');
-                extEl.classList.add('hidden');
-                btnDash.classList.add('active');
-                btnExt.classList.remove('active');
+                dashEl.classList.remove('hidden'); extEl.classList.add('hidden');
+                btnDash.classList.add('active'); btnExt.classList.remove('active');
                 render(currentFilterState);
             } else {
-                dashEl.classList.add('hidden');
-                extEl.classList.remove('hidden');
-                btnExt.classList.add('active');
-                btnDash.classList.remove('active');
+                dashEl.classList.add('hidden'); extEl.classList.remove('hidden');
+                btnExt.classList.add('active'); btnDash.classList.remove('active');
+                render(currentFilterState);
             }
         };
 
-        // ==================== IMPORTAÇÃO DE FATURA PDF ====================
-
-        window.handlePdfUpload = async (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            toggleLoader(true, "Lendo arquivo PDF...");
-            try {
-                const arrayBuffer = await file.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                
-                let fullLines = [];
-                let rawTextBlob = "";
-
-                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                    const page = await pdf.getPage(pageNum);
-                    const textContent = await page.getTextContent();
-                    
-                    const rows = {};
-                    textContent.items.forEach(item => {
-                        const str = item.str.trim();
-                        if (!str) return;
-                        rawTextBlob += " " + str;
-                        const y = Math.round(item.transform[5] / 3) * 3;
-                        if (!rows[y]) rows[y] = [];
-                        rows[y].push({ x: item.transform[4], text: item.str });
-                    });
-
-                    const sortedY = Object.keys(rows).map(Number).sort((a, b) => b - a);
-                    sortedY.forEach(y => {
-                        const lineStr = rows[y]
-                            .sort((a, b) => a.x - b.x)
-                            .map(i => i.text.trim())
-                            .join(' ')
-                            .replace(/\s+/g, ' ')
-                            .trim();
-                        if (lineStr.length > 5) fullLines.push(lineStr);
-                    });
-                }
-
-                const upperBlob = rawTextBlob.toUpperCase();
-                // AQUI: SANTANDER COMO FALLBACK PRINCIPAL SE IDENTIFICAR
-                let detectedBank = 'Santander'; 
-                if (upperBlob.includes('BANCO INTER') || upperBlob.includes('INTERMEDIUM') || upperBlob.includes('CARTAO INTER')) {
-                    detectedBank = 'Inter';
-                }
-
-                extractedPdfItems = parseInvoiceLines(fullLines, detectedBank);
-
-                if (extractedPdfItems.length === 0) {
-                    alert("Nenhuma transação padrão foi identificada automaticamente neste PDF. Verifique se o PDF possui texto selecionável ou adicione manualmente na revisão.");
-                }
-
-                openPdfReviewModal(detectedBank);
-            } catch (err) {
-                console.error("Erro ao processar PDF:", err);
-                alert("Falha ao processar o PDF. Verifique se o arquivo não está protegido por senha.");
-            } finally {
-                event.target.value = "";
-                toggleLoader(false);
-            }
-        };
-
-        function parseInvoiceLines(lines, defaultBank) {
-            const results = [];
-            const refYear = currentDate.getFullYear();
-            const refMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
-
-            const regexSlashDate = /^(\d{2})\/(\d{2})(?:\/(\d{2,4}))?\s+(.+?)\s+(?:-\s*)?(?:R\$\s*)?(-?\d{1,3}(?:\.\d{3})*,\d{2})(?:\s+[CD-]|$)/i;
-            const regexInterExtenso = /^(\d{2})\s+(?:de\s+)?([a-zç]{3})\.?(?:\s+(?:de\s+)?(\d{2,4}))?\s+(.+?)\s+(?:\+\s*|-\s*)?(?:R\$\s*)?(-?\d{1,3}(?:\.\d{3})*,\d{2})$/i;
-            const regexMidLine = /(?:^|\s)(\d{2})\/(\d{2})\s+([A-Z0-9\*\.\-\s\/]{4,45}?)\s+(?:R\$\s*)?(\d{1,3}(?:\.\d{3})*,\d{2})(?:\s|$)/i;
-
-            lines.forEach(line => {
-                const upperLine = line.toUpperCase();
-
-                if (NOISE_BLACKLIST.some(noise => upperLine.includes(noise))) return;
-                if (/\+\s*R\$\s*\d/.test(line) || /-\s*R\$\s*\d/.test(line)) return;
-
-                let match = line.match(regexSlashDate);
-                let day, month, deskYear, desc, rawVal;
-
-                if (match) {
-                    [, day, month, deskYear, desc, rawVal] = match;
-                } else {
-                    const matchInter = line.match(regexInterExtenso);
-                    if (matchInter) {
-                        const [, d, mStr, y, description, val] = matchInter;
-                        day = d;
-                        month = PT_MONTHS[mStr.toLowerCase()] || refMonth;
-                        deskYear = y;
-                        desc = description;
-                        rawVal = val;
-                    } else {
-                        const matchMid = line.match(regexMidLine);
-                        if (matchMid) {
-                            [, day, month, desc, rawVal] = matchMid;
-                        }
+        // ==================== LÓGICA DE AGRUPAMENTO DE CONSUMO ====================
+        function aggregateConsumo(expensesArray) {
+            const aggregated = {};
+            const result = [];
+            expensesArray.forEach(e => {
+                if (e.installmentGroupId) {
+                    if (!aggregated[e.installmentGroupId]) {
+                        aggregated[e.installmentGroupId] = { 
+                            ...e, 
+                            value: 0, 
+                            description: e.description.replace(/\s*\(\d+\/\d+\)$/, '') 
+                        };
                     }
-                }
-
-                if (day && month && desc && rawVal) {
-                    const value = parseFloat(rawVal.replace(/\./g, '').replace(',', '.'));
-                    if (isNaN(value) || value <= 0) return;
-
-                    const dNum = parseInt(day, 10);
-                    const mNum = parseInt(month, 10);
-                    if (dNum < 1 || dNum > 31 || mNum < 1 || mNum > 12) return;
-
-                    let cleanDesc = desc
-                        .replace(/\s+R\$$/i, '')
-                        .replace(/\s+US\$.*$/i, '')
-                        .replace(/^\d{4}\s+/, '')
-                        .trim();
-
-                    if (cleanDesc.length < 2) return;
-
-                    const maxDaysInRefMonth = new Date(refYear, parseInt(refMonth, 10), 0).getDate();
-                    const safeDay = String(Math.min(dNum, maxDaysInRefMonth)).padStart(2, '0');
-                    const formattedDate = `${refYear}-${refMonth}-${safeDay}`;
-
-                    const guessedCategory = guessCategory(cleanDesc);
-
-                    results.push({
-                        selected: true,
-                        date: formattedDate,
-                        originalDate: formattedDate,
-                        originalDateHint: `${day}/${month}`,
-                        description: cleanDesc,
-                        owner: 'Casal',
-                        category: guessedCategory,
-                        paymentMethod: defaultBank,
-                        value: value
-                    });
+                    aggregated[e.installmentGroupId].value += Number(e.value);
+                } else {
+                    result.push(e);
                 }
             });
-
-            return results;
+            return result.concat(Object.values(aggregated));
         }
-
-        function guessCategory(description) {
-            const matched = detectCategoryByKeyword(description);
-            if (matched) return matched;
-            return categories.includes('Outros') ? 'Outros' : categories[0];
-        }
-
-        function openPdfReviewModal(detectedBank) {
-            const badge = document.getElementById('pdf-detected-bank');
-            badge.innerText = `Cartão Sugerido: ${detectedBank}`;
-            document.getElementById('bulk-payment-method').value = detectedBank;
-
-            renderPdfReviewRows();
-
-            const modal = document.getElementById('pdf-review-modal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function renderPdfReviewRows() {
-            const tbody = document.getElementById('pdf-items-tbody');
-            if (extractedPdfItems.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7" class="py-10 text-center text-slate-500 font-bold uppercase text-xs">
-                            Nenhuma linha carregada. Clique em "+ Adicionar linha manualmente ao lote" abaixo se desejar.
-                        </td>
-                    </tr>
-                `;
-                updatePdfTotals();
-                return;
-            }
-
-            const catOptions = (selectedCat) => categories.map(c => 
-                `<option value="${c}" ${c === selectedCat ? 'selected' : ''}>${getCatIcon(c)} ${c}</option>`
-            ).join('');
-
-            const ownerOptions = (selectedOwner) => [
-                { val: 'Casal', label: '👫 Nosso (Casal)' },
-                { val: 'Sandra', label: '👩 Mãe Sandra' },
-                { val: 'Márcia', label: '👵 Sogra Márcia' }
-            ].map(o => `<option value="${o.val}" ${o.val === (selectedOwner || 'Casal') ? 'selected' : ''}>${o.label}</option>`).join('');
-
-            const payOptions = (selectedPay) => ['Inter', 'Santander', 'Outros'].map(p => 
-                `<option value="${p}" ${p === selectedPay ? 'selected' : ''}>${p}</option>`
-            ).join('');
-
-            tbody.innerHTML = extractedPdfItems.map((item, idx) => `
-                <tr class="hover:bg-slate-900/60 transition ${!item.selected ? 'opacity-40' : ''}">
-                    <td class="py-2.5 px-2 text-center">
-                        <input type="checkbox" ${item.selected ? 'checked' : ''} onchange="updatePdfItem(${idx}, 'selected', this.checked)">
-                    </td>
-                    <td class="py-2.5 px-2">
-                        <input type="date" value="${item.date}" onchange="updatePdfItem(${idx}, 'date', this.value)" class="p-1.5 rounded-lg text-xs w-full">
-                        ${item.originalDateHint ? `<span class="text-[9px] text-slate-500 block mt-0.5">PDF: ${item.originalDateHint}</span>` : ''}
-                    </td>
-                    <td class="py-2.5 px-2">
-                        <input type="text" value="${item.description.replace(/"/g, '&quot;')}" onchange="updatePdfItem(${idx}, 'description', this.value)" class="p-1.5 rounded-lg text-xs w-full font-semibold">
-                    </td>
-                    <td class="py-2.5 px-2">
-                        <select onchange="updatePdfItem(${idx}, 'owner', this.value)" class="p-1.5 rounded-lg text-xs w-full font-bold">
-                            ${ownerOptions(item.owner)}
-                        </select>
-                    </td>
-                    <td class="py-2.5 px-2">
-                        <select onchange="updatePdfItem(${idx}, 'category', this.value)" class="p-1.5 rounded-lg text-xs w-full font-semibold">
-                            ${catOptions(item.category)}
-                        </select>
-                    </td>
-                    <td class="py-2.5 px-2">
-                        <select onchange="updatePdfItem(${idx}, 'paymentMethod', this.value)" class="p-1.5 rounded-lg text-xs w-full">
-                            ${payOptions(item.paymentMethod)}
-                        </select>
-                    </td>
-                    <td class="py-2.5 px-2 text-right">
-                        <input type="number" step="0.01" value="${item.value.toFixed(2)}" onchange="updatePdfItem(${idx}, 'value', parseFloat(this.value)||0)" class="p-1.5 rounded-lg text-xs w-24 text-right font-black">
-                    </td>
-                </tr>
-            `).join('');
-
-            updatePdfTotals();
-        }
-
-        window.updatePdfItem = (index, field, val) => {
-            if (!extractedPdfItems[index]) return;
-            extractedPdfItems[index][field] = val;
-            // Garantir que current update acompanhe data original para o Card de Comprometimento caso alterado manualmente na conciliação
-            if (field === 'date' && !extractedPdfItems[index].originalDateHint) {
-                extractedPdfItems[index].originalDate = val;
-            }
-            if (field === 'selected' || field === 'value') {
-                renderPdfReviewRows();
-            }
-        };
-
-        window.toggleSelectAllPdf = (checked) => {
-            extractedPdfItems.forEach(item => item.selected = checked);
-            renderPdfReviewRows();
-        };
-
-        window.applyBulkPayment = (paymentMethod) => {
-            extractedPdfItems.forEach(item => item.paymentMethod = paymentMethod);
-            renderPdfReviewRows();
-        };
-
-        window.normalizeDatesToCurrentMonth = () => {
-            const refYear = currentDate.getFullYear();
-            const refMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
-            const maxDays = new Date(refYear, parseInt(refMonth, 10), 0).getDate();
-
-            extractedPdfItems.forEach(item => {
-                const parts = item.date.split('-');
-                const day = Math.min(parseInt(parts[2] || '01', 10), maxDays);
-                item.date = `${refYear}-${refMonth}-${String(day).padStart(2, '0')}`;
-                item.originalDate = item.date; // Atualiza tbm a base
-            });
-            renderPdfReviewRows();
-        };
-
-        window.addBlankPdfRow = () => {
-            const defaultPay = document.getElementById('bulk-payment-method').value || 'Santander';
-            const todayIso = currentDate.toISOString().slice(0, 7) + '-' + String(new Date().getDate()).padStart(2, '0');
-            extractedPdfItems.push({
-                selected: true,
-                date: todayIso,
-                originalDate: todayIso,
-                originalDateHint: 'Manual',
-                description: 'Novo Lançamento',
-                owner: 'Casal',
-                category: 'Outros',
-                paymentMethod: defaultPay,
-                value: 0
-            });
-            renderPdfReviewRows();
-        };
-
-        function updatePdfTotals() {
-            const selected = extractedPdfItems.filter(i => i.selected && i.value > 0);
-            const sum = selected.reduce((acc, cur) => acc + (cur.value || 0), 0);
-            document.getElementById('pdf-total-preview').innerText = fmtMoney(sum);
-            document.getElementById('pdf-selection-stats').innerText = `${selected.length} de ${extractedPdfItems.length} itens selecionados`;
-        }
-
-        window.savePdfBatch = async () => {
-            const approved = extractedPdfItems.filter(i => i.selected && i.value > 0 && i.description.trim() !== '');
-            if (approved.length === 0) {
-                alert("Selecione pelo menos um item válido com valor maior que zero para importar.");
-                return;
-            }
-
-            const btn = document.getElementById('confirm-batch-btn');
-            btn.disabled = true;
-            btn.innerText = "GRAVANDO LOTE...";
-            toggleLoader(true, `Gravando ${approved.length} registros no Firebase...`);
-
-            try {
-                const colRef = db.collection('users').doc(userId).collection('expenses');
-                const chunkSize = 450;
-                for (let i = 0; i < approved.length; i += chunkSize) {
-                    const chunk = approved.slice(i, i + chunkSize);
-                    const batch = db.batch();
-                    
-                    chunk.forEach(item => {
-                        const newDocRef = colRef.doc();
-                        lastCreatedId = newDocRef.id;
-                        batch.set(newDocRef, {
-                            date: item.date,
-                            originalDate: item.originalDate || item.date,
-                            description: item.description.trim(),
-                            owner: item.owner || 'Casal',
-                            category: item.category,
-                            value: Number(item.value),
-                            paymentMethod: item.paymentMethod,
-                            createdAt: new Date(),
-                            importedFromPdf: true
-                        });
-                    });
-
-                    await batch.commit();
-                }
-
-                closeModal('pdf-review-modal');
-                extractedPdfItems = [];
-                showToast(`${approved.length} itens importados!`);
-            } catch (error) {
-                console.error("Erro na gravação em lote:", error);
-                alert("Ocorreu um erro ao gravar o lote no Firestore.");
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "GRAVAR LOTE";
-                toggleLoader(false);
-            }
-        };
-
-        // ==================== GERENCIAMENTO E BI RENDER ====================
-
-        window.openConfig = () => {
-            renderCategoriesManager();
-            document.getElementById('danger-month-name').innerText = currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-            document.getElementById('config-modal').classList.remove('hidden');
-            document.getElementById('config-modal').classList.add('flex');
-        };
-
-        function renderCategoriesManager() {
-            const container = document.getElementById('categories-manager-list');
-            container.innerHTML = categories.map(cat => `
-                <div class="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-800">
-                    <span class="text-sm font-bold text-slate-300">${getCatIcon(cat)} ${cat}</span>
-                    ${cat !== 'Reserva' && cat !== 'Outros' ? `
-                        <button onclick="removeCategory('${cat}')" class="text-red-500 text-xs font-black p-1">REMOVER</button>
-                    ` : '<span class="text-[9px] text-slate-600 font-bold uppercase">Fixo</span>'}
-                </div>
-            `).join('');
-        }
-
-        window.addNewCategory = async () => {
-            const input = document.getElementById('new-cat-name');
-            const name = input.value.trim();
-            if (name && !categories.includes(name)) {
-                categories.push(name);
-                await db.collection('users').doc(userId).set({ customCategories: categories }, { merge: true });
-                renderVisualCategoryButtons(document.getElementById('form-cat').value);
-                renderCategoriesManager();
-                input.value = '';
-            }
-        };
-
-        window.removeCategory = async (cat) => {
-            if (confirm(`Remover a categoria "${cat}"? Isso não apaga os gastos já lançados nela.`)) {
-                categories = categories.filter(c => c !== cat);
-                await db.collection('users').doc(userId).set({ customCategories: categories }, { merge: true });
-                renderVisualCategoryButtons('');
-                renderCategoriesManager();
-            }
-        };
 
         function startListening() {
             toggleLoader(true);
@@ -1374,122 +953,95 @@
 
             document.getElementById('current-month').innerText = currentDate.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
             
-            // Render do Mês Corrente (Baseado na Data Efetiva de Vencimento/Fatura = 'date')
-            const allMonthExpenses = expenses.filter(e => e.date?.startsWith(monthKey)).sort((a,b) => new Date(b.date) - new Date(a.date));
-            let curExp = [...allMonthExpenses];
-            const prevExp = expenses.filter(e => e.date?.startsWith(prevMonthKey));
+            // 1. VISÃO DE FATURA (CAIXA) -> Baseado na data de vencimento (`date`)
+            let faturaExpenses = expenses.filter(e => e.date?.startsWith(monthKey)).sort((a,b) => new Date(b.date) - new Date(a.date));
+            const allFaturaPurchases = faturaExpenses.filter(e => e.category !== 'Reserva');
+            
+            // Totais Fatura (Card Cinza + Reserva)
+            const totalFaturasGeral = allFaturaPurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
+            const totalInter = allFaturaPurchases.filter(e => (e.paymentMethod || 'Outros') === 'Inter').reduce((a, b) => a + (Number(b.value) || 0), 0);
+            const totalSantander = allFaturaPurchases.filter(e => e.paymentMethod === 'Santander').reduce((a, b) => a + (Number(b.value) || 0), 0);
+            const totalReservaMes = faturaExpenses.filter(e => e.category === 'Reserva').reduce((acc, i) => acc + (Number(i.value) || 0), 0);
+            const reserveProgress = Math.min((totalReservaMes / EXPECTED_RESERVE) * 100, 100).toFixed(1);
+            document.getElementById('extrato-count-badge').innerText = faturaExpenses.length;
 
-            document.getElementById('extrato-count-badge').innerText = allMonthExpenses.length;
+            // 2. VISÃO DE COMPETÊNCIA/CONSUMO -> Baseado na data original da compra (`originalDate` fallback p/ `date` em dados antigos)
+            const consumoExpenses = expenses.filter(e => (e.originalDate || e.date).startsWith(monthKey));
+            const allConsumoPurchases = consumoExpenses.filter(e => e.category !== 'Reserva');
+            
+            // Agrupar parcelas para a visão de Consumo Total
+            const allConsumoAgg = aggregateConsumo(allConsumoPurchases);
+            const coupleConsumoAgg = allConsumoAgg.filter(e => (e.owner || 'Casal') === 'Casal');
+            const sandraConsumoAgg = allConsumoAgg.filter(e => e.owner === 'Sandra');
+            const marciaConsumoAgg = allConsumoAgg.filter(e => e.owner === 'Márcia');
+            
+            const totalNossoConsumo = coupleConsumoAgg.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
+            const totalSandra = sandraConsumoAgg.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
+            const totalMarcia = marciaConsumoAgg.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
+            const totalTerceiros = totalSandra + totalMarcia;
+
+            // Comparação Consumo Mês Anterior
+            const prevConsumoExpenses = expenses.filter(e => (e.originalDate || e.date).startsWith(prevMonthKey) && e.category !== 'Reserva' && (e.owner || 'Casal') === 'Casal');
+            const prevConsumoAgg = aggregateConsumo(prevConsumoExpenses);
+            const totalConsumoAnterior = prevConsumoAgg.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
+
+            const diffCouple = totalNossoConsumo - totalConsumoAnterior;
+            const percentComp = totalConsumoAnterior > 0 ? (diffCouple / totalConsumoAnterior * 100).toFixed(0) : 0;
+
+            const now = new Date();
+            const isCurrentRealMonth = (now.getFullYear() === currentDate.getFullYear() && now.getMonth() === currentDate.getMonth());
+            const totalDaysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+            const elapsedDays = isCurrentRealMonth ? Math.max(1, now.getDate()) : totalDaysInMonth;
+            const dailyAverageCouple = totalNossoConsumo / elapsedDays;
 
             renderRecentLaunches();
 
-            // AQUI: NOVA LÓGICA DE COMPROMETIMENTO NO CARTÃO (Dashboard de Parcelas Contratadas Neste Mês)
-            const purchasesMadeThisMonth = expenses.filter(e => {
-                const checkDate = e.originalDate || e.date; // fallback se for dados antigos
-                return checkDate && checkDate.startsWith(monthKey);
-            });
-            const parceledThisMonth = purchasesMadeThisMonth.filter(e => e.installmentGroupId);
-            const groupsThisMonth = [...new Set(parceledThisMonth.map(e => e.installmentGroupId))];
-            
-            let futureCommitment = 0;
-            groupsThisMonth.forEach(groupId => {
-                const groupParcels = expenses.filter(e => e.installmentGroupId === groupId);
-                futureCommitment += groupParcels.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
-            });
-
-            const commitmentCardEl = document.getElementById('commitment-display');
-            if (futureCommitment > 0) {
-                commitmentCardEl.innerHTML = `
-                    <div class="card p-4 rounded-2xl border border-blue-500/30 bg-blue-900/10 mb-5 relative overflow-hidden">
-                        <div class="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-blue-500/10 to-transparent"></div>
-                        <div class="flex justify-between items-center relative z-10">
-                            <div class="pr-2">
-                                <p class="text-[10px] font-black text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-                                    💳 Comprometimento em Cartão 
-                                </p>
-                                <p class="text-[10px] text-slate-400 mt-1 font-semibold leading-snug max-w-xs">
-                                    Total de compras parceladas adquiridas em <b>${document.getElementById('current-month').innerText}</b>, incluindo parcelas futuras.
-                                </p>
-                            </div>
-                            <p class="text-xl md:text-2xl font-black text-white shrink-0">${fmtMoney(futureCommitment)}</p>
-                        </div>
-                    </div>
-                `;
-            } else {
-                commitmentCardEl.innerHTML = '';
-            }
-
+            // Lógica de Filtros Clicáveis na UI (Aplica-se ao Extrato)
             const indicator = document.getElementById('active-filter-indicator');
+            let extratoList = [...faturaExpenses];
+
             if (filter && filter !== 'all') {
                 if (filter.startsWith('card:')) {
                     const cardName = filter.split(':')[1];
-                    curExp = curExp.filter(e => (e.paymentMethod || 'Outros') === cardName && e.category !== 'Reserva');
-                    indicator.innerText = `Filtro: Cartão ${cardName} (${curExp.length} lançamentos)`;
+                    extratoList = extratoList.filter(e => (e.paymentMethod || 'Outros') === cardName && e.category !== 'Reserva');
+                    indicator.innerText = `Filtro: Cartão ${cardName} (${extratoList.length} parcelas na fatura)`;
                     indicator.classList.remove('hidden');
                 } else if (filter.startsWith('owner:')) {
                     const ownerName = filter.split(':')[1];
-                    curExp = curExp.filter(e => (e.owner || 'Casal') === ownerName && e.category !== 'Reserva');
-                    indicator.innerText = `Filtro: Responsável ${ownerName} (${curExp.length} lançamentos)`;
+                    extratoList = extratoList.filter(e => (e.owner || 'Casal') === ownerName && e.category !== 'Reserva');
+                    indicator.innerText = `Filtro: Responsável ${ownerName} (${extratoList.length} parcelas na fatura)`;
                     indicator.classList.remove('hidden');
                 } else if (filter === 'Reserva') {
-                    curExp = curExp.filter(e => e.category === 'Reserva');
-                    indicator.innerText = `Filtro: Reserva (${curExp.length} lançamentos)`;
+                    extratoList = extratoList.filter(e => e.category === 'Reserva');
+                    indicator.innerText = `Filtro: Reserva (${extratoList.length} parcelas)`;
                     indicator.classList.remove('hidden');
                 } else {
-                    curExp = curExp.filter(e => e.category === filter && (e.owner || 'Casal') === 'Casal');
-                    indicator.innerText = `Filtro: Categoria ${filter} (${curExp.length} lançamentos)`;
+                    extratoList = extratoList.filter(e => e.category === filter && (e.owner || 'Casal') === 'Casal');
+                    indicator.innerText = `Filtro: Categoria ${filter} (${extratoList.length} parcelas na fatura)`;
                     indicator.classList.remove('hidden');
                 }
             } else {
                 indicator.classList.add('hidden');
             }
 
-            const allPurchases = allMonthExpenses.filter(e => e.category !== 'Reserva');
-            const couplePurchases = allPurchases.filter(e => (e.owner || 'Casal') === 'Casal');
-            const sandraPurchases = allPurchases.filter(e => e.owner === 'Sandra');
-            const marciaPurchases = allPurchases.filter(e => e.owner === 'Márcia');
-
-            const prevCouplePurchases = prevExp.filter(e => e.category !== 'Reserva' && (e.owner || 'Casal') === 'Casal');
-
-            const totalFaturasGeral = allPurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
-            const totalNossoGasto = couplePurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
-            const totalSandra = sandraPurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
-            const totalMarcia = marciaPurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
-            const totalTerceiros = totalSandra + totalMarcia;
-
-            const totalNossoAnterior = prevCouplePurchases.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
-            const totalReservaMes = allMonthExpenses.filter(e => e.category === 'Reserva').reduce((acc, i) => acc + (Number(i.value) || 0), 0);
-
-            const diffCouple = totalNossoGasto - totalNossoAnterior;
-            const percentComp = totalNossoAnterior > 0 ? (diffCouple / totalNossoAnterior * 100).toFixed(0) : 0;
-            const reserveProgress = Math.min((totalReservaMes / EXPECTED_RESERVE) * 100, 100).toFixed(1);
-
-            const totalInter = allPurchases.filter(e => (e.paymentMethod || 'Outros') === 'Inter').reduce((a, b) => a + (Number(b.value) || 0), 0);
-            const totalSantander = allPurchases.filter(e => e.paymentMethod === 'Santander').reduce((a, b) => a + (Number(b.value) || 0), 0);
-
-            const now = new Date();
-            const isCurrentRealMonth = (now.getFullYear() === currentDate.getFullYear() && now.getMonth() === currentDate.getMonth());
-            const totalDaysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
-            const elapsedDays = isCurrentRealMonth ? Math.max(1, now.getDate()) : totalDaysInMonth;
-            const dailyAverageCouple = totalNossoGasto / elapsedDays;
-
+            // Cards Superiores
             document.getElementById('summary-display').innerHTML = `
                 <div class="card p-4 rounded-2xl border-l-4 border-slate-400">
-                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Total das Faturas (Geral)</p>
-                    <p class="text-xl font-black text-white mt-0.5">${fmtMoney(totalFaturasGeral)}</p>
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Total das Faturas (Caixa)</p>
+                    <p class="text-xl font-black text-white mt-0.5" title="Soma exata das parcelas que vencem neste mês.">${fmtMoney(totalFaturasGeral)}</p>
                     <p class="text-[10px] font-semibold text-slate-400 mt-1 truncate">
                         Inter: ${fmtMoney(totalInter)} • Sant: ${fmtMoney(totalSantander)}
                     </p>
                 </div>
 
-                <div onclick="setFastFilter('owner:Casal')" class="card p-4 rounded-2xl border-l-4 border-blue-500 cursor-pointer hover:border-blue-400 transition">
+                <div onclick="setFastFilter('owner:Casal')" class="card p-4 rounded-2xl border-l-4 border-blue-500 cursor-pointer hover:border-blue-400 transition" title="Mostra o limite de crédito real comprometido pelas compras adquiridas este mês (inclusive parceladas).">
                     <div class="flex justify-between items-center">
-                        <p class="text-[9px] font-black text-blue-400 uppercase tracking-wider">👫 Nosso Gasto Real</p>
+                        <p class="text-[9px] font-black text-blue-400 uppercase tracking-wider">👫 Nosso Consumo (Mês)</p>
                         <span class="text-[9px] font-bold text-slate-500">${fmtMoney(dailyAverageCouple)}/dia</span>
                     </div>
-                    <p class="text-xl font-black text-white mt-0.5">${fmtMoney(totalNossoGasto)}</p>
+                    <p class="text-xl font-black text-white mt-0.5">${fmtMoney(totalNossoConsumo)}</p>
                     <p class="text-[10px] font-bold mt-1 ${diffCouple > 0 ? 'text-red-400' : 'text-emerald-400'}">
-                        ${diffCouple > 0 ? '▲' : '▼'} ${Math.abs(percentComp)}% vs mês ant. (${fmtMoney(totalNossoAnterior)})
+                        ${diffCouple > 0 ? '▲' : '▼'} ${Math.abs(percentComp)}% vs mês ant. (${fmtMoney(totalConsumoAnterior)})
                     </p>
                 </div>
 
@@ -1518,10 +1070,11 @@
                 </div>
             `;
 
-            renderSmartInsights(couplePurchases, prevCouplePurchases, totalNossoGasto, totalNossoAnterior, totalTerceiros, totalSandra, totalMarcia, totalReservaMes);
-            renderTopExpenses(couplePurchases, totalNossoGasto);
+            renderSmartInsights(coupleConsumoAgg, prevConsumoAgg, totalNossoConsumo, totalConsumoAnterior, totalTerceiros, totalSandra, totalMarcia, totalReservaMes);
+            renderTopExpenses(coupleConsumoAgg, totalNossoConsumo);
 
-            document.getElementById('expense-list').innerHTML = curExp.map(i => `
+            // A Lista do Extrato exibe a Visão de Fatura (parcelas físicas do mês)
+            document.getElementById('expense-list').innerHTML = extratoList.map(i => `
                 <div onclick="openModal('${i.id}')" class="flex items-center justify-between p-4 lg:p-5 active:bg-slate-800 cursor-pointer hover:bg-slate-900/40 transition">
                     <div class="flex items-center gap-3.5 min-w-0">
                         <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-lg shrink-0 ${i.category === 'Reserva' ? 'bg-amber-900/20' : 'bg-slate-800/90'}">
@@ -1542,12 +1095,12 @@
                         ${fmtMoney(i.value)}
                     </p>
                 </div>
-            `).join('') || '<p class="p-10 text-center text-slate-600 text-xs uppercase font-bold tracking-widest">Nenhum lançamento encontrado para este filtro</p>';
+            `).join('') || '<p class="p-10 text-center text-slate-600 text-xs uppercase font-bold tracking-widest">Nenhum lançamento encontrado para este filtro na fatura</p>';
             
             if (activeTab === 'dashboard') {
-                updateChart(couplePurchases);
-                updateCardChart(allPurchases);
-                updateComparisonChart(totalNossoGasto, totalNossoAnterior);
+                updateChart(coupleConsumoAgg);
+                updateCardChart(allConsumoAgg);
+                updateComparisonChart(totalNossoConsumo, totalConsumoAnterior);
             }
         }
 
@@ -1563,8 +1116,8 @@
                     alerts.push({
                         icon: '🚨',
                         color: 'border-red-500/40 bg-red-950/20 text-red-300',
-                        title: 'Nosso Gasto Subiu',
-                        desc: `Os gastos reais do casal superaram o mês passado em <b>+${pct}%</b> (+${fmtMoney(diffVal)}).`
+                        title: 'Consumo Subiu',
+                        desc: `O comprometimento do casal superou o mês passado em <b>+${pct}%</b> (+${fmtMoney(diffVal)}).`
                     });
                 } else {
                     const savedVal = totalPrev - totalCur;
@@ -1573,7 +1126,7 @@
                         icon: '📉',
                         color: 'border-emerald-500/40 bg-emerald-950/20 text-emerald-300',
                         title: 'Economia Real do Casal',
-                        desc: `Vocês gastaram <b>${pct}% a menos</b> (${fmtMoney(savedVal)}) comparando apenas os gastos do casal.`
+                        desc: `Vocês consumiram <b>${pct}% a menos</b> (${fmtMoney(savedVal)}) do limite comparando as compras do casal.`
                     });
                 }
             } else {
@@ -1581,7 +1134,7 @@
                     icon: '👫',
                     color: 'border-blue-500/40 bg-blue-950/20 text-blue-300',
                     title: 'Orçamento do Casal Isolado',
-                    desc: `O gasto real de vocês está em <b>${fmtMoney(totalCur)}</b>, livre das compras de terceiros.`
+                    desc: `O consumo real de vocês está em <b>${fmtMoney(totalCur)}</b>, livre das compras de terceiros.`
                 });
             }
 
@@ -1590,8 +1143,8 @@
                 alerts.push({
                     icon: '🤝',
                     color: 'border-purple-500/40 bg-purple-950/20 text-purple-300',
-                    title: `Terceiros: ${shareFatura}% da Fatura`,
-                    desc: `Sandra (<b>${fmtMoney(totalSandra)}</b>) e Márcia (<b>${fmtMoney(totalMarcia)}</b>) somam <b>${fmtMoney(totalTerceiros)}</b> a receber.`
+                    title: `Terceiros: ${shareFatura}% do Consumo`,
+                    desc: `Sandra (<b>${fmtMoney(totalSandra)}</b>) e Márcia (<b>${fmtMoney(totalMarcia)}</b>) consumiram <b>${fmtMoney(totalTerceiros)}</b>.`
                 });
             } else if (coupleCur.length > 0) {
                 const curCats = {};
@@ -1601,8 +1154,8 @@
                 alerts.push({
                     icon: '🎯',
                     color: 'border-amber-500/40 bg-amber-950/20 text-amber-300',
-                    title: `Maior Categoria: ${topCat[0]}`,
-                    desc: `Representa <b>${share}%</b> dos gastos do casal neste mês (${fmtMoney(topCat[1])}).`
+                    title: `Maior Ralo: ${topCat[0]}`,
+                    desc: `Tomou <b>${share}%</b> do limite do casal nestas compras (${fmtMoney(topCat[1])}).`
                 });
             } else {
                 alerts.push({
@@ -1642,17 +1195,17 @@
             `).join('');
         }
 
-        function renderTopExpenses(coupleExpenses, totalNossoGasto) {
+        function renderTopExpenses(coupleExpensesAgg, totalNossoConsumo) {
             const container = document.getElementById('top-expenses-list');
-            const top5 = [...coupleExpenses].sort((a, b) => (b.value || 0) - (a.value || 0)).slice(0, 5);
+            const top5 = [...coupleExpensesAgg].sort((a, b) => (b.value || 0) - (a.value || 0)).slice(0, 5);
 
             if (top5.length === 0) {
-                container.innerHTML = `<p class="text-center text-slate-600 text-xs uppercase font-bold py-6">Nenhuma despesa do casal registrada neste mês</p>`;
+                container.innerHTML = `<p class="text-center text-slate-600 text-xs uppercase font-bold py-6">Nenhum consumo do casal registrado neste mês</p>`;
                 return;
             }
 
             container.innerHTML = top5.map((item, idx) => {
-                const pctOfTotal = totalNossoGasto > 0 ? Math.min(((item.value / totalNossoGasto) * 100), 100).toFixed(1) : 0;
+                const pctOfTotal = totalNossoConsumo > 0 ? Math.min(((item.value / totalNossoConsumo) * 100), 100).toFixed(1) : 0;
                 return `
                     <div onclick="openModal('${item.id}')" class="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 cursor-pointer transition">
                         <div class="flex items-center justify-between gap-2 mb-1.5">
@@ -1661,15 +1214,18 @@
                                     #${idx + 1}
                                 </span>
                                 <div class="truncate">
-                                    <p class="text-xs font-bold text-slate-200 truncate">${getCatIcon(item.category)} ${item.description}</p>
-                                    <p class="text-[10px] text-slate-500 font-bold uppercase">
-                                        ${item.category} • ${item.paymentMethod || 'Outros'} • ${item.date.split('-').reverse().slice(0,2).join('/')}
+                                    <div class="flex items-center gap-1.5">
+                                        <p class="text-xs font-bold text-slate-200 truncate">${getCatIcon(item.category)} ${item.description}</p>
+                                        ${item.installmentGroupId ? `<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 text-[8px] font-black uppercase">Série Total</span>` : ''}
+                                    </div>
+                                    <p class="text-[10px] text-slate-500 font-bold uppercase mt-0.5">
+                                        ${item.category} • ${item.paymentMethod || 'Outros'} • ${item.originalDate ? item.originalDate.split('-').reverse().slice(0,2).join('/') : item.date.split('-').reverse().slice(0,2).join('/')}
                                     </p>
                                 </div>
                             </div>
                             <div class="text-right shrink-0">
                                 <p class="text-sm font-black text-white">${fmtMoney(item.value)}</p>
-                                <p class="text-[9px] font-bold text-slate-400">${pctOfTotal}% do nosso gasto</p>
+                                <p class="text-[9px] font-bold text-slate-400">${pctOfTotal}% do nosso consumo</p>
                             </div>
                         </div>
                         <div class="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
@@ -1775,12 +1331,9 @@
             });
         }
 
-        // ==================== VALIDAÇÃO E GRAVAÇÃO DO FORMULÁRIO ====================
-
         function showFormError(msg) {
             const errEl = document.getElementById('form-error-msg');
-            errEl.innerText = `⚠️ ${msg}`;
-            errEl.classList.remove('hidden');
+            errEl.innerText = `⚠️ ${msg}`; errEl.classList.remove('hidden');
         }
 
         document.getElementById('expense-form').onsubmit = async function(e) {
@@ -1814,12 +1367,10 @@
             
             const installmentValue = Number((totalValue / installments).toFixed(2));
             const col = db.collection('users').doc(userId).collection('expenses');
-            const originalDate = rawDate; // Fundamental para o cálculo de comprometimento do mês
+            const originalDate = rawDate;
 
             const saveBtn = document.getElementById('save-btn');
-            saveBtn.disabled = true;
-            saveBtn.innerText = "SALVANDO...";
-            toggleLoader(true);
+            saveBtn.disabled = true; saveBtn.innerText = "SALVANDO..."; toggleLoader(true);
 
             try {
                 if (currentEditId) {
@@ -1833,21 +1384,17 @@
                     if (updateAll) {
                         const groupItems = expenses.filter(e => e.installmentGroupId === currentItem.installmentGroupId);
                         const batch = db.batch();
-                        const baseDesc = description.replace(/\s*\(\d+\/\d+\)$/, ''); // Previne duplicidade
+                        const baseDesc = description.replace(/\s*\(\d+\/\d+\)$/, ''); 
                         
                         groupItems.forEach(gItem => {
                             batch.update(col.doc(gItem.id), {
                                 description: `${baseDesc} (${gItem.installmentNumber}/${gItem.totalInstallments})`,
-                                category: category,
-                                owner: owner,
-                                paymentMethod: paymentMethod
-                                // Valor e data mantêm-se os de cada parcela
+                                category: category, owner: owner, paymentMethod: paymentMethod
                             });
                         });
                         await batch.commit();
                         showToast("Série de parcelas atualizada!");
                     } else {
-                        // Edição simples
                         lastCreatedId = currentEditId;
                         const finalDesc = currentItem.installmentGroupId && !description.match(/\(\d+\/\d+\)$/) 
                             ? `${description.replace(/\s*\(\d+\/\d+\)$/, '')} (${currentItem.installmentNumber}/${currentItem.totalInstallments})` 
@@ -1856,11 +1403,7 @@
                         await col.doc(currentEditId).set({
                             date: rawDate,
                             originalDate: currentItem.originalDate || originalDate,
-                            description: finalDesc,
-                            category: category,
-                            value: totalValue,
-                            paymentMethod: paymentMethod,
-                            owner: owner
+                            description: finalDesc, category: category, value: totalValue, paymentMethod: paymentMethod, owner: owner
                         }, { merge: true });
                         showToast("Lançamento atualizado!");
                     }
@@ -1874,20 +1417,13 @@
                         if (i === 0) lastCreatedId = newDocRef.id;
 
                         const payload = {
-                            date: dueDateStr,
-                            originalDate: originalDate,
+                            date: dueDateStr, originalDate: originalDate,
                             description: installments > 1 ? `${description} (${i + 1}/${installments})` : description,
-                            category: category,
-                            value: installmentValue,
-                            paymentMethod: paymentMethod,
-                            owner: owner,
-                            createdAt: new Date()
+                            category: category, value: installmentValue, paymentMethod: paymentMethod, owner: owner, createdAt: new Date()
                         };
 
                         if (installments > 1) {
-                            payload.installmentGroupId = installmentGroupId;
-                            payload.totalInstallments = installments;
-                            payload.installmentNumber = i + 1;
+                            payload.installmentGroupId = installmentGroupId; payload.totalInstallments = installments; payload.installmentNumber = i + 1;
                         }
 
                         batch.set(newDocRef, payload);
@@ -1901,25 +1437,20 @@
                         showToast(`${getCatIcon(category)} ${description} (${fmtMoney(totalValue)}) salvo!`);
                     }
                 }
-                closeModal('expense-modal');
-                this.reset();
+                closeModal('expense-modal'); this.reset();
                 document.getElementById('form-installments').value = "1";
                 document.getElementById('installment-start-box').classList.add('hidden');
                 currentEditId = null;
             } catch (error) {
-                console.error(error);
-                alert("Erro ao gravar dados.");
+                console.error(error); alert("Erro ao gravar dados.");
             } finally {
-                saveBtn.disabled = false;
-                saveBtn.innerText = "✅ SALVAR GASTO";
-                toggleLoader(false);
+                saveBtn.disabled = false; saveBtn.innerText = "✅ SALVAR GASTO"; toggleLoader(false);
             }
         };
 
         window.openModal = (id = null) => {
             currentEditId = id;
             document.getElementById('form-error-msg').classList.add('hidden');
-            
             const delActions = document.getElementById('delete-actions');
             const delBtn = document.getElementById('delete-btn');
             const delGroupBtn = document.getElementById('delete-group-btn');
@@ -1935,15 +1466,12 @@
                 const i = expenses.find(e => e.id === id);
                 
                 if (i.installmentGroupId) {
-                    delBtn.innerText = "🗑️ Esta Parcela";
-                    delGroupBtn.classList.remove('hidden');
+                    delBtn.innerText = "🗑️ Esta Parcela"; delGroupBtn.classList.remove('hidden');
                 } else {
-                    delBtn.innerText = "🗑️ Excluir Este Registro";
-                    delGroupBtn.classList.add('hidden');
+                    delBtn.innerText = "🗑️ Excluir Registro"; delGroupBtn.classList.add('hidden');
                 }
 
-                document.getElementById('form-date').value = i.date;
-                // Exibe de forma limpa para edição, sem a flag de parcelas (x/y) caso seja de grupo
+                document.getElementById('form-date').value = i.originalDate || i.date;
                 document.getElementById('form-desc').value = i.installmentGroupId ? i.description.replace(/\s*\(\d+\/\d+\)$/, '') : i.description;
                 document.getElementById('form-val').value = i.value;
                 document.getElementById('installment-start-box').classList.add('hidden');
@@ -1960,8 +1488,6 @@
                 document.getElementById('form-installments').value = "1";
                 document.getElementById('offset-current').checked = true;
                 document.getElementById('installment-start-box').classList.add('hidden');
-                
-                // AQUI: Default volta a ser Santander
                 document.getElementById('pay-santander').checked = true;
                 document.getElementById('owner-casal').checked = true;
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
@@ -1973,8 +1499,7 @@
         };
 
         window.closeModal = (id) => { 
-            document.getElementById(id).classList.add('hidden');
-            document.getElementById(id).classList.remove('flex');
+            document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex');
         };
 
         window.deleteItem = async (allGroup = false) => {
@@ -1987,32 +1512,220 @@
                     const item = expenses.find(e => e.id === currentEditId);
                     const groupItems = expenses.filter(e => e.installmentGroupId === item.installmentGroupId);
                     const batch = db.batch();
-                    groupItems.forEach(gItem => {
-                        batch.delete(db.collection('users').doc(userId).collection('expenses').doc(gItem.id));
-                    });
-                    await batch.commit();
-                    showToast("Série de parcelas excluída!");
+                    groupItems.forEach(gItem => batch.delete(db.collection('users').doc(userId).collection('expenses').doc(gItem.id)));
+                    await batch.commit(); showToast("Série excluída!");
                 } else {
-                    await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete();
-                    showToast("Registro excluído.");
+                    await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete(); showToast("Registro excluído.");
                 }
                 closeModal('expense-modal');
             } catch (err) {
-                console.error("Erro exclusão:", err);
-                alert("Erro ao excluir.");
+                console.error("Erro exclusão:", err); alert("Erro ao excluir.");
             } finally {
                 toggleLoader(false);
             }
+        };
+
+        window.handlePdfUpload = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            toggleLoader(true, "Lendo arquivo PDF...");
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                
+                let fullLines = [];
+                let rawTextBlob = "";
+
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    const textContent = await page.getTextContent();
+                    
+                    const rows = {};
+                    textContent.items.forEach(item => {
+                        const str = item.str.trim(); if (!str) return;
+                        rawTextBlob += " " + str;
+                        const y = Math.round(item.transform[5] / 3) * 3;
+                        if (!rows[y]) rows[y] = [];
+                        rows[y].push({ x: item.transform[4], text: item.str });
+                    });
+
+                    const sortedY = Object.keys(rows).map(Number).sort((a, b) => b - a);
+                    sortedY.forEach(y => {
+                        const lineStr = rows[y].sort((a, b) => a.x - b.x).map(i => i.text.trim()).join(' ').replace(/\s+/g, ' ').trim();
+                        if (lineStr.length > 5) fullLines.push(lineStr);
+                    });
+                }
+
+                const upperBlob = rawTextBlob.toUpperCase();
+                let detectedBank = 'Santander'; 
+                if (upperBlob.includes('BANCO INTER') || upperBlob.includes('INTERMEDIUM') || upperBlob.includes('CARTAO INTER')) detectedBank = 'Inter';
+
+                extractedPdfItems = parseInvoiceLines(fullLines, detectedBank);
+
+                if (extractedPdfItems.length === 0) alert("Nenhuma transação padrão foi identificada automaticamente neste PDF.");
+
+                openPdfReviewModal(detectedBank);
+            } catch (err) {
+                console.error("Erro ao processar PDF:", err); alert("Falha ao processar o PDF.");
+            } finally {
+                event.target.value = ""; toggleLoader(false);
+            }
+        };
+
+        function parseInvoiceLines(lines, defaultBank) {
+            const results = [];
+            const refYear = currentDate.getFullYear();
+            const refMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+
+            const regexSlashDate = /^(\d{2})\/(\d{2})(?:\/(\d{2,4}))?\s+(.+?)\s+(?:-\s*)?(?:R\$\s*)?(-?\d{1,3}(?:\.\d{3})*,\d{2})(?:\s+[CD-]|$)/i;
+            const regexInterExtenso = /^(\d{2})\s+(?:de\s+)?([a-zç]{3})\.?(?:\s+(?:de\s+)?(\d{2,4}))?\s+(.+?)\s+(?:\+\s*|-\s*)?(?:R\$\s*)?(-?\d{1,3}(?:\.\d{3})*,\d{2})$/i;
+            const regexMidLine = /(?:^|\s)(\d{2})\/(\d{2})\s+([A-Z0-9\*\.\-\s\/]{4,45}?)\s+(?:R\$\s*)?(\d{1,3}(?:\.\d{3})*,\d{2})(?:\s|$)/i;
+
+            lines.forEach(line => {
+                const upperLine = line.toUpperCase();
+                if (NOISE_BLACKLIST.some(noise => upperLine.includes(noise))) return;
+                if (/\+\s*R\$\s*\d/.test(line) || /-\s*R\$\s*\d/.test(line)) return;
+
+                let match = line.match(regexSlashDate);
+                let day, month, deskYear, desc, rawVal;
+
+                if (match) {
+                    [, day, month, deskYear, desc, rawVal] = match;
+                } else {
+                    const matchInter = line.match(regexInterExtenso);
+                    if (matchInter) {
+                        const [, d, mStr, y, description, val] = matchInter;
+                        day = d; month = PT_MONTHS[mStr.toLowerCase()] || refMonth; desc = description; rawVal = val;
+                    } else {
+                        const matchMid = line.match(regexMidLine);
+                        if (matchMid) [, day, month, desc, rawVal] = matchMid;
+                    }
+                }
+
+                if (day && month && desc && rawVal) {
+                    const value = parseFloat(rawVal.replace(/\./g, '').replace(',', '.'));
+                    if (isNaN(value) || value <= 0) return;
+                    const dNum = parseInt(day, 10); const mNum = parseInt(month, 10);
+                    if (dNum < 1 || dNum > 31 || mNum < 1 || mNum > 12) return;
+
+                    let cleanDesc = desc.replace(/\s+R\$$/i, '').replace(/\s+US\$.*$/i, '').replace(/^\d{4}\s+/, '').trim();
+                    if (cleanDesc.length < 2) return;
+
+                    const maxDaysInRefMonth = new Date(refYear, parseInt(refMonth, 10), 0).getDate();
+                    const safeDay = String(Math.min(dNum, maxDaysInRefMonth)).padStart(2, '0');
+                    const formattedDate = `${refYear}-${refMonth}-${safeDay}`;
+
+                    results.push({
+                        selected: true, date: formattedDate, originalDate: formattedDate, originalDateHint: `${day}/${month}`,
+                        description: cleanDesc, owner: 'Casal', category: guessCategory(cleanDesc), paymentMethod: defaultBank, value: value
+                    });
+                }
+            });
+            return results;
+        }
+
+        function guessCategory(description) {
+            const matched = detectCategoryByKeyword(description);
+            if (matched) return matched;
+            return categories.includes('Outros') ? 'Outros' : categories[0];
+        }
+
+        function openPdfReviewModal(detectedBank) {
+            document.getElementById('pdf-detected-bank').innerText = `Cartão Sugerido: ${detectedBank}`;
+            document.getElementById('bulk-payment-method').value = detectedBank;
+            renderPdfReviewRows();
+            document.getElementById('pdf-review-modal').classList.remove('hidden'); document.getElementById('pdf-review-modal').classList.add('flex');
+        }
+
+        function renderPdfReviewRows() {
+            const tbody = document.getElementById('pdf-items-tbody');
+            if (extractedPdfItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-10 text-center text-slate-500 font-bold uppercase text-xs">Nenhuma linha carregada.</td></tr>`;
+                updatePdfTotals(); return;
+            }
+
+            const catOptions = (selectedCat) => categories.map(c => `<option value="${c}" ${c === selectedCat ? 'selected' : ''}>${getCatIcon(c)} ${c}</option>`).join('');
+            const ownerOptions = (selectedOwner) => [{ val: 'Casal', label: '👫 Nosso (Casal)' }, { val: 'Sandra', label: '👩 Mãe Sandra' }, { val: 'Márcia', label: '👵 Sogra Márcia' }].map(o => `<option value="${o.val}" ${o.val === (selectedOwner || 'Casal') ? 'selected' : ''}>${o.label}</option>`).join('');
+            const payOptions = (selectedPay) => ['Inter', 'Santander', 'Outros'].map(p => `<option value="${p}" ${p === selectedPay ? 'selected' : ''}>${p}</option>`).join('');
+
+            tbody.innerHTML = extractedPdfItems.map((item, idx) => `
+                <tr class="hover:bg-slate-900/60 transition ${!item.selected ? 'opacity-40' : ''}">
+                    <td class="py-2.5 px-2 text-center"><input type="checkbox" ${item.selected ? 'checked' : ''} onchange="updatePdfItem(${idx}, 'selected', this.checked)"></td>
+                    <td class="py-2.5 px-2">
+                        <input type="date" value="${item.date}" onchange="updatePdfItem(${idx}, 'date', this.value)" class="p-1.5 rounded-lg text-xs w-full">
+                        ${item.originalDateHint ? `<span class="text-[9px] text-slate-500 block mt-0.5">PDF: ${item.originalDateHint}</span>` : ''}
+                    </td>
+                    <td class="py-2.5 px-2"><input type="text" value="${item.description.replace(/"/g, '&quot;')}" onchange="updatePdfItem(${idx}, 'description', this.value)" class="p-1.5 rounded-lg text-xs w-full font-semibold"></td>
+                    <td class="py-2.5 px-2"><select onchange="updatePdfItem(${idx}, 'owner', this.value)" class="p-1.5 rounded-lg text-xs w-full font-bold">${ownerOptions(item.owner)}</select></td>
+                    <td class="py-2.5 px-2"><select onchange="updatePdfItem(${idx}, 'category', this.value)" class="p-1.5 rounded-lg text-xs w-full font-semibold">${catOptions(item.category)}</select></td>
+                    <td class="py-2.5 px-2"><select onchange="updatePdfItem(${idx}, 'paymentMethod', this.value)" class="p-1.5 rounded-lg text-xs w-full">${payOptions(item.paymentMethod)}</select></td>
+                    <td class="py-2.5 px-2 text-right"><input type="number" step="0.01" value="${item.value.toFixed(2)}" onchange="updatePdfItem(${idx}, 'value', parseFloat(this.value)||0)" class="p-1.5 rounded-lg text-xs w-24 text-right font-black"></td>
+                </tr>
+            `).join('');
+            updatePdfTotals();
+        }
+
+        window.updatePdfItem = (index, field, val) => {
+            if (!extractedPdfItems[index]) return;
+            extractedPdfItems[index][field] = val;
+            if (field === 'date' && !extractedPdfItems[index].originalDateHint) extractedPdfItems[index].originalDate = val;
+            if (field === 'selected' || field === 'value') renderPdfReviewRows();
+        };
+
+        window.toggleSelectAllPdf = (checked) => { extractedPdfItems.forEach(item => item.selected = checked); renderPdfReviewRows(); };
+        window.applyBulkPayment = (paymentMethod) => { extractedPdfItems.forEach(item => item.paymentMethod = paymentMethod); renderPdfReviewRows(); };
+        window.normalizeDatesToCurrentMonth = () => {
+            const refYear = currentDate.getFullYear(); const refMonth = String(currentDate.getMonth() + 1).padStart(2, '0'); const maxDays = new Date(refYear, parseInt(refMonth, 10), 0).getDate();
+            extractedPdfItems.forEach(item => {
+                const parts = item.date.split('-'); const day = Math.min(parseInt(parts[2] || '01', 10), maxDays);
+                item.date = `${refYear}-${refMonth}-${String(day).padStart(2, '0')}`; item.originalDate = item.date;
+            });
+            renderPdfReviewRows();
+        };
+
+        window.addBlankPdfRow = () => {
+            const todayIso = currentDate.toISOString().slice(0, 7) + '-' + String(new Date().getDate()).padStart(2, '0');
+            extractedPdfItems.push({ selected: true, date: todayIso, originalDate: todayIso, originalDateHint: 'Manual', description: 'Novo Lançamento', owner: 'Casal', category: 'Outros', paymentMethod: document.getElementById('bulk-payment-method').value || 'Santander', value: 0 });
+            renderPdfReviewRows();
+        };
+
+        function updatePdfTotals() {
+            const selected = extractedPdfItems.filter(i => i.selected && i.value > 0);
+            const sum = selected.reduce((acc, cur) => acc + (cur.value || 0), 0);
+            document.getElementById('pdf-total-preview').innerText = fmtMoney(sum);
+            document.getElementById('pdf-selection-stats').innerText = `${selected.length} de ${extractedPdfItems.length} itens selecionados`;
+        }
+
+        window.savePdfBatch = async () => {
+            const approved = extractedPdfItems.filter(i => i.selected && i.value > 0 && i.description.trim() !== '');
+            if (approved.length === 0) return alert("Selecione pelo menos um item válido.");
+            const btn = document.getElementById('confirm-batch-btn'); btn.disabled = true; btn.innerText = "GRAVANDO LOTE..."; toggleLoader(true, `Gravando ${approved.length} registros...`);
+
+            try {
+                const colRef = db.collection('users').doc(userId).collection('expenses');
+                const chunkSize = 450;
+                for (let i = 0; i < approved.length; i += chunkSize) {
+                    const chunk = approved.slice(i, i + chunkSize); const batch = db.batch();
+                    chunk.forEach(item => {
+                        const newDocRef = colRef.doc(); lastCreatedId = newDocRef.id;
+                        batch.set(newDocRef, {
+                            date: item.date, originalDate: item.originalDate || item.date, description: item.description.trim(),
+                            owner: item.owner || 'Casal', category: item.category, value: Number(item.value), paymentMethod: item.paymentMethod, createdAt: new Date(), importedFromPdf: true
+                        });
+                    });
+                    await batch.commit();
+                }
+                closeModal('pdf-review-modal'); extractedPdfItems = []; showToast(`${approved.length} itens importados!`);
+            } catch (error) { console.error(error); alert("Erro ao gravar lote."); } 
+            finally { btn.disabled = false; btn.innerText = "GRAVAR LOTE"; toggleLoader(false); }
         };
 
         document.getElementById('prev-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()-1); render(currentFilterState); };
         document.getElementById('next-month').onclick = () => { currentDate.setMonth(currentDate.getMonth()+1); render(currentFilterState); };
         document.getElementById('logout-btn').onclick = () => { auth.signOut(); location.reload(); };
         
-        function toggleLoader(s, text = "Processando...") { 
-            document.getElementById('loading-text').innerText = text;
-            document.getElementById('loading-overlay').style.display = s ? 'flex' : 'none'; 
-        }
+        function toggleLoader(s, text = "Processando...") { document.getElementById('loading-text').innerText = text; document.getElementById('loading-overlay').style.display = s ? 'flex' : 'none'; }
         function fmtMoney(v) { return (v || 0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
     </script>
 </body>

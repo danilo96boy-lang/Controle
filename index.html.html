@@ -177,6 +177,9 @@
                 <!-- Resumo Inteligente (4 KPIs) -->
                 <div id="summary-display" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
 
+                <!-- Card de Comprometimento (Adicionado via JS no render) -->
+                <div id="commitment-display"></div>
+
                 <!-- Últimos 3 Lançamentos Recentes (Feedback Imediato) -->
                 <div class="card rounded-2xl p-4 lg:p-5 border border-blue-500/20">
                     <div class="flex items-center justify-between mb-3">
@@ -360,11 +363,12 @@
                             <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">5. Pagamento</label>
                             <div class="grid grid-cols-3 gap-1.5 visual-selector">
                                 <div class="relative">
-                                    <input type="radio" name="form-payment" id="pay-inter" value="Inter" checked class="sr-only">
+                                    <input type="radio" name="form-payment" id="pay-inter" value="Inter" class="sr-only">
                                     <label for="pay-inter" class="block text-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Inter</label>
                                 </div>
                                 <div class="relative">
-                                    <input type="radio" name="form-payment" id="pay-santander" value="Santander" class="sr-only">
+                                    <!-- AQUI: SANTANDER AGORA É O DEFAULT -->
+                                    <input type="radio" name="form-payment" id="pay-santander" value="Santander" checked class="sr-only">
                                     <label for="pay-santander" class="block text-center p-2.5 rounded-xl border border-slate-800 bg-slate-900/40 text-xs font-semibold text-slate-400 cursor-pointer transition-all">Santander</label>
                                 </div>
                                 <div class="relative">
@@ -395,7 +399,7 @@
                         <button type="button" onclick="setInstallments(12)" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300">12x</button>
                     </div>
 
-                    <!-- NOVO: Pergunta se a 1ª Parcela entra Neste Mês ou Só no Próximo Mês -->
+                    <!-- Pergunta se a 1ª Parcela entra Neste Mês ou Só no Próximo Mês -->
                     <div id="installment-start-box" class="hidden p-3.5 rounded-2xl bg-blue-950/20 border border-blue-500/30 space-y-2.5">
                         <div class="flex items-center justify-between">
                             <label class="text-[10px] font-black text-blue-300 uppercase tracking-wider flex items-center gap-1.5">
@@ -430,7 +434,12 @@
                         ✅ Salvar Gasto
                     </button>
                 </div>
-                <button type="button" id="delete-btn" onclick="deleteItem()" class="w-full text-red-500 hover:text-red-400 text-[10px] font-black uppercase tracking-widest pt-1 hidden">🗑️ Excluir Este Registro</button>
+                
+                <!-- Ações de Exclusão Refatoradas -->
+                <div id="delete-actions" class="hidden flex gap-2 pt-1">
+                    <button type="button" id="delete-btn" onclick="deleteItem(false)" class="flex-1 text-red-500 hover:text-red-400 text-[10px] font-black uppercase tracking-widest bg-red-500/10 py-2.5 rounded-xl">🗑️ Excluir Parcela</button>
+                    <button type="button" id="delete-group-btn" onclick="deleteItem(true)" class="flex-1 text-red-500 hover:text-red-400 text-[10px] font-black uppercase tracking-widest bg-red-500/10 py-2.5 rounded-xl">🗑️ Excluir Toda a Série</button>
+                </div>
             </form>
         </div>
     </div>
@@ -450,9 +459,10 @@
                 <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
                     <div class="flex items-center gap-1.5 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
                         <span class="text-[10px] font-bold text-slate-400 uppercase">Cartão:</span>
+                        <!-- AQUI: SANTANDER AGORA É A OPÇÃO PADRÃO -->
                         <select id="bulk-payment-method" onchange="applyBulkPayment(this.value)" class="text-xs font-bold py-1 px-2 rounded-lg">
+                            <option value="Santander" selected>Santander</option>
                             <option value="Inter">Inter</option>
-                            <option value="Santander">Santander</option>
                             <option value="Outros">Outros</option>
                         </select>
                     </div>
@@ -568,13 +578,13 @@
         };
 
         const DEFAULT_PLACES = [
-            { desc: 'iFood', cat: 'Delivery', pay: 'Inter' },
-            { desc: 'Mercado', cat: 'Mercado', pay: 'Inter' },
-            { desc: 'Uber', cat: 'Carro', pay: 'Inter' },
-            { desc: 'Farmácia', cat: 'Farmácia', pay: 'Inter' },
+            { desc: 'iFood', cat: 'Delivery', pay: 'Santander' },
+            { desc: 'Mercado', cat: 'Mercado', pay: 'Santander' },
+            { desc: 'Uber', cat: 'Carro', pay: 'Santander' },
+            { desc: 'Farmácia', cat: 'Farmácia', pay: 'Santander' },
             { desc: 'Posto', cat: 'Posto', pay: 'Santander' },
             { desc: 'Padaria', cat: 'Delivery', pay: 'Inter' },
-            { desc: 'Shopee', cat: 'Roupa', pay: 'Inter' }
+            { desc: 'Shopee', cat: 'Roupa', pay: 'Santander' }
         ];
 
         const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#a855f7', '#14b8a6', '#f43f5e'];
@@ -811,7 +821,7 @@
                         count: 0,
                         desc: cleanName,
                         cat: e.category || 'Outros',
-                        pay: e.paymentMethod || 'Inter'
+                        pay: e.paymentMethod || 'Santander'
                     };
                 }
                 freqMap[key].count++;
@@ -1012,10 +1022,9 @@
                 }
 
                 const upperBlob = rawTextBlob.toUpperCase();
-                let detectedBank = 'Inter';
-                if (upperBlob.includes('SANTANDER') || upperBlob.includes('SX ') || upperBlob.includes('ESFERA')) {
-                    detectedBank = 'Santander';
-                } else if (upperBlob.includes('BANCO INTER') || upperBlob.includes('INTERMEDIUM') || upperBlob.includes('CARTAO INTER')) {
+                // AQUI: SANTANDER COMO FALLBACK PRINCIPAL SE IDENTIFICAR
+                let detectedBank = 'Santander'; 
+                if (upperBlob.includes('BANCO INTER') || upperBlob.includes('INTERMEDIUM') || upperBlob.includes('CARTAO INTER')) {
                     detectedBank = 'Inter';
                 }
 
@@ -1097,6 +1106,7 @@
                     results.push({
                         selected: true,
                         date: formattedDate,
+                        originalDate: formattedDate,
                         originalDateHint: `${day}/${month}`,
                         description: cleanDesc,
                         owner: 'Casal',
@@ -1195,6 +1205,10 @@
         window.updatePdfItem = (index, field, val) => {
             if (!extractedPdfItems[index]) return;
             extractedPdfItems[index][field] = val;
+            // Garantir que current update acompanhe data original para o Card de Comprometimento caso alterado manualmente na conciliação
+            if (field === 'date' && !extractedPdfItems[index].originalDateHint) {
+                extractedPdfItems[index].originalDate = val;
+            }
             if (field === 'selected' || field === 'value') {
                 renderPdfReviewRows();
             }
@@ -1219,16 +1233,18 @@
                 const parts = item.date.split('-');
                 const day = Math.min(parseInt(parts[2] || '01', 10), maxDays);
                 item.date = `${refYear}-${refMonth}-${String(day).padStart(2, '0')}`;
+                item.originalDate = item.date; // Atualiza tbm a base
             });
             renderPdfReviewRows();
         };
 
         window.addBlankPdfRow = () => {
-            const defaultPay = document.getElementById('bulk-payment-method').value || 'Inter';
+            const defaultPay = document.getElementById('bulk-payment-method').value || 'Santander';
             const todayIso = currentDate.toISOString().slice(0, 7) + '-' + String(new Date().getDate()).padStart(2, '0');
             extractedPdfItems.push({
                 selected: true,
                 date: todayIso,
+                originalDate: todayIso,
                 originalDateHint: 'Manual',
                 description: 'Novo Lançamento',
                 owner: 'Casal',
@@ -1270,6 +1286,7 @@
                         lastCreatedId = newDocRef.id;
                         batch.set(newDocRef, {
                             date: item.date,
+                            originalDate: item.originalDate || item.date,
                             description: item.description.trim(),
                             owner: item.owner || 'Casal',
                             category: item.category,
@@ -1357,6 +1374,7 @@
 
             document.getElementById('current-month').innerText = currentDate.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
             
+            // Render do Mês Corrente (Baseado na Data Efetiva de Vencimento/Fatura = 'date')
             const allMonthExpenses = expenses.filter(e => e.date?.startsWith(monthKey)).sort((a,b) => new Date(b.date) - new Date(a.date));
             let curExp = [...allMonthExpenses];
             const prevExp = expenses.filter(e => e.date?.startsWith(prevMonthKey));
@@ -1364,6 +1382,42 @@
             document.getElementById('extrato-count-badge').innerText = allMonthExpenses.length;
 
             renderRecentLaunches();
+
+            // AQUI: NOVA LÓGICA DE COMPROMETIMENTO NO CARTÃO (Dashboard de Parcelas Contratadas Neste Mês)
+            const purchasesMadeThisMonth = expenses.filter(e => {
+                const checkDate = e.originalDate || e.date; // fallback se for dados antigos
+                return checkDate && checkDate.startsWith(monthKey);
+            });
+            const parceledThisMonth = purchasesMadeThisMonth.filter(e => e.installmentGroupId);
+            const groupsThisMonth = [...new Set(parceledThisMonth.map(e => e.installmentGroupId))];
+            
+            let futureCommitment = 0;
+            groupsThisMonth.forEach(groupId => {
+                const groupParcels = expenses.filter(e => e.installmentGroupId === groupId);
+                futureCommitment += groupParcels.reduce((acc, i) => acc + (Number(i.value) || 0), 0);
+            });
+
+            const commitmentCardEl = document.getElementById('commitment-display');
+            if (futureCommitment > 0) {
+                commitmentCardEl.innerHTML = `
+                    <div class="card p-4 rounded-2xl border border-blue-500/30 bg-blue-900/10 mb-5 relative overflow-hidden">
+                        <div class="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-blue-500/10 to-transparent"></div>
+                        <div class="flex justify-between items-center relative z-10">
+                            <div class="pr-2">
+                                <p class="text-[10px] font-black text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                                    💳 Comprometimento em Cartão 
+                                </p>
+                                <p class="text-[10px] text-slate-400 mt-1 font-semibold leading-snug max-w-xs">
+                                    Total de compras parceladas adquiridas em <b>${document.getElementById('current-month').innerText}</b>, incluindo parcelas futuras.
+                                </p>
+                            </div>
+                            <p class="text-xl md:text-2xl font-black text-white shrink-0">${fmtMoney(futureCommitment)}</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                commitmentCardEl.innerHTML = '';
+            }
 
             const indicator = document.getElementById('active-filter-indicator');
             if (filter && filter !== 'all') {
@@ -1477,6 +1531,7 @@
                             <div class="flex items-center gap-2 flex-wrap">
                                 <p class="text-sm font-bold text-slate-100 truncate">${i.description}</p>
                                 ${i.category !== 'Reserva' ? getOwnerBadge(i.owner) : ''}
+                                ${i.installmentGroupId ? `<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 text-[8px] font-black uppercase">Série</span>` : ''}
                             </div>
                             <p class="text-[10px] text-slate-500 font-bold uppercase mt-0.5">
                                 ${i.category} ${i.paymentMethod && i.category !== 'Reserva' ? `• [${i.paymentMethod}]` : ''} • ${i.date.split('-').reverse().slice(0,2).join('/')}
@@ -1759,6 +1814,7 @@
             
             const installmentValue = Number((totalValue / installments).toFixed(2));
             const col = db.collection('users').doc(userId).collection('expenses');
+            const originalDate = rawDate; // Fundamental para o cálculo de comprometimento do mês
 
             const saveBtn = document.getElementById('save-btn');
             saveBtn.disabled = true;
@@ -1767,32 +1823,74 @@
 
             try {
                 if (currentEditId) {
-                    lastCreatedId = currentEditId;
-                    await col.doc(currentEditId).set({
-                        date: rawDate,
-                        description: description,
-                        category: category,
-                        value: totalValue,
-                        paymentMethod: paymentMethod,
-                        owner: owner
-                    }, { merge: true });
-                    showToast("Lançamento atualizado!");
+                    const currentItem = expenses.find(e => e.id === currentEditId);
+                    let updateAll = false;
+                    
+                    if (currentItem.installmentGroupId) {
+                        updateAll = confirm("Este é um lançamento parcelado.\nDeseja aplicar as alterações (Categoria, Descrição, Pagamento e Responsável) para TODAS as parcelas desta série?\n\n[OK] = Sim, alterar a série toda\n[Cancelar] = Não, alterar apenas esta parcela isolada");
+                    }
+
+                    if (updateAll) {
+                        const groupItems = expenses.filter(e => e.installmentGroupId === currentItem.installmentGroupId);
+                        const batch = db.batch();
+                        const baseDesc = description.replace(/\s*\(\d+\/\d+\)$/, ''); // Previne duplicidade
+                        
+                        groupItems.forEach(gItem => {
+                            batch.update(col.doc(gItem.id), {
+                                description: `${baseDesc} (${gItem.installmentNumber}/${gItem.totalInstallments})`,
+                                category: category,
+                                owner: owner,
+                                paymentMethod: paymentMethod
+                                // Valor e data mantêm-se os de cada parcela
+                            });
+                        });
+                        await batch.commit();
+                        showToast("Série de parcelas atualizada!");
+                    } else {
+                        // Edição simples
+                        lastCreatedId = currentEditId;
+                        const finalDesc = currentItem.installmentGroupId && !description.match(/\(\d+\/\d+\)$/) 
+                            ? `${description.replace(/\s*\(\d+\/\d+\)$/, '')} (${currentItem.installmentNumber}/${currentItem.totalInstallments})` 
+                            : description;
+
+                        await col.doc(currentEditId).set({
+                            date: rawDate,
+                            originalDate: currentItem.originalDate || originalDate,
+                            description: finalDesc,
+                            category: category,
+                            value: totalValue,
+                            paymentMethod: paymentMethod,
+                            owner: owner
+                        }, { merge: true });
+                        showToast("Lançamento atualizado!");
+                    }
                 } else {
+                    const installmentGroupId = installments > 1 ? 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9) : null;
                     const batch = db.batch();
+                    
                     for (let i = 0; i < installments; i++) {
                         const dueDateStr = addMonthsSafe(rawDate, monthOffset + i);
                         const newDocRef = col.doc();
                         if (i === 0) lastCreatedId = newDocRef.id;
 
-                        batch.set(newDocRef, {
+                        const payload = {
                             date: dueDateStr,
+                            originalDate: originalDate,
                             description: installments > 1 ? `${description} (${i + 1}/${installments})` : description,
                             category: category,
                             value: installmentValue,
                             paymentMethod: paymentMethod,
                             owner: owner,
                             createdAt: new Date()
-                        });
+                        };
+
+                        if (installments > 1) {
+                            payload.installmentGroupId = installmentGroupId;
+                            payload.totalInstallments = installments;
+                            payload.installmentNumber = i + 1;
+                        }
+
+                        batch.set(newDocRef, payload);
                     }
                     await batch.commit();
 
@@ -1821,7 +1919,11 @@
         window.openModal = (id = null) => {
             currentEditId = id;
             document.getElementById('form-error-msg').classList.add('hidden');
-            document.getElementById('delete-btn').classList.toggle('hidden', !id);
+            
+            const delActions = document.getElementById('delete-actions');
+            const delBtn = document.getElementById('delete-btn');
+            const delGroupBtn = document.getElementById('delete-group-btn');
+
             document.getElementById('installments-wrapper').classList.toggle('hidden', !!id);
             document.getElementById('installment-quick-btns').classList.toggle('hidden', !!id);
             document.getElementById('modal-title').innerText = id ? '✏️ Editar Lançamento' : '⚡ Lançamento Rápido';
@@ -1829,9 +1931,20 @@
             renderFrequentPlacesChips();
 
             if (id) {
+                delActions.classList.remove('hidden');
                 const i = expenses.find(e => e.id === id);
+                
+                if (i.installmentGroupId) {
+                    delBtn.innerText = "🗑️ Esta Parcela";
+                    delGroupBtn.classList.remove('hidden');
+                } else {
+                    delBtn.innerText = "🗑️ Excluir Este Registro";
+                    delGroupBtn.classList.add('hidden');
+                }
+
                 document.getElementById('form-date').value = i.date;
-                document.getElementById('form-desc').value = i.description;
+                // Exibe de forma limpa para edição, sem a flag de parcelas (x/y) caso seja de grupo
+                document.getElementById('form-desc').value = i.installmentGroupId ? i.description.replace(/\s*\(\d+\/\d+\)$/, '') : i.description;
                 document.getElementById('form-val').value = i.value;
                 document.getElementById('installment-start-box').classList.add('hidden');
                 renderVisualCategoryButtons(i.category || '', false);
@@ -1842,11 +1955,14 @@
                 const targetOwner = document.querySelector(`input[name="form-owner"][value="${i.owner || 'Casal'}"]`);
                 if (targetOwner) targetOwner.checked = true;
             } else {
+                delActions.classList.add('hidden');
                 document.getElementById('expense-form').reset();
                 document.getElementById('form-installments').value = "1";
                 document.getElementById('offset-current').checked = true;
                 document.getElementById('installment-start-box').classList.add('hidden');
-                document.getElementById('pay-inter').checked = true;
+                
+                // AQUI: Default volta a ser Santander
+                document.getElementById('pay-santander').checked = true;
                 document.getElementById('owner-casal').checked = true;
                 document.getElementById('form-date').value = new Date().toISOString().split('T')[0];
                 renderVisualCategoryButtons('', false);
@@ -1861,11 +1977,31 @@
             document.getElementById(id).classList.remove('flex');
         };
 
-        window.deleteItem = () => {
-            if(confirm("Apagar este registro permanentemente?")) {
-                db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete();
+        window.deleteItem = async (allGroup = false) => {
+            const msg = allGroup ? "Atenção: Você irá apagar TODAS AS PARCELAS deste parcelamento permanentemente. Tem certeza?" : "Apagar este registro permanentemente?";
+            if(!confirm(msg)) return;
+
+            toggleLoader(true, "Excluindo...");
+            try {
+                if (allGroup) {
+                    const item = expenses.find(e => e.id === currentEditId);
+                    const groupItems = expenses.filter(e => e.installmentGroupId === item.installmentGroupId);
+                    const batch = db.batch();
+                    groupItems.forEach(gItem => {
+                        batch.delete(db.collection('users').doc(userId).collection('expenses').doc(gItem.id));
+                    });
+                    await batch.commit();
+                    showToast("Série de parcelas excluída!");
+                } else {
+                    await db.collection('users').doc(userId).collection('expenses').doc(currentEditId).delete();
+                    showToast("Registro excluído.");
+                }
                 closeModal('expense-modal');
-                showToast("Registro excluído.");
+            } catch (err) {
+                console.error("Erro exclusão:", err);
+                alert("Erro ao excluir.");
+            } finally {
+                toggleLoader(false);
             }
         };
 
